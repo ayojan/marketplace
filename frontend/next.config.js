@@ -5,8 +5,7 @@ const nextConfig = {
   
   // Environment variables
   env: {
-    // We don't provide a default here to let Vercel/Process env take precedence
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   },
 
   // Image optimization

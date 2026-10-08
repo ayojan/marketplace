@@ -81,7 +81,40 @@ Rails.application.routes.draw do
   end
 
   # Review routes (reviews pack)
-  resources :reviews, only: %i[index show create update destroy]
+  resources :reviews, only: %i[index show create update destroy] do
+    member do
+      post :vote
+      post :respond
+    end
+  end
+
+  # Customer favorites routes
+  resources :customer_favorites, only: %i[index create destroy] do
+    collection do
+      get 'check/:vendor_profile_id', action: :check
+      delete 'by_vendor/:vendor_profile_id', action: :destroy_by_vendor
+    end
+  end
+
+  # Customer checklist items routes
+  resources :checklist_items, only: %i[index create update destroy] do
+    member do
+      patch :toggle
+    end
+  end
+
+  # Customer profile route
+  resource :customer_profile, only: %i[show update]
+
+  # In-app notifications routes
+  resources :in_app_notifications, only: %i[index] do
+    member do
+      patch :read, action: :mark_as_read
+    end
+    collection do
+      post :read_all, action: :mark_all_read
+    end
+  end
 
   # Portfolio items routes (service_catalog pack)
   resources :portfolio_items do

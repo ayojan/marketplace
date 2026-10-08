@@ -102,6 +102,8 @@ export const apiService = {
     delete: (id) => api.delete(`/reviews/${id}`),
     getByService: (serviceId) => api.get(`/services/${serviceId}/reviews`),
     getByVendor: (vendorId) => api.get(`/vendors/${vendorId}/reviews`),
+    vote: (id) => api.post(`/reviews/${id}/vote`),
+    respond: (id, vendorResponse) => api.post(`/reviews/${id}/respond`, { vendor_response: vendorResponse }),
   },
 
   // Services
@@ -196,6 +198,37 @@ export const apiService = {
     bulkCreate: (data) => api.post('/availability_slots/bulk_create', data),
     checkConflicts: (params) =>
         api.get('/availability_slots/check_conflicts', { params }),
+  },
+
+  // Customer Favorites
+  favorites: {
+    getAll: () => api.get('/customer_favorites'),
+    add: (vendorProfileId) => api.post('/customer_favorites', { vendor_profile_id: vendorProfileId }),
+    remove: (id) => api.delete(`/customer_favorites/${id}`),
+    removeByVendor: (vendorProfileId) => api.delete(`/customer_favorites/by_vendor/${vendorProfileId}`),
+    check: (vendorProfileId) => api.get(`/customer_favorites/check/${vendorProfileId}`),
+  },
+
+  // Customer Checklists
+  checklists: {
+    getAll: () => api.get('/checklist_items'),
+    create: (data) => api.post('/checklist_items', { checklist_item: data }),
+    update: (id, data) => api.put(`/checklist_items/${id}`, { checklist_item: data }),
+    toggle: (id) => api.patch(`/checklist_items/${id}/toggle`),
+    delete: (id) => api.delete(`/checklist_items/${id}`),
+  },
+
+  // Customer Profile
+  customerProfile: {
+    get: () => api.get('/customer_profile'),
+    update: (data) => api.put('/customer_profile', { customer_profile: data }),
+  },
+
+  // In-App Notifications
+  notifications: {
+    getAll: () => api.get('/in_app_notifications'),
+    markAsRead: (id) => api.patch(`/in_app_notifications/${id}/read`),
+    markAllRead: () => api.post('/in_app_notifications/read_all'),
   },
 
   // GraphQL

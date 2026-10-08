@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import AuthLeftPanel from '@/components/auth/AuthLeftPanel';
+import AyojLogo from '@/components/AyojLogo';
 
 const Register = () => {
   const searchParams = useSearchParams();
@@ -85,61 +86,58 @@ const Register = () => {
     setIsSubmitting(false);
   };
 
-  const customerPerks = ['Browse portfolios', 'Instant booking', 'Secure payment'];
-  const vendorPerks = ['List services', 'Manage bookings', 'Get paid fast'];
+  const customerPerks = ['Browse verified pros', 'Instant booking', 'Secure payment escrow'];
+  const vendorPerks = ['List services & packages', 'Manage calendar', 'Get paid directly'];
 
   return (
-    <div className="min-h-screen w-full bg-background flex overflow-hidden font-sans text-foreground">
+    <div className="min-h-screen w-full bg-[#FBF8F4] flex overflow-hidden font-sans text-[#221F1C]">
       <AuthLeftPanel />
 
       {/* Right Panel */}
-      <div className="flex-1 lg:w-[55%] flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
-        {/* Ambient Orb */}
-        <div className="absolute top-[-15%] right-[-15%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[130px] pointer-events-none" />
+      <div className="flex-1 lg:w-[55%] flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden bg-[#FBF8F4]">
+        
+        {/* Mobile Logo & Back Link */}
+        <div className="w-full flex items-center justify-between max-w-md mx-auto mb-4">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-[#6B6560] hover:text-[#9E5338] transition-colors font-medium">
+            <ArrowLeft className="size-3.5" /> Back to Home
+          </Link>
 
-        {/* Mobile Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="lg:hidden flex items-center gap-2 mb-8"
-        >
-          <div className="p-2 rounded-lg bg-primary/20">
-            <Camera className="w-5 h-5 text-primary" />
-          </div>
-          <span className="text-lg font-bold text-white">jashnify</span>
-        </motion.div>
+          <Link href="/">
+            <AyojLogo size="sm" showTagline={false} />
+          </Link>
+        </div>
 
         {/* Step Indicator */}
-        <div className="flex gap-2 mb-8">
-          <div className={`h-1 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-primary' : 'bg-border'}`} style={{ width: '24px' }} />
-          <div className={`h-1 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-border'}`} style={{ width: '24px' }} />
+        <div className="flex gap-2 mb-6">
+          <div className={`h-1 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-[#9E5338]' : 'bg-[#E8E2D9]'}`} style={{ width: '32px' }} />
+          <div className={`h-1 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-[#9E5338]' : 'bg-[#E8E2D9]'}`} style={{ width: '32px' }} />
         </div>
 
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8 max-w-md"
+          className="text-center mb-6 max-w-md"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            {step === 1 ? 'Join Jashnify' : 'Create your account'}
+          <h2 className="text-3xl md:text-4xl font-serif font-normal text-[#221F1C] mb-2">
+            {step === 1 ? 'Join Ayoj' : 'Create your account'}
           </h2>
-          <p className="text-muted-foreground text-base">
+          <p className="text-[#6B6560] text-sm">
             {step === 1
-              ? 'Choose your role to get started'
-              : 'Fill in your details to complete signup'}
+              ? 'Select your account type to get started'
+              : 'Fill in your details to complete setup'}
           </p>
         </motion.div>
 
-        {/* Form Card */}
+        {/* Form Card Surface */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-strong rounded-2xl p-8 shadow-2xl shadow-black/40 w-full max-w-md relative z-10"
+          className="bg-white border border-[#E8E2D9] rounded-2xl p-8 shadow-sm w-full max-w-md relative z-10"
         >
           {error && (
-            <div className="bg-destructive/10 border border-destructive/20 text-destructive-foreground px-4 py-3 rounded-xl text-sm flex items-start gap-3 mb-6">
-              <svg className="w-4 h-4 text-destructive shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-xs flex items-start gap-2.5 mb-6">
+              <svg className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <span>{error}</span>
@@ -151,67 +149,67 @@ const Register = () => {
             {step === 1 && (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: -30 }}
+                initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 30 }}
-                transition={{ duration: 0.3 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
                 <div className="grid grid-cols-1 gap-4">
                   {[
-                    { role: 'customer', icon: User, label: 'Customer', desc: 'Book Services', perks: customerPerks },
-                    { role: 'vendor', icon: Briefcase, label: 'Vendor', desc: 'Provide Services', perks: vendorPerks },
-                  ].map(({ role, icon: Icon, label, desc, perks }) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => handleRoleSelect(role)}
-                      className={`relative p-5 rounded-2xl border-2 transition-all duration-300 text-left ${
-                        formData.role === role
-                          ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10'
-                          : 'bg-background/40 border-border/50 hover:border-primary/30 hover:bg-primary/5'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className={`p-3 rounded-full transition-colors shrink-0 ${
-                          formData.role === role ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'
-                        }`}>
-                          <Icon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                          <div className={`font-bold text-lg ${formData.role === role ? 'text-white' : 'text-foreground'}`}>
-                            {label}
+                    { role: 'customer', icon: User, label: 'Customer', desc: 'Discover & Book Services', perks: customerPerks },
+                    { role: 'vendor', icon: Briefcase, label: 'Vendor / Partner', desc: 'List & Provide Services', perks: vendorPerks },
+                  ].map(({ role, icon: Icon, label, desc, perks }) => {
+                    const isSelected = formData.role === role;
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => handleRoleSelect(role)}
+                        className={`relative p-5 rounded-xl border-2 transition-all duration-200 text-left cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#F3EADF] border-[#9E5338] shadow-sm'
+                            : 'bg-white border-[#E8E2D9] hover:border-[#9E5338]/40 hover:bg-[#FBF8F4]'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-full transition-colors shrink-0 ${
+                            isSelected ? 'bg-[#9E5338] text-white' : 'bg-[#F5ECE2] text-[#6B6560]'
+                          }`}>
+                            <Icon className="w-5 h-5" />
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1 mb-3">{desc}</div>
-                          <ul className="space-y-1">
-                            {perks.map((perk) => (
-                              <li key={perk} className="text-xs text-foreground/70 flex items-center gap-2">
-                                <div className="w-1 h-1 rounded-full bg-primary" />
-                                {perk}
-                              </li>
-                            ))}
-                          </ul>
+                          <div className="flex-1">
+                            <div className="font-serif font-bold text-base text-[#221F1C]">
+                              {label}
+                            </div>
+                            <div className="text-xs text-[#6B6560] mt-0.5 mb-2.5">{desc}</div>
+                            <ul className="space-y-1">
+                              {perks.map((perk) => (
+                                <li key={perk} className="text-xs text-[#221F1C] flex items-center gap-2 font-normal">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[#9E5338]" />
+                                  {perk}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
-                      </div>
-                      {formData.role === role && (
-                        <motion.div
-                          layoutId="role-indicator"
-                          className="absolute top-4 right-4 text-primary"
-                        >
-                          <CheckCircle className="w-5 h-5 fill-primary/20" />
-                        </motion.div>
-                      )}
-                    </button>
-                  ))}
+                        {isSelected && (
+                          <div className="absolute top-4 right-4 text-[#9E5338]">
+                            <CheckCircle className="w-5 h-5 fill-[#9E5338]/20" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <Button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="w-full h-10 rounded-xl font-bold"
+                  className="w-full h-11 rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white font-medium text-xs transition-colors"
                 >
                   Continue
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
               </motion.div>
             )}
@@ -220,28 +218,28 @@ const Register = () => {
             {step === 2 && (
               <motion.form
                 key="step2"
-                initial={{ opacity: 0, x: 30 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.3 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
                 className="space-y-4"
                 onSubmit={handleSubmit}
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div className="group">
-                    <Label htmlFor="firstName" className="text-foreground/80 font-semibold mb-1.5 block text-sm">
+                    <Label htmlFor="firstName" className="text-[#221F1C] font-semibold text-xs mb-1 block">
                       First Name
                     </Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-4 w-4 text-muted-foreground" />
+                        <User className="h-4 w-4 text-[#6B6560]" />
                       </div>
                       <Input
                         id="firstName"
                         name="firstName"
                         type="text"
                         required
-                        className="pl-9 h-10 bg-background/60 border-border/50 rounded-xl focus-visible:ring-primary/40 text-sm"
+                        className="pl-9 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C]"
                         placeholder="John"
                         value={formData.firstName}
                         onChange={handleChange}
@@ -249,19 +247,19 @@ const Register = () => {
                     </div>
                   </div>
                   <div className="group">
-                    <Label htmlFor="lastName" className="text-foreground/80 font-semibold mb-1.5 block text-sm">
+                    <Label htmlFor="lastName" className="text-[#221F1C] font-semibold text-xs mb-1 block">
                       Last Name
                     </Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-4 w-4 text-muted-foreground" />
+                        <User className="h-4 w-4 text-[#6B6560]" />
                       </div>
                       <Input
                         id="lastName"
                         name="lastName"
                         type="text"
                         required
-                        className="pl-9 h-10 bg-background/60 border-border/50 rounded-xl focus-visible:ring-primary/40 text-sm"
+                        className="pl-9 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C]"
                         placeholder="Doe"
                         value={formData.lastName}
                         onChange={handleChange}
@@ -271,19 +269,19 @@ const Register = () => {
                 </div>
 
                 <div className="group">
-                  <Label htmlFor="email" className="text-foreground/80 font-semibold mb-1.5 block text-sm">
+                  <Label htmlFor="email" className="text-[#221F1C] font-semibold text-xs mb-1 block">
                     Email Address
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Mail className="h-4 w-4 text-[#6B6560]" />
                     </div>
                     <Input
                       id="email"
                       name="email"
                       type="email"
                       required
-                      className="pl-9 h-10 bg-background/60 border-border/50 rounded-xl focus-visible:ring-primary/40 text-sm"
+                      className="pl-9 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C]"
                       placeholder="name@example.com"
                       value={formData.email}
                       onChange={handleChange}
@@ -293,19 +291,19 @@ const Register = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="group">
-                    <Label htmlFor="password" className="text-foreground/80 font-semibold mb-1.5 block text-sm">
+                    <Label htmlFor="password" className="text-[#221F1C] font-semibold text-xs mb-1 block">
                       Password
                     </Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-4 w-4 text-muted-foreground" />
+                        <Lock className="h-4 w-4 text-[#6B6560]" />
                       </div>
                       <Input
                         id="password"
                         name="password"
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="pl-9 pr-9 h-10 bg-background/60 border-border/50 rounded-xl focus-visible:ring-primary/40 text-sm"
+                        className="pl-9 pr-8 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C]"
                         placeholder="Create password"
                         value={formData.password}
                         onChange={handleChange}
@@ -313,30 +311,30 @@ const Register = () => {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#6B6560] hover:text-[#221F1C] transition-colors cursor-pointer"
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-3.5 w-3.5" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3.5 w-3.5" />
                         )}
                       </button>
                     </div>
                   </div>
                   <div className="group">
-                    <Label htmlFor="passwordConfirmation" className="text-foreground/80 font-semibold mb-1.5 block text-sm">
-                      Confirm
+                    <Label htmlFor="passwordConfirmation" className="text-[#221F1C] font-semibold text-xs mb-1 block">
+                      Confirm Password
                     </Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-4 w-4 text-muted-foreground" />
+                        <Lock className="h-4 w-4 text-[#6B6560]" />
                       </div>
                       <Input
                         id="passwordConfirmation"
                         name="passwordConfirmation"
                         type={showConfirm ? 'text' : 'password'}
                         required
-                        className="pl-9 pr-9 h-10 bg-background/60 border-border/50 rounded-xl focus-visible:ring-primary/40 text-sm"
+                        className="pl-9 pr-8 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C]"
                         placeholder="Confirm password"
                         value={formData.passwordConfirmation}
                         onChange={handleChange}
@@ -344,45 +342,44 @@ const Register = () => {
                       <button
                         type="button"
                         onClick={() => setShowConfirm(!showConfirm)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#6B6560] hover:text-[#221F1C] transition-colors cursor-pointer"
                       >
                         {showConfirm ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-3.5 w-3.5" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3.5 w-3.5" />
                         )}
                       </button>
                     </div>
                     {passwordMismatch && (
-                      <p className="text-xs text-destructive mt-1">Passwords don't match</p>
+                      <p className="text-[10px] text-rose-600 mt-1">Passwords don't match</p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3 pt-3">
                   <Button
                     type="button"
                     onClick={() => setStep(1)}
                     variant="outline"
-                    size="sm"
-                    className="h-10 rounded-lg px-3"
+                    className="h-11 rounded-full px-4 border-[#E8E2D9] bg-[#FBF8F4] hover:bg-[#F3EADF] text-[#221F1C]"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Button
                     type="submit"
                     disabled={isSubmitting || passwordMismatch}
-                    className="flex-1 h-10 rounded-lg font-bold"
+                    className="flex-1 h-11 rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white font-medium text-xs transition-colors"
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Creating...</span>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        <span>Creating account...</span>
                       </>
                     ) : (
                       <>
                         Create Account
-                        <ArrowRight className="w-4 h-4 ml-1" />
+                        <ArrowRight className="w-4 h-4 ml-1.5" />
                       </>
                     )}
                   </Button>
@@ -397,16 +394,17 @@ const Register = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-center mt-8 text-muted-foreground text-sm"
+          className="text-center mt-6 text-[#6B6560] text-xs"
         >
           Already have an account?{' '}
           <Link
             href="/login"
-            className="text-primary font-bold hover:text-primary/80 transition-colors"
+            className="text-[#9E5338] font-bold hover:underline transition-colors"
           >
             Sign in
           </Link>
         </motion.p>
+
       </div>
     </div>
   );

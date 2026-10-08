@@ -177,7 +177,7 @@ const Home = () => {
       </section>
 
       <footer className="py-12 border-t border-white/[0.03] text-center">
-         <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-600">&copy; 2026 Jashnify Collective</p>
+         <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-600">&copy; 2026 Ayoj Collective</p>
       </footer>
     </div>
   );

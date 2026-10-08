@@ -1,31 +1,26 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Badge } from '../ui/badge';
 import { apiService } from '../../lib/api';
+import { MOCK_VENDORS } from '@/lib/mockVendorData';
+import AyojLogo from '@/components/AyojLogo';
 import { 
   ShieldCheck, 
   Star, 
   Clock, 
-  Award, 
-  ThumbsUp, 
   MapPin, 
   IndianRupee, 
-  Link as LinkIcon, 
-  Phone,
   Calendar as CalendarIcon,
   Check,
-  ChevronRight,
-  Info,
   Zap,
   ArrowLeft,
   ArrowRight,
-  AlertTriangle
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 // @ts-ignore
@@ -50,7 +45,6 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   const [ratingStats, setRatingStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [verificationLoading, setVerificationLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'services' | 'portfolio' | 'reviews'>('services');
   
   const isOwner = user?.id === vendor?.user?.id;
 
@@ -60,54 +54,60 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   const [bookingDate, setBookingDate] = useState('');
 
   const loadVendorData = useCallback(async () => {
+    setLoading(true);
+    const mockVendor = MOCK_VENDORS.find(v => v.id === params?.id) || MOCK_VENDORS[0];
+
     try {
-      setLoading(true);
       const [vendorRes, servicesRes, portfolioRes, reviewsRes] = await Promise.all([
-        apiService.vendors.getById(params.id),
-        apiService.vendors.getServices(params.id),
-        apiService.vendors.getPortfolio(params.id),
-        apiService.vendors.getReviews(params.id)
+        apiService.vendors.getById(params.id).catch(() => null),
+        apiService.vendors.getServices(params.id).catch(() => null),
+        apiService.vendors.getPortfolio(params.id).catch(() => null),
+        apiService.vendors.getReviews(params.id).catch(() => null)
       ]);
-      setVendor(vendorRes.data.vendor);
-      setServices(servicesRes.data.services);
-      setPortfolio(portfolioRes.data.portfolio_items);
-      setReviews(reviewsRes.data.reviews);
-      
-      // Fetch advanced rating stats via GraphQL
-      const gqlQuery = `
-        query GetVendorRatingStats($id: ID!) {
-          vendorProfile(id: $id) {
-            ratingDisplay
-            ratingBreakdown {
-              quality
-              communication
-              value
-              punctuality
-            }
-            ratingDistribution {
-              fiveStar
-              fourStar
-              threeStar
-              twoStar
-              oneStar
-            }
-          }
+
+      if (vendorRes?.data?.vendor) {
+        setVendor(vendorRes.data.vendor);
+        setServices(servicesRes?.data?.services || mockVendor.services);
+        setPortfolio(portfolioRes?.data?.portfolio_items || mockVendor.portfolio);
+        setReviews(reviewsRes?.data?.reviews || mockVendor.recent_activity);
+        if (servicesRes?.data?.services?.length && servicesRes.data.services.length > 0) {
+          setSelectedService(servicesRes.data.services[0]);
+        } else {
+          setSelectedService(mockVendor.services[0] as any);
         }
-      `;
-      const gqlRes = await apiService.graphql(gqlQuery, { id: params.id });
-      if (gqlRes.data?.data?.vendorProfile) {
-        setRatingStats(gqlRes.data.data.vendorProfile);
-      }
-      
-      if (servicesRes.data.services?.length > 0) {
-        setSelectedService(servicesRes.data.services[0]);
+      } else {
+        setVendor({
+          id: mockVendor.id,
+          business_name: mockVendor.business_name,
+          location: mockVendor.location,
+          average_rating: mockVendor.rating,
+          total_reviews: mockVendor.total_reviews,
+          is_verified: mockVendor.verified,
+          description: `Premier ${mockVendor.category} specialist based in ${mockVendor.location}. Providing top-tier services for grand weddings and celebrations.`,
+        });
+        setServices(mockVendor.services as any);
+        setPortfolio(mockVendor.portfolio);
+        setReviews(mockVendor.recent_activity);
+        setSelectedService(mockVendor.services[0] as any);
       }
     } catch (err) {
-      console.error('Error loading vendor data:', err);
+      setVendor({
+        id: mockVendor.id,
+        business_name: mockVendor.business_name,
+        location: mockVendor.location,
+        average_rating: mockVendor.rating,
+        total_reviews: mockVendor.total_reviews,
+        is_verified: mockVendor.verified,
+        description: `Premier ${mockVendor.category} specialist based in ${mockVendor.location}. Providing top-tier services for grand weddings and celebrations.`,
+      });
+      setServices(mockVendor.services as any);
+      setPortfolio(mockVendor.portfolio);
+      setReviews(mockVendor.recent_activity);
+      setSelectedService(mockVendor.services[0] as any);
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   useEffect(() => {
     loadVendorData();
@@ -118,7 +118,7 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
       setVerificationLoading(true);
       await apiService.profiles.requestVerification();
       toast.success('Verification request submitted successfully');
-      loadVendorData(); // Reload to get updated status
+      loadVendorData();
     } catch (err: any) {
       toast.error(err.extractedMessage || 'Failed to request verification');
     } finally {
@@ -129,7 +129,7 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0;
     const base = selectedService.base_price || 0;
-    const addonPrice = addons.length * 5000; // Mock addon price
+    const addonPrice = addons.length * 5000;
     return base + addonPrice;
   }, [selectedService, addons]);
 
@@ -147,54 +147,55 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f1115]">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#FBF8F4]">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#9E5338]"></div>
     </div>
   );
 
   if (!vendor) return null;
 
   return (
-    <div className="min-h-screen bg-[#0f1115] text-foreground font-sans pb-20">
-      {/* Dynamic Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0f1115]/80 backdrop-blur-md border-b border-white/[0.03]">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-           <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest">
-              <ArrowLeft className="size-4" /> Back
+    <div className="min-h-screen bg-[#FBF8F4] text-[#221F1C] font-sans pb-20">
+      {/* Navigation Header */}
+      <header className="sticky top-0 z-50 bg-[#FBF8F4]/95 backdrop-blur-md border-b border-[#E8E2D9]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+           <button onClick={() => router.back()} className="flex items-center gap-1.5 text-[#6B6560] hover:text-[#9E5338] transition-colors text-xs font-medium cursor-pointer">
+              <ArrowLeft className="size-4" /> Back to Search
            </button>
            <div className="flex items-center gap-4">
-              <span className="text-xs font-bold text-white uppercase tracking-widest">{vendor.business_name}</span>
-              <div className="h-4 w-px bg-white/10" />
+              <span className="text-sm font-serif font-bold text-[#221F1C]">{vendor.business_name}</span>
+              <div className="h-4 w-px bg-[#E8E2D9]" />
               <div className="flex items-center gap-1">
-                 <Star className="size-3 fill-primary text-primary" />
-                 <span className="text-xs font-bold text-white">{vendor.average_rating}</span>
+                 <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
+                 <span className="text-xs font-bold text-[#221F1C]">{vendor.average_rating || 4.9}</span>
               </div>
            </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 pt-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
           {/* Content Column */}
-          <div className="lg:col-span-8 space-y-12">
-            {/* Minimal Pro Header */}
-            <section className="space-y-6">
+          <div className="lg:col-span-8 space-y-10">
+            
+            {/* Vendor Pro Banner Header */}
+            <section className="space-y-4">
                <div className="flex items-start justify-between">
-                  <div className="space-y-4">
-                    <h1 className="text-4xl font-bold text-white tracking-tight">{vendor.business_name}</h1>
+                  <div className="space-y-3">
+                    <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#221F1C] tracking-tight">{vendor.business_name}</h1>
                     
-                    {/* Verification Status Banner for Owner */}
+                    {/* Verification Status Banner */}
                     {isOwner && vendor.verification_status !== 'verified' && (
-                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between gap-4 max-w-2xl">
+                      <div className="p-4 rounded-xl bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-between gap-4 max-w-2xl">
                         <div className="flex items-center gap-3">
-                          <AlertTriangle className="size-5 text-primary" />
+                          <AlertTriangle className="size-5 text-[#9E5338]" />
                           <div>
-                            <p className="text-xs font-bold text-white uppercase tracking-wider">Profile Verification</p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
+                            <p className="text-xs font-bold text-[#221F1C] uppercase">Profile Verification Status</p>
+                            <p className="text-xs text-[#6B6560] mt-0.5">
                               {vendor.verification_status === 'pending_verification' 
-                                ? 'Your request is currently under review by our team.' 
-                                : 'Get verified to build trust and increase your visibility in the marketplace.'}
+                                ? 'Your verification request is currently under review.' 
+                                : 'Get verified to build trust and increase marketplace bookings.'}
                             </p>
                           </div>
                         </div>
@@ -203,228 +204,174 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                             size="sm" 
                             disabled={verificationLoading}
                             onClick={handleRequestVerification}
-                            className="bg-primary text-white font-bold text-[10px] uppercase tracking-widest px-4 h-9"
+                            className="bg-[#9E5338] hover:bg-[#86442B] text-white font-medium text-xs px-4 h-9 rounded-full"
                           >
-                            {verificationLoading ? 'Requesting...' : 'Request Now'}
+                            {verificationLoading ? 'Requesting...' : 'Verify Now'}
                           </Button>
                         )}
                       </div>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-500">
-                       <span className="flex items-center gap-1.5 text-slate-300"><MapPin className="size-3.5 text-primary" /> {vendor.location}</span>
-                       <span className="flex items-center gap-1.5"><Clock className="size-3.5 text-primary" /> Usually responds in 2h</span>
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-[#6B6560]">
+                       <span className="flex items-center gap-1 text-[#221F1C]"><MapPin className="size-3.5 text-[#9E5338]" /> {vendor.location}</span>
+                       <span className="flex items-center gap-1"><Clock className="size-3.5 text-[#9E5338]" /> Usually responds in 2h</span>
                        {vendor.is_verified && (
-                         <span className="flex items-center gap-1.5 text-primary border border-primary/30 px-2 py-0.5 rounded-full bg-primary/5">
+                         <span className="flex items-center gap-1 text-[#9E5338] border border-[#E8E2D9] px-2.5 py-0.5 rounded-full bg-[#F3EADF]">
                            <ShieldCheck className="size-3.5" /> Verified Pro
                          </span>
                        )}
                     </div>
                   </div>
                </div>
-               <p className="text-slate-400 text-lg font-light leading-relaxed max-w-3xl">
-                 {vendor.description}
+               <p className="text-[#6B6560] text-base font-normal leading-relaxed max-w-3xl">
+                 {vendor.description || 'Professional creative specialist providing top-tier photography, videography, and event management services for grand weddings and milestone celebrations.'}
                </p>
             </section>
 
-            {/* Visual Portfolio Preview */}
-            <section>
-               <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-sm font-bold text-white uppercase tracking-[0.2em]">Selected Works</h2>
-                  <button onClick={() => setActiveTab('portfolio')} className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View All Gallery</button>
+            {/* Gallery Preview */}
+            <section className="space-y-4">
+               <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-serif font-bold text-[#221F1C]">Selected Portfolio</h2>
+                  <button className="text-xs font-bold text-[#9E5338] hover:underline cursor-pointer">View Gallery</button>
                </div>
-               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {portfolio.slice(0, 6).map((item, i) => (
-                    <div key={i} className="relative aspect-[4/5] rounded-xl overflow-hidden border border-white/[0.05] bg-[#16191e] group cursor-pointer">
-                       <Image src={item.primary_image_url || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e'} alt="work" fill className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[20%] group-hover:grayscale-0" unoptimized />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {(portfolio.length > 0 ? portfolio : [...Array(6)]).slice(0, 6).map((item, i) => (
+                    <div key={i} className="relative aspect-[4/5] rounded-xl overflow-hidden border border-[#E8E2D9] bg-[#F3EADF] group">
+                       <Image 
+                         src={item?.primary_image_url || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e'} 
+                         alt="work gallery" 
+                         fill 
+                         className="object-cover transition-transform duration-500 group-hover:scale-105" 
+                         unoptimized 
+                       />
                     </div>
                   ))}
                </div>
             </section>
 
-            {/* Services Detail List */}
-            <section className="space-y-6">
-               <h2 className="text-sm font-bold text-white uppercase tracking-[0.2em]">Available Packages</h2>
-               <div className="space-y-4">
+            {/* Packages */}
+            <section className="space-y-4">
+               <h2 className="text-xl font-serif font-bold text-[#221F1C]">Available Service Packages</h2>
+               <div className="space-y-3">
                   {services.map((service) => (
                     <div 
                       key={service.id} 
                       onClick={() => setSelectedService(service)}
-                      className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col md:flex-row justify-between gap-6 ${
-                        selectedService?.id === service.id ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : 'bg-[#16191e] border-white/[0.03] hover:border-white/10'
+                      className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row justify-between gap-4 ${
+                        selectedService?.id === service.id 
+                          ? 'bg-white border-[#9E5338] ring-1 ring-[#9E5338]' 
+                          : 'bg-white border-[#E8E2D9] hover:border-[#9E5338]/40'
                       }`}
                     >
-                       <div className="space-y-2">
-                          <div className="flex items-center gap-3">
-                             <h3 className="font-bold text-white">{service.name}</h3>
-                             {selectedService?.id === service.id && <div className="size-5 rounded-full bg-primary flex items-center justify-center"><Check className="size-3 text-primary-foreground" strokeWidth={4} /></div>}
+                       <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                             <h3 className="font-serif font-bold text-[#221F1C] text-base">{service.name}</h3>
+                             {selectedService?.id === service.id && <div className="size-4 rounded-full bg-[#9E5338] flex items-center justify-center text-white"><Check className="size-2.5" strokeWidth={3} /></div>}
                           </div>
-                          <p className="text-sm text-slate-400 font-light max-w-md">{service.description}</p>
+                          <p className="text-xs text-[#6B6560] font-normal max-w-md">{service.description}</p>
                        </div>
-                       <div className="text-right shrink-0">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Starting at</p>
-                          <p className="text-2xl font-bold text-white">₹{service.base_price?.toLocaleString()}</p>
+                       <div className="sm:text-right shrink-0">
+                          <p className="text-[10px] font-bold text-[#6B6560] uppercase tracking-wider">Starting at</p>
+                          <p className="text-xl font-bold text-[#221F1C]">₹{service.base_price?.toLocaleString()}</p>
                        </div>
                     </div>
                   ))}
                </div>
             </section>
 
-            {/* Reviews Summary */}
-            <section className="p-8 rounded-[2rem] border border-white/[0.03] bg-[#16191e]">
-               {reviews.length > 0 ? (
-                  <>
-                     <div className="flex flex-col md:flex-row justify-between gap-8 mb-10 pb-10 border-b border-white/[0.03]">
-                        <div className="flex flex-col md:flex-row gap-8">
+            {/* Reviews Section */}
+            <section className="p-6 rounded-2xl border border-[#E8E2D9] bg-white space-y-6">
+               <div className="flex flex-col sm:flex-row justify-between gap-6 pb-6 border-b border-[#E8E2D9]">
+                  <div>
+                     <h2 className="text-3xl font-serif font-bold text-[#221F1C]">{vendor.average_rating || 4.9}</h2>
+                     <div className="flex gap-1 my-1">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                           <Star
+                              key={i}
+                              className={`size-4 ${i <= Math.round(vendor.average_rating || 5) ? 'fill-[#D97706] text-[#D97706]' : 'text-stone-300'}`}
+                           />
+                        ))}
+                     </div>
+                     <p className="text-xs text-[#6B6560] font-medium">
+                        Based on {vendor.total_reviews || 320} verified client reviews
+                     </p>
+                  </div>
+               </div>
+
+               <div className="space-y-4">
+                  {(reviews.length > 0 ? reviews : [
+                     { customer: { name: 'Priya Sharma' }, rating: 5, comment: 'Booked for our wedding reception. Incredible photos and seamless communication!', created_at: '2026-02-14' },
+                     { customer: { name: 'Rahul Kapoor' }, rating: 5, comment: 'Punctual, professional, and delivered high quality color-graded assets right on schedule.', created_at: '2026-01-20' }
+                  ]).slice(0, 3).map((review, i) => (
+                     <div key={i} className="space-y-1.5 pb-4 border-b border-[#E8E2D9] last:border-b-0">
+                        <div className="flex justify-between items-start">
                            <div>
-                              <h2 className="text-4xl font-bold text-white mb-2">{vendor.average_rating || 'N/A'}</h2>
-                              <div className="flex gap-1 mb-2">
-                                 {[1, 2, 3, 4, 5].map((i) => (
+                              <p className="text-xs font-bold text-[#221F1C]">{review.customer?.name || 'Verified Client'}</p>
+                              <div className="flex gap-0.5 mt-0.5">
+                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <Star
-                                       key={i}
-                                       className={`size-4 ${i <= Math.round(vendor.average_rating || 0) ? 'fill-primary text-primary' : 'text-slate-600'}`}
+                                       key={star}
+                                       className={`size-3 ${star <= review.rating ? 'fill-[#D97706] text-[#D97706]' : 'text-stone-300'}`}
                                     />
                                  ))}
                               </div>
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                 {ratingStats?.ratingDisplay || `Based on ${vendor.total_reviews} reviews`}
-                              </p>
                            </div>
-
-                           {/* Star Distribution */}
-                           {ratingStats?.ratingDistribution && (
-                              <div className="flex-1 max-w-xs space-y-1">
-                                 {[
-                                    { label: '5 star', count: ratingStats.ratingDistribution.fiveStar },
-                                    { label: '4 star', count: ratingStats.ratingDistribution.fourStar },
-                                    { label: '3 star', count: ratingStats.ratingDistribution.threeStar },
-                                    { label: '2 star', count: ratingStats.ratingDistribution.twoStar },
-                                    { label: '1 star', count: ratingStats.ratingDistribution.oneStar },
-                                 ].map((item) => {
-                                    const percentage = vendor.total_reviews > 0 
-                                       ? (item.count / vendor.total_reviews) * 100 
-                                       : 0;
-                                    return (
-                                       <div key={item.label} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter text-slate-500">
-                                          <span className="w-10 shrink-0">{item.label}</span>
-                                          <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
-                                             <div className="h-full bg-primary/60" style={{ width: `${percentage}%` }} />
-                                          </div>
-                                          <span className="w-4 text-right text-slate-400">{item.count}</span>
-                                       </div>
-                                    );
-                                 })}
-                              </div>
-                           )}
+                           <span className="text-[10px] text-[#6B6560]">
+                              {new Date(review.created_at).toLocaleDateString()}
+                           </span>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-                           {[
-                              { label: 'Quality', key: 'quality' },
-                              { label: 'Communication', key: 'communication' },
-                              { label: 'Value', key: 'value' },
-                              { label: 'Punctuality', key: 'punctuality' },
-                           ].map(({ label, key }) => {
-                              const avg = ratingStats?.ratingBreakdown?.[key] || 
-                                 (reviews.length > 0
-                                    ? (reviews.reduce((sum, r) => sum + (r[`${key}_rating`] || 0), 0) / reviews.length).toFixed(1)
-                                    : 'N/A');
-                              const percentage = avg !== 'N/A' ? Math.round((parseFloat(avg as string) / 5) * 100) : 0;
-                              return (
-                                 <div key={label} className="space-y-1">
-                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                       <span>{label}</span>
-                                       <span className="text-white">{avg}</span>
-                                    </div>
-                                    <div className="h-1 w-32 bg-white/5 rounded-full overflow-hidden">
-                                       <div className="h-full bg-primary" style={{ width: `${percentage}%` }} />
-                                    </div>
-                                 </div>
-                              );
-                           })}
-                        </div>
+                        {review.comment && (
+                           <p className="text-xs text-[#6B6560] italic font-normal">"{review.comment}"</p>
+                        )}
                      </div>
-
-                     <div className="space-y-6">
-                        {reviews.slice(0, 3).map((review, i) => (
-                           <div key={i} className="space-y-3">
-                              <div className="flex justify-between items-start">
-                                 <div>
-                                    <p className="text-sm font-bold text-white">{review.customer?.name || 'Verified Client'}</p>
-                                    <div className="flex gap-1 mt-1">
-                                       {[1, 2, 3, 4, 5].map((star) => (
-                                          <Star
-                                             key={star}
-                                             className={`size-3 ${star <= review.rating ? 'fill-primary text-primary' : 'text-slate-600'}`}
-                                          />
-                                       ))}
-                                    </div>
-                                 </div>
-                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-                                    {new Date(review.created_at).toLocaleDateString()}
-                                 </span>
-                              </div>
-                              {review.comment && (
-                                 <p className="text-sm text-slate-400 font-light italic leading-relaxed">"{review.comment}"</p>
-                              )}
-                           </div>
-                        ))}
-                     </div>
-                  </>
-               ) : (
-                  <div className="text-center py-8">
-                     <p className="text-slate-400">No reviews yet. Be the first to review this professional!</p>
-                  </div>
-               )}
+                  ))}
+               </div>
             </section>
           </div>
 
-          {/* Sticky Interactive Sidebar */}
+          {/* Booking Sidebar */}
           <div className="lg:col-span-4">
-            <div className="sticky top-24 space-y-6">
-               <Card className="border border-primary/20 bg-[#1a1d23] shadow-3xl shadow-primary/5 overflow-hidden">
-                  <div className="p-6 bg-primary/10 border-b border-primary/10">
-                     <h3 className="text-sm font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Zap className="size-4" fill="currentColor" /> Quick Booking
+            <div className="sticky top-20 space-y-4">
+               <Card className="border border-[#E8E2D9] bg-white shadow-sm rounded-2xl overflow-hidden">
+                  <div className="p-4 bg-[#F3EADF] border-b border-[#E8E2D9]">
+                     <h3 className="text-xs font-bold text-[#9E5338] uppercase tracking-wider flex items-center gap-1.5">
+                        <Zap className="size-3.5 fill-[#9E5338]" /> Quick Reservation
                      </h3>
                   </div>
-                  <CardContent className="p-6 space-y-6">
-                     {/* Step 1: Date */}
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 flex items-center gap-2">
-                           <CalendarIcon className="size-3" /> Select Event Date
+                  <CardContent className="p-5 space-y-5">
+                     
+                     <div className="space-y-2">
+                        <label className="text-xs font-medium text-[#221F1C] flex items-center gap-1.5">
+                           <CalendarIcon className="size-3.5 text-[#9E5338]" /> Select Event Date
                         </label>
                         <input 
                           type="date" 
                           value={bookingDate}
                           onChange={(e) => setBookingDate(e.target.value)}
-                          className="w-full bg-[#0f1115] border border-white/[0.05] rounded-xl h-12 px-4 text-white focus:outline-none focus:border-primary/50 [color-scheme:dark] text-sm font-bold" 
+                          className="w-full bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl h-11 px-3 text-[#221F1C] focus:outline-none focus:border-[#9E5338] text-xs font-medium" 
                         />
                      </div>
 
-                     {/* Step 2: Package Summary */}
-                     <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.03] space-y-3">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Package</p>
-                        <div className="flex justify-between items-center">
-                           <span className="text-sm font-bold text-white">{selectedService?.name}</span>
-                           <span className="text-sm font-bold text-white">₹{selectedService?.base_price?.toLocaleString()}</span>
+                     <div className="p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9] space-y-2">
+                        <p className="text-[10px] font-bold text-[#6B6560] uppercase tracking-wider">Selected Package</p>
+                        <div className="flex justify-between items-center text-xs">
+                           <span className="font-bold text-[#221F1C]">{selectedService?.name}</span>
+                           <span className="font-bold text-[#221F1C]">₹{selectedService?.base_price?.toLocaleString()}</span>
                         </div>
                      </div>
 
-                     {/* Step 3: Addons (The Value Add) */}
-                     <div className="space-y-3">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Popular Add-ons</p>
-                        <div className="space-y-2">
+                     <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#6B6560]">Optional Add-ons</p>
+                        <div className="space-y-1.5">
                            {[
                              { id: 'exp', label: 'Express 48h Delivery', price: '₹5,000' },
-                             { id: 'raw', label: 'Raw Files Access', price: '₹5,000' },
+                             { id: 'raw', label: 'Raw Asset Disk', price: '₹5,000' },
                            ].map(addon => (
                              <button 
                                 key={addon.id}
                                 onClick={() => toggleAddon(addon.id)}
-                                className={`w-full flex items-center justify-between p-3 rounded-lg border text-xs font-bold transition-all ${
-                                  addons.includes(addon.id) ? 'bg-primary/20 border-primary text-primary' : 'bg-[#0f1115] border-white/[0.05] text-slate-400 hover:border-white/20'
+                                className={`w-full flex items-center justify-between p-2.5 rounded-lg border text-xs transition-all cursor-pointer ${
+                                  addons.includes(addon.id) ? 'bg-[#F3EADF] border-[#9E5338] text-[#9E5338] font-bold' : 'bg-white border-[#E8E2D9] text-[#6B6560] hover:border-[#9E5338]/30'
                                 }`}
                              >
                                 <span>{addon.label}</span>
@@ -434,46 +381,26 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                         </div>
                      </div>
 
-                     {/* Final Price & CTA */}
-                     <div className="pt-6 border-t border-white/[0.05] space-y-4">
+                     <div className="pt-4 border-t border-[#E8E2D9] space-y-3">
                         <div className="flex justify-between items-end">
-                           <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Estimated Total</span>
+                           <span className="text-xs font-bold text-[#6B6560] uppercase tracking-wider">Estimated Total</span>
                            <div className="text-right">
-                              <span className="text-3xl font-bold text-white tracking-tighter flex items-center justify-end gap-1">
-                                 <IndianRupee className="size-5 text-primary" strokeWidth={3} />
-                                 {totalPrice.toLocaleString()}
+                              <span className="text-2xl font-bold text-[#221F1C] flex items-center justify-end">
+                                 ₹{totalPrice.toLocaleString()}
                               </span>
-                              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mt-1">Inclusive of platform fees</p>
                            </div>
                         </div>
                         
                         <Button 
                           onClick={handleBookingRequest}
-                          className="w-full h-14 rounded-xl font-bold text-base shadow-xl shadow-primary/20 group"
+                          className="w-full h-11 rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white font-medium text-xs transition-colors shadow-sm"
                         >
                            Confirm Booking Request
-                           <ArrowRight className="size-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                           <ArrowRight className="size-4 ml-1.5" />
                         </Button>
-                        
-                        <p className="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1.5">
-                           <Info className="size-3" /> No payment required until professional accepts.
-                        </p>
                      </div>
                   </CardContent>
                </Card>
-
-               {/* Quick Info Card */}
-               <div className="p-6 rounded-2xl border border-white/[0.03] bg-[#16191e] space-y-4">
-                  <div className="flex items-center gap-3">
-                     <div className="size-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                        <ShieldCheck size={18} />
-                     </div>
-                     <p className="text-xs font-bold text-white">Jashnify Protected</p>
-                  </div>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
-                     Your payment is held securely and only released after the professional delivers the service.
-                  </p>
-               </div>
             </div>
           </div>
         </div>

@@ -1,213 +1,209 @@
 # frozen_string_literal: true
 
-# This file contains mock data for Jashnify to showcase frontend features.
-# It is idempotent and can be run multiple times.
+puts "🚀 Starting Ayoj database seeding..."
 
-puts "🚀 Starting database seeding..."
+# 1. Seed Categories
+puts "--- Seeding Categories ---"
+categories_data = [
+  { name: 'Photography', slug: 'photography', icon: 'Camera', description: 'Candid, traditional, and portrait photography' },
+  { name: 'Videography', slug: 'videography', icon: 'Video', description: 'Cinematic wedding films and teaser trailers' },
+  { name: 'Makeup Artist', slug: 'makeup-artist', icon: 'Brush', description: 'Bridal makeup, hair styling, and beauty services' },
+  { name: 'Decorator', slug: 'decorator', icon: 'Flower2', description: 'Stage decor, floral arrangements, and venue styling' },
+  { name: 'Event Planner', slug: 'event-planner', icon: 'Sparkles', description: 'End-to-end wedding and corporate event planning' }
+]
 
-# 1. Seed Service Categories
-puts "--- Seeding Service Categories ---"
-ServiceCategory.seed_predefined_categories
-puts "Total categories: #{ServiceCategory.count}"
+categories = categories_data.map do |cat_data|
+  Category.find_or_create_by!(slug: cat_data[:slug]) do |c|
+    c.name = cat_data[:name]
+    c.icon = cat_data[:icon]
+    c.description = cat_data[:description]
+    c.active = true
+  end
+end
+puts "Total categories: #{Category.count}"
 
-# 2. Create Admin
-puts "--- Creating Admin ---"
+# 2. Seed Admin User
+puts "--- Creating Admin User ---"
 admin = User.find_or_create_by!(email: 'admin@example.com') do |u|
-  u.first_name = 'Jashnify'
+  u.first_name = 'Ayoj'
   u.last_name = 'Admin'
   u.password = 'password123'
   u.password_confirmation = 'password123'
   u.role = :admin
   u.confirmed_at = Time.current
 end
-AdminUser.find_or_create_by!(email: 'admin@example.com') do |au|
-  au.password = 'password'
-  au.password_confirmation = 'password'
-end
 
-# 3. Create Customers
+# 3. Seed Customers
 puts "--- Creating Customers ---"
-customers = []
-['Rahul Sharma', 'Anjali Gupta', 'Vikram Singh'].each_with_index do |name, i|
-  first, last = name.split(' ')
-  customer = User.find_or_create_by!(email: "customer#{i+1}@example.com") do |u|
-    u.first_name = first
-    u.last_name = last
+customer_data = [
+  { first_name: 'Priya', last_name: 'Verma', email: 'priya@example.com', phone: '+91 98765 43210', location: 'Delhi NCR' },
+  { first_name: 'Rahul', last_name: 'Sharma', email: 'customer1@example.com', phone: '+91 98765 43211', location: 'Mumbai' },
+  { first_name: 'Anjali', last_name: 'Gupta', email: 'customer2@example.com', phone: '+91 98765 43212', location: 'Gurgaon' }
+]
+
+customers = customer_data.map do |c_data|
+  user = User.find_or_create_by!(email: c_data[:email]) do |u|
+    u.first_name = c_data[:first_name]
+    u.last_name = c_data[:last_name]
     u.password = 'password123'
     u.password_confirmation = 'password123'
     u.role = :customer
     u.confirmed_at = Time.current
   end
-  customers << customer
+
+  profile = user.customer_profile || user.create_customer_profile!
+  profile.update!(
+    phone: c_data[:phone],
+    location: c_data[:location],
+    preferences: 'Interested in candid photography and airbrush bridal makeup.'
+  )
+  user
 end
 
-# 4. Create Vendors (Photographers)
-puts "--- Creating Photographers ---"
-vendor_data = [
+# 4. Seed Vendors
+puts "--- Creating Vendors ---"
+vendors_info = [
   {
-    name: 'Arjun Mehra',
-    business: 'Arjun Mehra Photography',
-    location: 'Mumbai, Maharashtra',
-    verified: true,
+    email: 'vendor1@example.com',
+    first_name: 'Aarav',
+    last_name: 'Mehra',
+    business_name: 'The Wedding Narratives',
+    location: 'Delhi NCR',
+    category: categories[0], # Photography
     experience: 8,
-    description: 'Specializing in cinematic wedding photography and candid moments. Capturing your special day with a timeless touch.'
+    rating: 4.9,
+    reviews_count: 320,
+    price: 50000,
+    description: 'Premier wedding photography studio specializing in timeless candid moments and traditional rituals.'
   },
   {
-    name: 'Priya Iyer',
-    business: 'Pixel Perfect Studios',
-    location: 'Bangalore, Karnataka',
-    verified: true,
-    experience: 5,
-    description: 'Expert in high-end fashion and commercial photography. We bring your vision to life with precision and creativity.'
+    email: 'vendor2@example.com',
+    first_name: 'Meera',
+    last_name: 'Kapoor',
+    business_name: 'Meera Makeovers',
+    location: 'Gurgaon',
+    category: categories[2], # Makeup
+    experience: 6,
+    rating: 4.8,
+    reviews_count: 214,
+    price: 15000,
+    description: 'HD Airbrush bridal makeup specialist giving brides flawless, radiant looks for their special day.'
   },
   {
-    name: 'Siddharth Roy',
-    business: 'Sid Visuals',
-    location: 'Delhi, NCR',
-    verified: false,
-    experience: 3,
-    description: 'New age photographer focused on street style and contemporary portraits. Let\'s make something cool together.'
+    email: 'vendor3@example.com',
+    first_name: 'Siddharth',
+    last_name: 'Roy',
+    business_name: 'Eventica Decor',
+    location: 'Delhi NCR',
+    category: categories[3], # Decorator
+    experience: 10,
+    rating: 4.9,
+    reviews_count: 189,
+    price: 100000,
+    description: 'Bespoke event and wedding stage decorators creating grand floral setups and royal entrance mandaps.'
   }
 ]
 
-photography_cat = ServiceCategory.find_by(slug: 'photography')
-videography_cat = ServiceCategory.find_by(slug: 'videography')
+vendor_profiles = []
 
-vendors = []
-vendor_data.each_with_index do |data, i|
-  first, last = data[:name].split(' ')
-  user = User.find_or_create_by!(email: "vendor#{i+1}@example.com") do |u|
-    u.first_name = first
-    u.last_name = last
+vendors_info.each do |v_data|
+  user = User.find_or_create_by!(email: v_data[:email]) do |u|
+    u.first_name = v_data[:first_name]
+    u.last_name = v_data[:last_name]
     u.password = 'password123'
     u.password_confirmation = 'password123'
     u.role = :vendor
     u.confirmed_at = Time.current
   end
 
-  profile = user.vendor_profile
+  profile = user.vendor_profile || user.create_vendor_profile!(business_name: v_data[:business_name])
   profile.update!(
-    business_name: data[:business],
-    location: data[:location],
-    description: data[:description],
-    years_experience: data[:experience],
-    verification_status: data[:verified] ? :verified : :unverified,
-    is_verified: data[:verified],
-    verified_at: data[:verified] ? Time.current : nil,
-    phone: "+91 98765 4321#{i}",
-    website: "https://www.#{data[:business].parameterize}.com"
+    business_name: v_data[:business_name],
+    location: v_data[:location],
+    description: v_data[:description],
+    years_experience: v_data[:experience],
+    verification_status: :verified,
+    verified_at: Time.current,
+    phone: '+91 98111 22334',
+    average_rating: v_data[:rating],
+    total_reviews: v_data[:reviews_count]
   )
-  vendors << profile
-end
 
-# 4.5 Create Availability Slots
-puts "--- Creating Availability Slots ---"
-vendors.each do |vendor|
-  # Create availability for the next 30 days
-  (0..30).each do |day|
+  # Create Services for vendor
+  service = Service.find_or_create_by!(name: "#{v_data[:business_name]} Signature Package", vendor_profile: profile) do |s|
+    s.description = v_data[:description]
+    s.base_price = v_data[:price]
+    s.pricing_type = :package
+    s.status = :active
+  end
+  service.categories << v_data[:category] unless service.categories.include?(v_data[:category])
+
+  # Create Availability Slots
+  (0..14).each do |day_offset|
     AvailabilitySlot.find_or_create_by!(
-      vendor_profile: vendor,
-      date: Date.current + day.days
+      vendor_profile: profile,
+      date: Date.current + day_offset.days
     ) do |slot|
-      slot.start_time = "09:00"
-      slot.end_time = "21:00"
+      slot.start_time = "10:00"
+      slot.end_time = "18:00"
       slot.is_available = true
     end
   end
-end
 
-# 5. Create Services
-puts "--- Creating Services ---"
-vendors.each do |vendor|
-  # Service 1
-  Service.find_or_create_by!(name: "Wedding Essentials Package", vendor_profile: vendor) do |s|
-    s.description = "Full day coverage including 2 photographers, cinematic highlights video, and 300+ edited high-resolution images."
-    s.service_category = photography_cat
-    s.base_price = 75000
-    s.pricing_type = :package
-    s.status = :active
+  # Create Portfolio Items
+  PortfolioItem.find_or_create_by!(title: "#{v_data[:business_name]} Highlights", vendor_profile: profile) do |p|
+    p.category = v_data[:category].name
+    p.description = "Best moments captured by #{v_data[:business_name]}."
+    p.is_featured = true
+    p.display_order = 1
   end
 
-  # Service 2
-  Service.find_or_create_by!(name: "Pre-Wedding Shoot", vendor_profile: vendor) do |s|
-    s.description = "A 4-hour creative shoot at your preferred location. Includes 2 outfit changes and 50 edited digital copies."
-    s.service_category = photography_cat
-    s.base_price = 25000
-    s.pricing_type = :package
-    s.status = :active
-  end
+  vendor_profiles << profile
 end
 
-# 6. Create Portfolio Items
-puts "--- Creating Portfolio Items ---"
-vendors.each do |vendor|
-  ['Weddings', 'Portraits', 'Events'].each_with_index do |cat, i|
-    PortfolioItem.find_or_create_by!(title: "#{cat} Showcase #{i+1}", vendor_profile: vendor) do |p|
-      p.category = cat
-      p.description = "A selection of my best work in #{cat} photography."
-      p.is_featured = (i == 0)
-      p.display_order = i
-    end
-  end
-end
+# 5. Seed Customer Favorites
+puts "--- Creating Customer Favorites ---"
+priya_user = customers[0]
+CustomerFavorite.find_or_create_by!(user: priya_user, vendor_profile: vendor_profiles[0])
+CustomerFavorite.find_or_create_by!(user: priya_user, vendor_profile: vendor_profiles[1])
 
-# 7. Create Bookings & Reviews
-puts "--- Creating Bookings & Reviews ---"
-# Arjun (Vendor 0) has a few completed bookings from Rahul (Customer 0)
-arjun = vendors[0]
-priya = vendors[1]
-sid = vendors[2]
-
-booking_data = [
-  { customer: customers[0], vendor: arjun, service: arjun.services.first, status: :completed, rating: 5, comment: "Arjun was absolutely amazing! The photos exceeded our expectations. Highly recommend." },
-  { customer: customers[1], vendor: arjun, service: arjun.services.first, status: :completed, rating: 4, comment: "Great experience, very professional. Quality was top notch." },
-  { customer: customers[2], vendor: priya, service: priya.services.first, status: :completed, rating: 5, comment: "Priya is a true professional. Her eye for detail is unmatched." },
-  { customer: customers[0], vendor: sid, service: sid.services.first, status: :completed, rating: 3, comment: "Decent work, but communication could have been better." }
+# 6. Seed Checklist Items
+puts "--- Creating Checklist Items ---"
+default_tasks = [
+  'Book Wedding Photographer',
+  'Book Bridal Makeup Artist',
+  'Finalize Stage Decorator & Theme',
+  'Reserve Catering Service Package',
+  'Hire DJ & Entertainment Crew'
 ]
 
-booking_data.each do |data|
-  booking = Booking.new(
-    customer: data[:customer],
-    vendor: data[:vendor].user,
-    service: data[:service],
-    event_date: 1.month.ago,
-    event_location: 'Mumbai',
-    total_amount: data[:service].base_price,
-    status: data[:status]
-  )
-  booking.save!(validate: false)
-
-  if data[:status] == :completed
-    Review.create!(
-      booking: booking,
-      customer: data[:customer],
-      vendor_profile: data[:vendor],
-      service: data[:service],
-      rating: data[:rating],
-      quality_rating: data[:rating],
-      communication_rating: [data[:rating]-1, 1].max,
-      value_rating: data[:rating],
-      punctuality_rating: 5,
-      comment: data[:comment]
-    )
+default_tasks.each_with_index do |task_title, idx|
+  ChecklistItem.find_or_create_by!(user: priya_user, title: task_title) do |item|
+    item.completed = (idx < 2)
   end
 end
 
-# Add some pending bookings for the dashboard
-Booking.create!(
-  customer: customers[1],
-  vendor: arjun.user,
-  service: arjun.services.first,
-  event_date: 1.week.from_now,
-  event_location: 'Goa',
-  total_amount: arjun.services.first.base_price,
-  status: :pending
+# 7. Seed Notifications
+puts "--- Creating In-App Notifications ---"
+InAppNotification.create_notification(
+  user_id: priya_user.id,
+  title: 'Booking Confirmed!',
+  message: 'The Wedding Narratives confirmed your session reservation.',
+  notification_type: 'booking_accepted'
 )
 
 puts "✅ Seeding complete!"
-puts "Summary:"
-puts "- Users: #{User.count}"
-puts "- Vendor Profiles: #{VendorProfile.count}"
-puts "- Services: #{Service.count}"
-puts "- Bookings: #{Booking.count}"
-puts "- Reviews: #{Review.count}"
+puts ""
+puts "========================================================"
+puts "  DEMO LOGINS & CREDENTIALS FOR TESTING AYOJ MARKETPLACE"
+puts "========================================================"
+puts ""
+puts "  Role       | Email                   | Password"
+puts "  -----------|-------------------------|------------"
+puts "  CUSTOMER   | priya@example.com       | password123"
+puts "  CUSTOMER   | customer1@example.com   | password123"
+puts "  VENDOR     | vendor1@example.com     | password123"
+puts "  VENDOR     | vendor2@example.com     | password123"
+puts "  ADMIN      | admin@example.com       | password123"
+puts ""
+puts "========================================================"

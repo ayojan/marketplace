@@ -252,7 +252,7 @@ const MarketplaceHome = () => {
             Join the community
           </h2>
           <p className="text-sm text-slate-400 mb-8 font-light">
-            Whether you're hosting an event or offering your creative services, Jashnify makes the connection seamless.
+            Whether you're hosting an event or offering your creative services, Ayoj makes the connection seamless.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
