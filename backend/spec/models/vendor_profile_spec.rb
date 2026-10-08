@@ -20,7 +20,6 @@
 #  phone               :string
 #  rejection_reason    :text
 #  response_time_hours :decimal(5, 2)
-#  service_categories  :text
 #  total_reviews       :integer          default(0)
 #  verification_status :integer          default("unverified")
 #  verified_at         :datetime

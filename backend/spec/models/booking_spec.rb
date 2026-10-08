@@ -32,6 +32,7 @@
 #  index_bookings_on_vendor_first_response_at  (vendor_first_response_at)
 #  index_bookings_on_vendor_profile_id         (vendor_profile_id)
 #  index_bookings_vendor_response_time         (vendor_profile_id,vendor_first_response_at,created_at)
+#  index_bookings_vendor_status_date           (vendor_profile_id,status,event_date)
 #
 # Foreign Keys
 #

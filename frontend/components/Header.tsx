@@ -1,12 +1,13 @@
 'use client';
 
-// @ts-ignore
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Camera, LogOut, User, LayoutDashboard, ShoppingBag } from 'lucide-react';
+import { Heart, MapPin, ChevronDown, LogOut, User, LayoutDashboard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import AyojLogo from '@/components/AyojLogo';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -21,65 +22,89 @@ export default function Header() {
   const dashboardLink = user?.role === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard';
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border/50">
-      <div className="container mx-auto flex h-20 items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-all group">
-          <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-            <Camera className="size-5 text-primary" strokeWidth={2} />
-          </div>
-          <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-            jashnify
-          </span>
+    <header className="sticky top-0 z-50 w-full bg-[#FBF8F4]/95 backdrop-blur-md border-b border-[#E8E2D9]">
+      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
+        
+        {/* Official Brand Logo with Tagline */}
+        <Link href="/" className="flex items-center hover:opacity-95 transition-opacity">
+          <AyojLogo size="lg" showTagline={false} />
         </Link>
 
-        <div className="flex items-center gap-4">
-          <Link href="/marketplace" className="hidden sm:block">
-            <Button variant="ghost" className="rounded-full font-medium gap-2 text-slate-300 hover:text-white hover:bg-secondary">
-              <ShoppingBag className="size-4" strokeWidth={2} />
-              Explore
-            </Button>
+        {/* Center Nav Links */}
+        <nav className="hidden lg:flex items-center gap-8">
+          <Link href="/marketplace" className="text-xs font-medium text-[#221F1C] hover:text-[#9E5338] transition-colors">
+            Explore
+          </Link>
+          <Link href="/vendors" className="text-xs font-medium text-[#221F1C] hover:text-[#9E5338] transition-colors">
+            Vendors
+          </Link>
+          <Link href="/#reviews" className="text-xs font-medium text-[#221F1C] hover:text-[#9E5338] transition-colors">
+            Real Reviews
+          </Link>
+          <Link href="/register?role=vendor" className="text-xs font-medium text-[#221F1C] hover:text-[#9E5338] transition-colors">
+            For Vendors
+          </Link>
+        </nav>
+
+        {/* Right Action Controls */}
+        <div className="flex items-center gap-3">
+          
+          {/* Location Dropdown Pill */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E8E2D9] bg-white text-xs font-medium text-[#221F1C] cursor-pointer hover:border-[#9E5338]/40 transition-colors">
+            <MapPin className="size-3.5 text-[#221F1C]" />
+            <span>Delhi NCR</span>
+            <ChevronDown className="size-3 text-[#6B6560]" />
+          </div>
+
+          {/* Notification Dropdown */}
+          {user && <NotificationDropdown />}
+
+          {/* Heart Icon / Wishlist */}
+          <Link href="/customer/dashboard?tab=saved">
+            <button className="size-9 rounded-full border border-[#E8E2D9] bg-white flex items-center justify-center text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338]/40 transition-all cursor-pointer">
+              <Heart className="size-4" />
+            </button>
           </Link>
 
-          {user && (
+          {user ? (
             <>
               <Link href={dashboardLink}>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex items-center gap-2 h-10 rounded-full font-medium text-slate-300 hover:text-white hover:bg-secondary"
+                  className="flex items-center gap-2 h-9 rounded-full text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF]"
                 >
-                  <LayoutDashboard className="size-4" strokeWidth={2} />
+                  <LayoutDashboard className="size-3.5 text-[#9E5338]" />
                   <span className="hidden sm:inline">Dashboard</span>
                 </Button>
               </Link>
-              <div className="hidden md:flex items-center gap-2 text-sm text-slate-400 font-medium border-l border-border pl-4 px-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                  <User className="size-4 text-primary" strokeWidth={2} />
-                </div>
-                <span className="max-w-[120px] truncate text-slate-200">{user.first_name || user.name}</span>
-              </div>
+
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="flex items-center gap-2 h-10 rounded-full font-medium border-border/50 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all"
+                className="h-9 px-3 rounded-full text-xs font-medium text-[#6B6560] hover:text-[#9E5338] hover:bg-[#F3EADF] transition-all cursor-pointer"
               >
-                <LogOut className="size-4" strokeWidth={2} />
-                <span className="hidden sm:inline">Logout</span>
+                <LogOut className="size-3.5" />
+                <span className="hidden sm:inline ml-1">Logout</span>
               </Button>
             </>
-          )}
-          {!user && (
-             <div className="flex items-center gap-3">
-                <Link href="/login">
-                  <Button variant="ghost" className="rounded-full font-medium text-slate-300 hover:text-white hover:bg-secondary">Login</Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-6 shadow-lg shadow-primary/20">Join</Button>
-                </Link>
-             </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="rounded-full text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] h-9 px-4">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium h-9 px-5 transition-colors">
+                  Sign up
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
+
       </div>
     </header>
   );

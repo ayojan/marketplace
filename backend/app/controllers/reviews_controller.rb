@@ -62,6 +62,38 @@ class ReviewsController < ApiController
     render json: { message: 'Review deleted successfully' }
   end
 
+  # POST /api/reviews/:id/vote
+  def vote
+    @review = Review.find(params[:id])
+    vote = ReviewVote.find_by(review_id: @review.id, voter_id: current_user.id)
+
+    if vote
+      vote.destroy
+      @review.decrement!(:helpful_votes)
+      render json: { message: 'Vote removed', helpful_votes: @review.helpful_votes, voted: false }
+    else
+      ReviewVote.create!(review: @review, voter: current_user)
+      @review.increment!(:helpful_votes)
+      render json: { message: 'Review marked as helpful', helpful_votes: @review.helpful_votes, voted: true }
+    end
+  end
+
+  # POST /api/reviews/:id/respond
+  def respond
+    @review = Review.find(params[:id])
+    unless current_user.vendor_profile == @review.vendor_profile
+      return render json: { error: 'Only the vendor can respond to this review' }, status: :forbidden
+    end
+
+    response_text = params[:vendor_response] || params.dig(:review, :vendor_response)
+
+    if @review.update(vendor_response: response_text, vendor_responded_at: Time.current)
+      render json: { message: 'Response saved', review: review_json(@review) }
+    else
+      render json: { error: 'Failed to save response', details: @review.errors.full_messages }, status: :unprocessable_content
+    end
+  end
+
   private
 
   def set_review

@@ -61,9 +61,9 @@ class AuthController < ApplicationController
   end
 
   def auth_params
-    params.expect(
-      auth: [:email, :password, :password_confirmation, :first_name, :last_name, :role,
-             { vendor_profile_attributes: %i[business_name location description phone website] }]
+    params.require(:auth).permit(
+      :email, :password, :password_confirmation, :first_name, :last_name, :role,
+      vendor_profile_attributes: %i[business_name location description phone website]
     )
   end
 

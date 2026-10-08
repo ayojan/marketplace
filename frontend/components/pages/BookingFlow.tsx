@@ -383,7 +383,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
                            </Button>
                         </div>
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-                           <ShieldCheck className="size-3 text-emerald-500" /> Payment secured by Jashnify
+                           <ShieldCheck className="size-3 text-emerald-500" /> Payment secured by Ayoj
                         </p>
                      </motion.div>
                   )}

@@ -212,7 +212,44 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Clear error action
+  // Demo login helpers for effortless previewing
+  const loginDemoVendor = () => {
+    const mockVendorUser = {
+      id: 'v1',
+      first_name: 'Aarav',
+      last_name: 'Sharma',
+      email: 'aarav@weddingnarratives.in',
+      role: 'vendor',
+      business_name: 'The Wedding Narratives'
+    };
+    const mockToken = 'demo_vendor_token_123';
+    tokenService.setToken(mockToken);
+    tokenService.setUser(mockVendorUser);
+    dispatch({
+      type: AUTH_ACTIONS.LOGIN_SUCCESS,
+      payload: { user: mockVendorUser, token: mockToken }
+    });
+    return { success: true };
+  };
+
+  const loginDemoCustomer = () => {
+    const mockCustomerUser = {
+      id: 'c1',
+      first_name: 'Priya',
+      last_name: 'Verma',
+      email: 'priya@example.com',
+      role: 'customer'
+    };
+    const mockToken = 'demo_customer_token_123';
+    tokenService.setToken(mockToken);
+    tokenService.setUser(mockCustomerUser);
+    dispatch({
+      type: AUTH_ACTIONS.LOGIN_SUCCESS,
+      payload: { user: mockCustomerUser, token: mockToken }
+    });
+    return { success: true };
+  };
+
   const clearError = () => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
   };
@@ -223,6 +260,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     clearError,
+    loginDemoVendor,
+    loginDemoCustomer,
   };
 
   return (

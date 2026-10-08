@@ -7,107 +7,87 @@
 
 :root {
   --font-size: 15px;
-  /* Modern Neutral Dark - Softer charcoal palette */
-  --background: #0f1115;
-  --foreground: #e2e8f0;
   
-  --card: #1a1d23;
-  --card-foreground: #e2e8f0;
+  /* Reference Image Color Palette */
+  --background: #FBF8F4;          /* Soft Cream Base */
+  --foreground: #221F1C;          /* Deep Charcoal Text */
   
-  --popover: #1a1d23;
-  --popover-foreground: #e2e8f0;
+  --card: #FFFFFF;                /* White Card Surfaces */
+  --card-foreground: #221F1C;
   
-  --primary: #a78bfa;
-  --primary-foreground: #0f1115;
+  --popover: #FFFFFF;
+  --popover-foreground: #221F1C;
   
-  --secondary: #272b35;
-  --secondary-foreground: #cbd5e1;
+  --primary: #9E5338;            /* Terracotta Brown Accent */
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #86442B;
   
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
+  --secondary: #F3EADF;          /* Muted Soft Cream Pill */
+  --secondary-foreground: #221F1C;
   
-  --accent: #312e81;
-  --accent-foreground: #e2e8f0;
+  --muted: #F3EADF;
+  --muted-foreground: #6B6560;   /* Muted Gray Text */
   
-  --destructive: #991b1b;
-  --destructive-foreground: #fef2f2;
+  --accent: #F5ECE2;
+  --accent-foreground: #221F1C;
   
-  --border: #2d333f;
-  --input: #2d333f;
-  --input-background: #16191e;
-  --switch-background: #334155;
+  --destructive: #BE123C;
+  --destructive-foreground: #FFFFFF;
   
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --ring: #a78bfa;
+  --border: #E8E2D9;             /* Warm Beige Border */
+  --input: #E8E2D9;
+  --input-background: #FFFFFF;
   
-  --radius: 0.625rem;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-input-background: var(--input-background);
-  --color-switch-background: var(--switch-background);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --rating-gold: #D97706;        /* Star Rating Gold */
+  
+  --radius: 1rem;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-[#E8E2D9];
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-[#FBF8F4] text-[#221F1C] selection:bg-[#F3EADF] selection:text-[#9E5338];
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
-  }
-
-  .glass {
-    @apply bg-card/40 backdrop-blur-md border-white/5;
-  }
-
-  .glass-strong {
-    @apply bg-card/60 backdrop-blur-2xl border border-white/8;
-  }
-
-  .glow-separator {
-    @apply h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   html {
     font-size: var(--font-size);
+    scroll-behavior: smooth;
   }
 
   h1 {
-    @apply text-3xl font-bold tracking-tight;
+    @apply text-4xl sm:text-5xl lg:text-6xl font-serif font-normal tracking-tight text-[#221F1C];
   }
 
   h2 {
-    @apply text-2xl font-semibold tracking-tight;
+    @apply text-2xl sm:text-3xl font-serif font-normal tracking-tight text-[#221F1C];
   }
 
   h3 {
-    @apply text-xl font-semibold tracking-tight;
+    @apply text-lg sm:text-xl font-serif font-normal tracking-tight text-[#221F1C];
   }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FBF8F4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E8E2D9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9E5338;
 }

@@ -88,8 +88,8 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
   # Mailer configuration for production
-  config.action_mailer.default_url_options = { host: "api.jashnify.in", protocol: "https" }
-  config.action_mailer.asset_host = "https://api.jashnify.in"
-  config.action_controller.default_url_options = { host: "api.jashnify.in", protocol: "https" }
+  config.action_mailer.default_url_options = { host: "api.ayoj.in", protocol: "https" }
+  config.action_mailer.asset_host = "https://api.ayoj.in"
+  config.action_controller.default_url_options = { host: "api.ayoj.in", protocol: "https" }
 
 end

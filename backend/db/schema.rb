@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_14_130001) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_15_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -102,6 +102,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_14_130001) do
     t.index ["service_id", "status"], name: "index_bookings_on_service_id_and_status"
     t.index ["service_id"], name: "index_bookings_on_service_id"
     t.index ["vendor_first_response_at"], name: "index_bookings_on_vendor_first_response_at"
+    t.index ["vendor_profile_id", "status", "event_date"], name: "index_bookings_vendor_status_date", comment: "Optimizes vendor dashboard filtering by status and event date"
     t.index ["vendor_profile_id", "vendor_first_response_at", "created_at"], name: "index_bookings_vendor_response_time"
     t.index ["vendor_profile_id"], name: "index_bookings_on_vendor_profile_id"
     t.check_constraint "vendor_first_response_at IS NULL OR vendor_first_response_at >= created_at", name: "check_vendor_response_after_creation"
@@ -117,6 +118,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_14_130001) do
     t.string "icon"
     t.jsonb "metadata", default: {}
     t.index ["slug"], name: "index_categories_on_slug", unique: true
+  end
+
+  create_table "checklist_items", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "title", null: false
+    t.boolean "completed", default: false, null: false
+    t.string "category"
+    t.date "due_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "completed"], name: "index_checklist_items_on_user_id_and_completed"
+    t.index ["user_id"], name: "index_checklist_items_on_user_id"
   end
 
   create_table "customer_favorites", force: :cascade do |t|
@@ -306,7 +319,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_14_130001) do
     t.string "location"
     t.string "phone"
     t.string "website"
-    t.text "service_categories"
     t.string "business_license"
     t.integer "years_experience", default: 0
     t.decimal "average_rating", precision: 3, scale: 2, default: "0.0"
@@ -326,7 +338,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_14_130001) do
     t.index ["favorites_count"], name: "index_vendor_profiles_on_favorites_count"
     t.index ["latitude", "longitude"], name: "index_vendor_profiles_on_coordinates"
     t.index ["location"], name: "index_vendor_profiles_on_location"
-    t.index ["user_id"], name: "index_vendor_profiles_on_user_id"
+    t.index ["user_id"], name: "index_vendor_profiles_on_user_id", comment: "Ensures each user has at most one vendor profile"
     t.index ["verification_status"], name: "index_vendor_profiles_on_verification_status"
     t.check_constraint "completion_rate IS NULL OR completion_rate >= 0::numeric AND completion_rate <= 1.0", name: "check_completion_rate_valid"
     t.check_constraint "response_time_hours IS NULL OR response_time_hours >= 0::numeric", name: "check_response_time_non_negative"
@@ -350,6 +362,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_14_130001) do
   add_foreign_key "bookings", "services"
   add_foreign_key "bookings", "users", column: "customer_id"
   add_foreign_key "bookings", "vendor_profiles"
+  add_foreign_key "checklist_items", "users"
   add_foreign_key "customer_favorites", "users"
   add_foreign_key "customer_favorites", "vendor_profiles"
   add_foreign_key "customer_profiles", "users"

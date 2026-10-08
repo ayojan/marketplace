@@ -16,7 +16,7 @@ import {
   Grid, 
   Search, 
   AlertCircle,
-  Filter,
+  SlidersHorizontal,
   ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,20 +39,20 @@ const iconMap = {
 };
 
 const categories = [
-  { id: 'all', name: 'All', icon: 'Grid' },
-  { id: 'wedding', name: 'Wedding', icon: 'Heart' },
+  { id: 'all', name: 'All Categories', icon: 'Grid' },
+  { id: 'wedding', name: 'Weddings', icon: 'Heart' },
   { id: 'pre-wedding', name: 'Pre-Wedding', icon: 'Camera' },
-  { id: 'birthday', name: 'Birthday', icon: 'Cake' },
-  { id: 'party', name: 'Party', icon: 'PartyPopper' },
-  { id: 'corporate', name: 'Corporate', icon: 'Briefcase' },
-  { id: 'family', name: 'Family', icon: 'Users' },
+  { id: 'birthday', name: 'Celebrations', icon: 'Cake' },
+  { id: 'party', name: 'Private Parties', icon: 'PartyPopper' },
+  { id: 'corporate', name: 'Corporate Summits', icon: 'Briefcase' },
+  { id: 'family', name: 'Family Portraits', icon: 'Users' },
 ] as const;
 
 const pricingTypes = [
   { id: 'all', name: 'All Pricing' },
-  { id: 'hourly', name: 'Hourly' },
-  { id: 'package', name: 'Package' },
-  { id: 'custom', name: 'Custom' },
+  { id: 'hourly', name: 'Hourly Rate' },
+  { id: 'package', name: 'Full Package' },
+  { id: 'custom', name: 'Custom Quote' },
 ];
 
 export default function Marketplace() {
@@ -105,43 +105,48 @@ export default function Marketplace() {
   }, [selectedCategory, searchQuery, minPrice, maxPrice, selectedPricingType]);
 
   return (
-    <div className="min-h-screen bg-[#0f1115] text-white">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1C1B19] selection:bg-[#F3E4DB] selection:text-[#8E4532]">
       <Header />
       
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500"
-            >
-              Marketplace
-            </motion.h1>
-            <p className="text-xl text-slate-400 font-light mb-12">
-              Connect with top-tier creative professionals for your next landmark event
+      {/* Header Banner */}
+      <section className="py-14 border-b border-[#E5DED6] bg-[#FAF7F2]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto text-center space-y-3">
+            
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#F3E4DB] border border-[#E5DED6] text-xs font-medium text-[#A9573D]">
+              <span>Editorial Marketplace</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-serif font-semibold tracking-tight text-[#1C1B19]">
+              Creative Partners & Event Pros
+            </h1>
+            <p className="text-sm sm:text-base text-[#6F6A64] font-normal">
+              Connect with verified Indian photographers, videographers, and event specialists.
             </p>
             
-            {/* Search & Filter Bar */}
-            <div className="flex flex-col md:flex-row gap-4 max-w-3xl mx-auto">
+            {/* Search & Filter Inputs */}
+            <div className="pt-3 flex flex-col sm:flex-row gap-2.5 max-w-2xl mx-auto">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-500" strokeWidth={1.5} />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#A9573D]" />
                 <Input
                   type="text"
-                  placeholder="Search professionals, services, or locations..."
+                  placeholder="Search by name, service, or city..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-14 bg-white/[0.03] border-white/[0.05] rounded-2xl focus:ring-primary/50 text-white placeholder:text-slate-600"
+                  className="pl-10 h-11 bg-white border-[#E5DED6] rounded-lg text-xs focus:border-[#A9573D] text-[#1C1B19] placeholder:text-[#6F6A64]"
                 />
               </div>
+
               <Button 
                 onClick={() => setShowFilters(!showFilters)}
-                variant="outline" 
-                className={`h-14 px-6 rounded-2xl border-white/[0.05] font-bold uppercase tracking-widest text-[10px] gap-2 ${showFilters ? 'bg-primary/10 border-primary/50 text-primary' : 'bg-white/[0.03]'}`}
+                variant="ghost" 
+                className={`h-11 px-4 rounded-lg border text-xs font-medium gap-2 transition-all cursor-pointer ${
+                  showFilters 
+                    ? 'bg-[#F3E4DB] border-[#A9573D]/40 text-[#8E4532]' 
+                    : 'bg-white border-[#E5DED6] text-[#6F6A64] hover:bg-[#F5F0EA] hover:text-[#1C1B19]'
+                }`}
               >
-                <Filter className="size-4" />
+                <SlidersHorizontal className="size-3.5 text-[#A9573D]" />
                 Filters
               </Button>
             </div>
@@ -150,47 +155,49 @@ export default function Marketplace() {
             <AnimatePresence>
               {showFilters && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0, y: -20 }}
-                  animate={{ opacity: 1, height: 'auto', y: 0 }}
-                  exit={{ opacity: 0, height: 0, y: -20 }}
-                  className="max-w-3xl mx-auto mt-6 overflow-hidden"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="max-w-2xl mx-auto pt-3 overflow-hidden"
                 >
-                  <div className="p-6 rounded-3xl border border-white/[0.05] bg-white/[0.02] backdrop-blur-md grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2 text-left">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Min Price</label>
+                  <div className="p-4 rounded-xl border border-[#E5DED6] bg-white grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#6F6A64]">Min Price (₹)</label>
                       <Input 
                         type="number" 
-                        placeholder="₹ Min" 
+                        placeholder="e.g. 15000" 
                         value={minPrice}
                         onChange={(e) => setMinPrice(e.target.value)}
-                        className="bg-[#0f1115] border-white/[0.05] h-11 rounded-xl" 
+                        className="bg-[#FAF7F2] border-[#E5DED6] h-9 rounded-md text-xs" 
                       />
                     </div>
-                    <div className="space-y-2 text-left">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Max Price</label>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#6F6A64]">Max Price (₹)</label>
                       <Input 
                         type="number" 
-                        placeholder="₹ Max" 
+                        placeholder="e.g. 75000" 
                         value={maxPrice}
                         onChange={(e) => setMaxPrice(e.target.value)}
-                        className="bg-[#0f1115] border-white/[0.05] h-11 rounded-xl" 
+                        className="bg-[#FAF7F2] border-[#E5DED6] h-9 rounded-md text-xs" 
                       />
                     </div>
-                    <div className="space-y-2 text-left">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Pricing Type</label>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#6F6A64]">Package Model</label>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="w-full h-11 justify-between rounded-xl bg-[#0f1115] border-white/[0.05] font-medium text-slate-400">
+                          <Button variant="ghost" className="w-full h-9 justify-between rounded-md bg-[#FAF7F2] border border-[#E5DED6] text-xs font-medium text-[#1C1B19]">
                             {pricingTypes.find(t => t.id === selectedPricingType)?.name}
-                            <ChevronDown className="size-4 opacity-50" />
+                            <ChevronDown className="size-3.5 opacity-60 text-[#A9573D]" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56 bg-[#16191e] border-white/[0.05] text-white">
+                        <DropdownMenuContent className="w-48 bg-white border-[#E5DED6] text-[#1C1B19]">
                           {pricingTypes.map((type) => (
                             <DropdownMenuItem 
                               key={type.id} 
                               onClick={() => setSelectedPricingType(type.id)}
-                              className="focus:bg-primary/20 focus:text-primary cursor-pointer font-medium"
+                              className="focus:bg-[#F3E4DB] focus:text-[#8E4532] cursor-pointer text-xs font-medium"
                             >
                               {type.name}
                             </DropdownMenuItem>
@@ -202,88 +209,93 @@ export default function Marketplace() {
                 </motion.div>
               )}
             </AnimatePresence>
+
           </div>
         </div>
       </section>
 
-      {/* Categories Bar */}
-      <section className="sticky top-20 z-40 bg-[#0f1115]/80 backdrop-blur-xl border-y border-white/[0.03] py-4">
-        <div className="container mx-auto px-6">
-          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
+      {/* Sticky Categories Bar */}
+      <section className="sticky top-16 z-40 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E5DED6] py-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
             {categories.map((category) => {
               const Icon = iconMap[category.icon as keyof typeof iconMap];
+              const isSelected = selectedCategory === category.id;
               return (
-                <Button
+                <button
                   key={category.id}
-                  variant={selectedCategory === category.id ? 'default' : 'ghost'}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`flex items-center gap-2 h-10 px-5 rounded-full font-bold uppercase tracking-widest text-[10px] shrink-0 transition-all ${
-                    selectedCategory === category.id
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  className={`flex items-center gap-2 h-8 px-3.5 rounded-lg text-xs font-medium shrink-0 transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#A9573D] text-white border border-[#A9573D]'
+                      : 'bg-white text-[#6F6A64] hover:bg-[#F3E4DB] hover:text-[#1C1B19] border border-[#E5DED6]'
                   }`}
                 >
-                  <Icon className="size-3.5" />
+                  <Icon className={`size-3.5 ${isSelected ? 'text-white' : 'text-[#A9573D]'}`} />
                   {category.name}
-                </Button>
+                </button>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* Grid */}
-      <section className="container mx-auto px-6 py-16">
+      {/* Vendor Grid */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         {error ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <AlertCircle className="size-12 text-destructive mb-4" />
-            <p className="text-xl text-slate-400 font-light">{error}</p>
-            <Button variant="outline" className="mt-6 rounded-xl border-white/10" onClick={() => window.location.reload()}>Retry</Button>
+          <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+            <AlertCircle className="size-9 text-[#BE123C]" />
+            <p className="text-sm text-[#6F6A64] font-normal">{error}</p>
+            <Button variant="outline" className="rounded-lg border-[#E5DED6] text-xs" onClick={() => window.location.reload()}>Retry</Button>
           </div>
         ) : (
-          <div className="space-y-8">
-            <div className="flex justify-between items-end border-b border-white/[0.03] pb-6">
-               <div>
-                  <h2 className="text-sm font-bold text-white uppercase tracking-[0.2em]">Featured Pros</h2>
-                  <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">Found {vendors.length} matching experts</p>
-               </div>
+          <div className="space-y-5">
+            <div className="flex items-center justify-between border-b border-[#E5DED6] pb-3">
+              <div>
+                <h2 className="text-base font-serif font-semibold text-[#1C1B19]">Verified Creative Partners</h2>
+                <p className="text-xs text-[#6F6A64] font-medium">Showing {vendors.length} matching experts</p>
+              </div>
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className="space-y-4">
-                    <Skeleton className="aspect-[3/4] w-full rounded-2xl bg-white/[0.03]" />
-                    <div className="space-y-2 px-1">
-                      <Skeleton className="h-4 w-3/4 bg-white/[0.03]" />
-                      <Skeleton className="h-3 w-1/2 bg-white/[0.03]" />
-                    </div>
+                  <div key={i} className="space-y-3">
+                    <Skeleton className="aspect-[4/5] w-full rounded-xl bg-[#F5F0EA]" />
+                    <Skeleton className="h-4 w-3/4 bg-[#F5F0EA]" />
+                    <Skeleton className="h-3 w-1/2 bg-[#F5F0EA]" />
                   </div>
                 ))}
               </div>
             ) : vendors.length === 0 ? (
-              <div className="text-center py-32 border-2 border-dashed border-white/[0.03] rounded-[3rem]">
-                <div className="size-16 rounded-full bg-white/[0.02] flex items-center justify-center mx-auto mb-6 text-slate-600">
-                   <Search className="size-8" />
+              <div className="text-center py-20 border border-dashed border-[#E5DED6] rounded-xl space-y-2 bg-white">
+                <div className="size-10 rounded-lg bg-[#F5F0EA] flex items-center justify-center mx-auto text-[#A9573D]">
+                  <Search className="size-5" />
                 </div>
-                <p className="text-xl text-slate-400 font-light tracking-tight">No experts found matching your criteria</p>
-                <p className="text-sm text-slate-600 mt-2 font-medium">Try adjusting your filters or search terms</p>
-                <Button variant="link" onClick={() => {
-                   setSelectedCategory('all');
-                   setSearchQuery('');
-                   setMinPrice('');
-                   setMaxPrice('');
-                   setSelectedPricingType('all');
-                }} className="mt-4 text-primary font-bold uppercase tracking-widest text-[10px]">Clear all filters</Button>
+                <h3 className="text-base font-serif font-semibold text-[#1C1B19]">No experts found</h3>
+                <p className="text-xs text-[#6F6A64] font-normal">Try adjusting your filters or search keywords.</p>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => {
+                    setSelectedCategory('all');
+                    setSearchQuery('');
+                    setMinPrice('');
+                    setMaxPrice('');
+                    setSelectedPricingType('all');
+                  }} 
+                  className="text-xs font-medium text-[#A9573D] hover:text-[#8E4532] cursor-pointer"
+                >
+                  Reset all filters
+                </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {vendors.map((vendor, index) => (
                   <motion.div
                     key={`${vendor.id}-${index}`}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                    transition={{ duration: 0.3, delay: index * 0.04 }}
                   >
                     <PhotographerCard photographer={vendor} />
                   </motion.div>

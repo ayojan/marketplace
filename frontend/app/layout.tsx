@@ -11,9 +11,9 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: 'Marketplace - Find Perfect Service Providers',
-  description: 'Connect with professional photographers, videographers, event managers, and more',
-  keywords: 'marketplace, services, photography, videography, event management',
+  title: 'Ayoj — Premium Creative & Event Marketplace',
+  description: 'Connect with verified photographers, videographers, and event managers for landmark celebrations.',
+  keywords: 'ayoj, marketplace, event management, photography, videography, wedding planners',
 };
 
 export default function RootLayout({
@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${plusJakartaSans.className} antialiased min-h-screen`}>
+    <html lang="en">
+      <body className={`${plusJakartaSans.className} antialiased min-h-screen bg-[#FAF7F2] text-[#1C1B19]`}>
         <AuthProvider>
           <AppProvider>
             {children}

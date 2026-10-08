@@ -4,14 +4,16 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../lib/contexts/AuthContext';
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Github, Camera } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Github, Camera, User, Briefcase, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
 import AuthLeftPanel from '@/components/auth/AuthLeftPanel';
+import AyojLogo from '@/components/AyojLogo';
 
 const Login = () => {
+  const [activeRole, setActiveRole] = useState<'customer' | 'vendor'>('customer');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,11 +21,21 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, error, clearError } = useAuth();
+  const { login, error, clearError, loginDemoVendor, loginDemoCustomer } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const from = searchParams.get('from') || '/dashboard';
+  const from = searchParams.get('from') || (activeRole === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard');
+
+  const handleDemoVendor = () => {
+    loginDemoVendor();
+    router.push('/vendor/dashboard');
+  };
+
+  const handleDemoCustomer = () => {
+    loginDemoCustomer();
+    router.push('/customer/dashboard');
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,7 +50,7 @@ const Login = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const result = await login(formData);
+    const result = await login({ ...formData, role: activeRole });
 
     if (result.success) {
       router.push(from);
@@ -48,50 +60,96 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background flex overflow-hidden font-sans text-foreground">
+    <div className="min-h-screen w-full bg-[#FBF8F4] flex overflow-hidden font-sans text-[#221F1C]">
       <AuthLeftPanel />
 
       {/* Right Panel */}
-      <div className="flex-1 lg:w-[55%] flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
-        {/* Ambient Orb */}
-        <div className="absolute top-[-15%] right-[-15%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[130px] pointer-events-none" />
+      <div className="flex-1 lg:w-[55%] flex flex-col justify-between p-6 md:p-10 relative overflow-auto bg-[#FBF8F4]">
+        
+        {/* Top Header Row with Back Button & Logo */}
+        <div className="w-full flex items-center justify-between max-w-md mx-auto mb-4">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-[#6B6560] hover:text-[#9E5338] transition-colors font-medium">
+            <ArrowLeft className="size-3.5" /> Back to Home
+          </Link>
 
-        {/* Mobile Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="lg:hidden flex items-center gap-2 mb-8"
-        >
-          <div className="p-2 rounded-lg bg-primary/20">
-            <Camera className="w-5 h-5 text-primary" />
+          <Link href="/">
+            <AyojLogo size="sm" showTagline={false} />
+          </Link>
+        </div>
+
+        <div className="w-full max-w-md mx-auto my-auto space-y-6">
+          {/* Heading */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <h2 className="text-3xl md:text-4xl font-serif font-normal text-[#221F1C] mb-2">
+              Welcome back
+            </h2>
+            <p className="text-[#6B6560] text-xs sm:text-sm font-normal">
+              Sign in to manage your marketplace account
+            </p>
+          </motion.div>
+
+          {/* Account Role Selector Tabs */}
+          <div className="flex rounded-full bg-[#F3EADF] p-1 border border-[#E8E2D9] max-w-md mx-auto">
+            <button
+              type="button"
+              onClick={() => setActiveRole('customer')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeRole === 'customer'
+                  ? 'bg-white text-[#9E5338] shadow-sm'
+                  : 'text-[#6B6560] hover:text-[#221F1C]'
+              }`}
+            >
+              <User size={14} />
+              Customer Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveRole('vendor')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeRole === 'vendor'
+                  ? 'bg-white text-[#9E5338] shadow-sm'
+                  : 'text-[#6B6560] hover:text-[#221F1C]'
+              }`}
+            >
+              <Briefcase size={14} />
+              Vendor Login
+            </button>
           </div>
-          <span className="text-lg font-bold text-white">jashnify</span>
-        </motion.div>
 
-        {/* Heading */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8 max-w-md"
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Welcome back
-          </h2>
-          <p className="text-muted-foreground text-base">
-            Sign in to start exploring services
-          </p>
-        </motion.div>
-
-        {/* Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-strong rounded-2xl p-8 shadow-2xl shadow-black/40 w-full max-w-md relative z-10"
-        >
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          {/* Form Card Surface */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border border-[#E8E2D9] rounded-2xl p-6 sm:p-8 shadow-sm w-full max-w-md relative z-10 space-y-4"
+          >
+            {/* Quick Demo Access Box */}
+            <div className="p-3.5 rounded-xl bg-[#F3EADF] border border-[#E8E2D9] space-y-2">
+               <div className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] text-center">Quick Demo Access (One-Click)</div>
+               <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    type="button" 
+                    onClick={handleDemoCustomer} 
+                    className="py-2 px-3 rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] font-bold text-xs hover:border-[#9E5338] transition-all cursor-pointer shadow-sm hover:text-[#9E5338]"
+                  >
+                     Customer Demo
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleDemoVendor} 
+                    className="py-2 px-3 rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] font-bold text-xs hover:border-[#9E5338] transition-all cursor-pointer shadow-sm hover:text-[#9E5338]"
+                  >
+                     Vendor Demo
+                  </button>
+               </div>
+            </div>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive-foreground px-4 py-3 rounded-xl text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
-                <svg className="w-4 h-4 text-destructive shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-xs flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <span>{error}</span>
@@ -100,12 +158,12 @@ const Login = () => {
 
             <div className="space-y-4">
               <div className="group">
-                <Label htmlFor="email" className="text-foreground/80 font-semibold mb-2 block">
+                <Label htmlFor="email" className="text-[#221F1C] font-semibold text-xs mb-1.5 block">
                   Email Address
                 </Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                    <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Mail className="h-4 w-4 text-[#6B6560]" />
                   </div>
                   <Input
                     id="email"
@@ -113,7 +171,7 @@ const Login = () => {
                     type="email"
                     autoComplete="email"
                     required
-                    className="pl-11 h-10 bg-background/60 border-border/50 rounded-xl focus-visible:ring-primary/40"
+                    className="pl-9 h-11 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C] placeholder:text-[#6B6560]"
                     placeholder="name@example.com"
                     value={formData.email}
                     onChange={handleChange}
@@ -122,17 +180,17 @@ const Login = () => {
               </div>
 
               <div className="group">
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="password" className="text-foreground/80 font-semibold">
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label htmlFor="password" className="text-[#221F1C] font-semibold text-xs">
                     Password
                   </Label>
-                  <a href="#" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                  <a href="#" className="text-xs font-medium text-[#9E5338] hover:underline">
                     Forgot?
                   </a>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                    <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Lock className="h-4 w-4 text-[#6B6560]" />
                   </div>
                   <Input
                     id="password"
@@ -140,7 +198,7 @@ const Login = () => {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     required
-                    className="pl-11 pr-10 h-10 bg-background/60 border-border/50 rounded-xl focus-visible:ring-primary/40"
+                    className="pl-9 pr-10 h-11 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C] placeholder:text-[#6B6560]"
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleChange}
@@ -148,12 +206,12 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#6B6560] hover:text-[#221F1C] transition-colors cursor-pointer"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
+                      <EyeOff className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-5 w-5" />
+                      <Eye className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -163,17 +221,17 @@ const Login = () => {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-10 rounded-xl font-bold"
+              className="w-full h-11 rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white font-medium text-xs transition-colors"
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                   <span>Signing in...</span>
                 </>
               ) : (
                 <>
                   Sign In
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-4 h-4 ml-1.5" />
                 </>
               )}
             </Button>
@@ -181,13 +239,13 @@ const Login = () => {
 
           {/* Divider */}
           <div className="my-6 flex items-center">
-            <div className="glow-separator" />
-            <span className="mx-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest shrink-0">Or continue with</span>
-            <div className="glow-separator" />
+            <div className="h-px flex-1 bg-[#E8E2D9]" />
+            <span className="mx-3 text-[10px] font-semibold text-[#6B6560] uppercase tracking-wider shrink-0">Or continue with</span>
+            <div className="h-px flex-1 bg-[#E8E2D9]" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="h-10 rounded-lg gap-2 text-sm">
+            <Button variant="outline" className="h-10 rounded-xl border-[#E8E2D9] bg-[#FBF8F4] hover:bg-[#F3EADF] text-[#221F1C] text-xs font-medium gap-2">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -196,8 +254,8 @@ const Login = () => {
               </svg>
               Google
             </Button>
-            <Button variant="outline" className="h-10 rounded-lg gap-2 text-sm">
-              <Github className="w-4 h-4" />
+            <Button variant="outline" className="h-10 rounded-xl border-[#E8E2D9] bg-[#FBF8F4] hover:bg-[#F3EADF] text-[#221F1C] text-xs font-medium gap-2">
+              <Github className="w-4 h-4 text-[#221F1C]" />
               Github
             </Button>
           </div>
@@ -208,17 +266,19 @@ const Login = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-center mt-8 text-muted-foreground text-sm"
+          className="text-center mt-6 text-[#6B6560] text-xs"
         >
           Don't have an account?{' '}
           <Link
             href="/register"
-            className="text-primary font-bold hover:text-primary/80 transition-colors inline-flex items-center gap-1 group"
+            className="text-[#9E5338] font-bold hover:underline transition-colors inline-flex items-center gap-1 group"
           >
             Create one here
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.p>
+        </div>
+
       </div>
     </div>
   );
