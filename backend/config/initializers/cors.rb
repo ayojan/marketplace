@@ -7,11 +7,20 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins 'https://ayoj.in', 'http://localhost:3000', 'http://127.0.0.1:3000'
+    allowed = [
+      'https://ayoj.in',
+      'https://www.ayoj.in',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ]
+    allowed += ENV['ALLOWED_ORIGINS'].split(',').map(&:strip) if ENV['ALLOWED_ORIGINS'].present?
+
+    origins(*allowed)
 
     resource '*',
              headers: :any,
              methods: %i[get post put patch delete options head],
+             expose: %w[Authorization Content-Type],
              credentials: true
   end
 end
