@@ -28,7 +28,7 @@ import { apiService } from '@/lib/api';
 import { CITIES } from '@/components/Header';
 
 // Unified Trade Categories matching Home Page
-export const TRADE_CATEGORIES = [
+const TRADE_CATEGORIES = [
   { id: 'all', name: 'All Categories', slug: 'all', icon: Grid, matchKeys: [] },
   { id: 'photographer', name: 'Photographers', slug: 'photographer', icon: Camera, matchKeys: ['photo', 'photographer', 'photography'] },
   { id: 'makeup-artist', name: 'Makeup Artists', slug: 'makeup-artist', icon: Brush, matchKeys: ['makeup', 'makeover', 'beauty', 'bridal makeup'] },
@@ -40,7 +40,7 @@ export const TRADE_CATEGORIES = [
 ];
 
 // Occasions / Event Types
-export const OCCASIONS = [
+const OCCASIONS = [
   { id: 'all', name: 'All Occasions', emoji: '✨', matchKeys: [] },
   { id: 'wedding', name: 'Weddings', emoji: '💍', matchKeys: ['wedding', 'shaadi', 'bridal', 'vivah'] },
   { id: 'pre-wedding', name: 'Pre-Wedding', emoji: '📸', matchKeys: ['pre-wedding', 'pre wedding', 'engagement', 'roka'] },

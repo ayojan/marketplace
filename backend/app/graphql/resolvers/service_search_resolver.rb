@@ -225,11 +225,11 @@ class Resolvers::ServiceSearchResolver < Resolvers::BaseResolver
 
   def generate_price_range_facets(services, filters)
     price_ranges = [
-      { min: 0, max: 10000, label: 'Under ₹10,000' },
-      { min: 10000, max: 50000, label: '₹10,000 - ₹50,000' },
-      { min: 50000, max: 100000, label: '₹50,000 - ₹1,00,000' },
-      { min: 100000, max: 500000, label: '₹1,00,000 - ₹5,00,000' },
-      { min: 500000, max: Float::INFINITY, label: 'Over ₹5,00,000' }
+      { min: 0, max: 10_000, label: 'Under ₹10,000' },
+      { min: 10_000, max: 50_000, label: '₹10,000 - ₹50,000' },
+      { min: 50_000, max: 100_000, label: '₹50,000 - ₹1,00,000' },
+      { min: 100_000, max: 500_000, label: '₹1,00,000 - ₹5,00,000' },
+      { min: 500_000, max: Float::INFINITY, label: 'Over ₹5,00,000' }
     ]
 
     # Apply all filters except price

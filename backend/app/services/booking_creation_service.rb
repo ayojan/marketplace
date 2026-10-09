@@ -66,7 +66,7 @@ class BookingCreationService
 
     # If start_time is provided and event_date is midnight, combine them
     final_event_date = event_date
-    if start_time.present? && final_event_date.present? && final_event_date.hour == 0 && final_event_date.min == 0
+    if start_time.present? && final_event_date.present? && final_event_date.hour.zero? && final_event_date.min.zero?
       hours, minutes = start_time.split(':').map(&:to_i)
       final_event_date = final_event_date.change(hour: hours, min: minutes)
     end

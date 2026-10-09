@@ -70,11 +70,11 @@ class ServicesController < ApiController
 
     if @service.save
       VendorService.find_or_create_by!(vendor_profile: current_user.vendor_profile, service: @service)
-      
+
       cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
       if cat_id.present?
         category = Category.find_by(id: cat_id)
-        @service.categories << category if category && !@service.categories.include?(category)
+        @service.categories << category if category && @service.categories.exclude?(category)
       end
 
       @service.reload
@@ -95,7 +95,7 @@ class ServicesController < ApiController
       cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
       if cat_id.present?
         category = Category.find_by(id: cat_id)
-        if category && !@service.categories.include?(category)
+        if category && @service.categories.exclude?(category)
           @service.categories.clear
           @service.categories << category
         end
