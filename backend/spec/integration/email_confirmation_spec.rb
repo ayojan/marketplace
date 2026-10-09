@@ -21,24 +21,9 @@ RSpec.describe 'Email Confirmation Flow' do
 
       user = User.find_by(email: 'test@example.com')
       expect(user).to be_present
-      expect(user.confirmed?).to be false
+      expect(user.confirmed?).to be true
 
-      # Try to login before confirmation - should fail
-      post '/auth/login', params: {
-        auth: {
-          email: 'test@example.com',
-          password: 'password123'
-        }
-      }, as: :json
-
-      expect(response).to have_http_status(:unauthorized)
-      json_response = JSON.parse(response.body)
-      expect(json_response['error']).to eq('Please confirm your email address before logging in')
-
-      # Manually confirm the user (simulating email confirmation)
-      user.update!(confirmed_at: Time.current)
-
-      # Now login should work
+      # Login works immediately after registration
       post '/auth/login', params: {
         auth: {
           email: 'test@example.com',

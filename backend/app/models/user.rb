@@ -125,6 +125,13 @@ class User < ApplicationRecord
     "User(id: #{id}, email: #{email}, role: #{role})"
   end
 
+  # Rescue mailer failures so SMTP downtime doesn't crash signup
+  def send_devise_notification(notification, *args)
+    super
+  rescue StandardError => e
+    Rails.logger.error "Failed to send Devise email notification #{notification} to #{email}: #{e.message}"
+  end
+
   private
 
   # Creates associated profile after user creation
