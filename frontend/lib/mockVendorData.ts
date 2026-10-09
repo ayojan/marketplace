@@ -74,7 +74,7 @@ export const MOCK_VENDORS: MockVendor[] = [
     },
     services: [
       {
-        id: 's1',
+        id: '14',
         name: 'Full Day Traditional & Candid Wedding Coverage',
         category: 'Photographers',
         formatted_price: '₹85,000 / day',
@@ -84,7 +84,7 @@ export const MOCK_VENDORS: MockVendor[] = [
         duration: '2 Days',
       },
       {
-        id: 's2',
+        id: '11',
         name: 'Cinematic Pre-Wedding Shoot & Film',
         category: 'Photographers',
         formatted_price: '₹45,000 / session',
@@ -94,7 +94,7 @@ export const MOCK_VENDORS: MockVendor[] = [
         duration: '1 Day',
       },
       {
-        id: 's3',
+        id: '15',
         name: 'Engagement & Ring Ceremony Highlights',
         category: 'Photographers',
         formatted_price: '₹35,000 / event',
@@ -177,7 +177,7 @@ export const MOCK_VENDORS: MockVendor[] = [
     },
     services: [
       {
-        id: 's4',
+        id: '12',
         name: 'HD Airbrush Bridal Makeup & Hair Styling',
         category: 'Makeup Artists',
         formatted_price: '₹25,000 / makeover',
@@ -187,7 +187,7 @@ export const MOCK_VENDORS: MockVendor[] = [
         duration: '4 Hours',
       },
       {
-        id: 's5',
+        id: '16',
         name: 'Party & Reception Glam Makeover',
         category: 'Makeup Artists',
         formatted_price: '₹15,000 / person',

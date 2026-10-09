@@ -53,7 +53,7 @@ class ChecklistItemsController < ApiController
   end
 
   def checklist_item_params
-    params.require(:checklist_item).permit(:title, :completed, :category, :due_date)
+    params.expect(checklist_item: %i[title completed category due_date])
   end
 
   def item_json(item)

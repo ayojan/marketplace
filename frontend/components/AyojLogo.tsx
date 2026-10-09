@@ -1,41 +1,60 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 
 interface AyojLogoProps {
   showTagline?: boolean;
+  taglinePosition?: 'bottom' | 'side';
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
 
 export default function AyojLogo({
   showTagline = true,
+  taglinePosition = 'bottom',
   className = '',
   size = 'md',
 }: AyojLogoProps) {
   const dimensionsMap = {
-    sm: showTagline ? { width: 180, height: 50 } : { width: 160, height: 46 },
-    md: showTagline ? { width: 230, height: 64 } : { width: 200, height: 56 },
-    lg: showTagline ? { width: 320, height: 86 } : { width: 260, height: 72 },
+    sm: { height: 28, text: 'text-[9px] tracking-[0.2em]' },
+    md: { height: 34, text: 'text-[10px] tracking-[0.22em]' },
+    lg: { height: 42, text: 'text-[11px] tracking-[0.24em]' },
   };
 
-  const { width, height } = dimensionsMap[size];
-  const logoSrc = showTagline
-    ? '/images/ayoj-logo-with-tagline.jpg'
-    : '/images/ayoj-logo-no-tagline.jpg';
+  const { height, text } = dimensionsMap[size];
+
+  if (showTagline && taglinePosition === 'side') {
+    return (
+      <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/ayoj-without-tagline.svg"
+          alt="Ayoj Marketplace"
+          className="w-auto object-contain"
+          style={{ height: `${height}px` }}
+        />
+        <div className="hidden sm:block h-4 w-[1px] bg-[#E8E2D9]" />
+        <span className={`hidden sm:inline-block ${text} uppercase font-medium text-[#9E5338] whitespace-nowrap leading-none`}>
+          Discover · Trust · Celebrate
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className={`inline-flex items-center select-none overflow-hidden ${className}`}>
-      <Image
-        src={logoSrc}
+    <div className={`inline-flex flex-col items-start select-none ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/ayoj-without-tagline.svg"
         alt="Ayoj Marketplace"
-        width={width}
-        height={height}
-        unoptimized
-        className="w-auto object-contain mix-blend-multiply rounded-sm scale-110 origin-left"
+        className="w-auto object-contain"
         style={{ height: `${height}px` }}
       />
+      {showTagline && (
+        <span className={`${text} uppercase font-medium text-[#9E5338] mt-1 whitespace-nowrap leading-none`}>
+          Discover · Trust · Celebrate
+        </span>
+      )}
     </div>
   );
 }

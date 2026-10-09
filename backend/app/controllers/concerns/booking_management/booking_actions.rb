@@ -42,7 +42,7 @@ module BookingManagement::BookingActionHelpers
     Rails.logger.warn 'build_availability_checker is deprecated, use domain services instead'
     service = Service.find(params[:service_id])
     AvailabilityCheckerService.new(
-      vendor_profile: service.vendor_profiles.first,
+      vendor_profile: service.vendor_profile,
       date: Date.parse(params[:date]),
       start_time: params[:start_time],
       end_time: params[:end_time]
@@ -73,7 +73,7 @@ module BookingManagement::BookingActionHelpers
   def booking_params
     params.expect(
       booking: %i[service_id event_date event_end_date event_location
-                  total_amount requirements special_instructions event_duration]
+                  total_amount requirements special_instructions event_duration start_time]
     )
   end
 
@@ -234,7 +234,13 @@ end
 module BookingManagement::AvailabilityActions
   def check_availability
     availability_checker = build_availability_checker
-    if availability_checker.available?
+    is_available = if availability_checker.vendor_profile.availability_slots.for_date(Date.parse(params[:date])).exists?
+                     availability_checker.available?
+                   else
+                     true
+                   end
+
+    if is_available
       render json: { available: true, message: 'Time slot is available' }
     else
       render json: {

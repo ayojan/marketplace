@@ -165,17 +165,17 @@ RSpec.describe CustomerProfile do
     describe '#budget_range_display' do
       it 'returns formatted budget range for under_500' do
         complete_customer_profile.update(budget_range: 'under_500')
-        expect(complete_customer_profile.budget_range_display).to eq('Under $500')
+        expect(complete_customer_profile.budget_range_display).to eq('Under ₹50,000')
       end
 
       it 'returns formatted budget range for 500_1000' do
         complete_customer_profile.update(budget_range: 'between_500_1000')
-        expect(complete_customer_profile.budget_range_display).to eq('$500 - $1,000')
+        expect(complete_customer_profile.budget_range_display).to eq('₹50,000 - ₹1,00,000')
       end
 
       it 'returns formatted budget range for over_5000' do
         complete_customer_profile.update(budget_range: 'over_5000')
-        expect(complete_customer_profile.budget_range_display).to eq('Over $5,000')
+        expect(complete_customer_profile.budget_range_display).to eq('Over ₹5,00,000')
       end
 
       it 'returns not specified for nil budget range' do

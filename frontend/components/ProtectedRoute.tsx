@@ -20,7 +20,8 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.push('/login');
+        const fromPath = typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '';
+        router.push(fromPath ? `/login?from=${encodeURIComponent(fromPath)}` : '/login');
       } else if (requiredRole && user?.role !== requiredRole) {
         router.push('/unauthorized');
       } else {
@@ -31,7 +32,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
 
   if (isLoading || !isAuthorized) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FAF7F2] flex flex-col items-center justify-center p-6">
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 

@@ -126,6 +126,7 @@ class VendorProfile < ApplicationRecord
   def service_categories_list
     services.joins(:categories).distinct.pluck('categories.name')
   end
+  alias_method :service_categories, :service_categories_list
 
   def profile_complete?
     business_name.present? &&

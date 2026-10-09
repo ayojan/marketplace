@@ -52,7 +52,7 @@ const ServiceSearch = () => {
   }, [searchQuery, selectedCategory]);
 
   useEffect(() => {
-    const initialSearch = searchParams.get('search') || '';
+    const initialSearch = searchParams.get('search') || searchParams.get('q') || '';
     const initialCategory = searchParams.get('category') || '';
 
     setSearchQuery(initialSearch);

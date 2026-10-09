@@ -14,6 +14,9 @@ export const metadata = {
   title: 'Ayoj — Premium Creative & Event Marketplace',
   description: 'Connect with verified photographers, videographers, and event managers for landmark celebrations.',
   keywords: 'ayoj, marketplace, event management, photography, videography, wedding planners',
+  icons: {
+    icon: '/images/ayoj-icon.svg',
+  },
 };
 
 export default function RootLayout({

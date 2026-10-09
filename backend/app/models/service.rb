@@ -114,9 +114,9 @@ class Service < ApplicationRecord
 
   def formatted_base_price
     return 'Custom Quote' if custom_pricing?
-    return "#{base_price}/hour" if hourly_pricing?
+    return "₹#{base_price.to_i}/hr" if hourly_pricing?
 
-    base_price.to_s
+    "₹#{base_price.to_i}"
   end
 
   def can_be_booked?

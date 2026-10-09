@@ -17,7 +17,7 @@ import {
   Calendar as CalendarIcon, 
   TrendingUp, 
   CheckCircle2, 
-  DollarSign,
+  IndianRupee,
   Plus,
   ShieldCheck,
   Star,
@@ -39,8 +39,7 @@ const VendorDashboard = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [selectedVendorIndex, setSelectedVendorIndex] = useState(0);
-  const currentVendor = MOCK_VENDORS[selectedVendorIndex];
+  const currentVendor = MOCK_VENDORS[0];
 
   const [dashboardData, setDashboardData] = useState<any>({
     services: currentVendor.services,
@@ -118,7 +117,7 @@ const VendorDashboard = () => {
         {/* Compact Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Revenue', value: `₹${analytics.revenue_stats.total_revenue.toLocaleString()}`, icon: DollarSign, trend: '+12.5%' },
+            { label: 'Revenue', value: `₹${analytics.revenue_stats.total_revenue.toLocaleString()}`, icon: IndianRupee, trend: '+12.5%' },
             { label: 'Bookings', value: analytics.overview.total_bookings, icon: CalendarIcon, trend: '+3 today' },
             { label: 'Active', value: analytics.overview.active_services, icon: Briefcase, trend: 'Running' },
             { label: 'Rating', value: analytics.overview.average_rating || '4.9', icon: Star, trend: 'Top 5%' },
@@ -277,18 +276,10 @@ const VendorDashboard = () => {
            </div>
 
            <div className="flex items-center gap-4">
-              {/* Vendor Profile Switcher */}
-              <div className="flex items-center gap-2 bg-[#F3EADF] border border-[#E8E2D9] px-3.5 py-1.5 rounded-full text-xs">
+              {/* Vendor Business Badge */}
+              <div className="flex items-center gap-2 bg-[#F3EADF] border border-[#E8E2D9] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#221F1C]">
                 <Store size={14} className="text-[#9E5338]" />
-                <span className="text-[#6B6560] font-medium hidden sm:inline">Active Vendor:</span>
-                <select
-                  value={selectedVendorIndex}
-                  onChange={(e) => setSelectedVendorIndex(Number(e.target.value))}
-                  className="bg-transparent font-bold text-[#221F1C] focus:outline-none cursor-pointer text-xs"
-                >
-                  <option value={0}>The Wedding Narratives (Photography)</option>
-                  <option value={1}>Meera Makeovers (Makeup)</option>
-                </select>
+                <span>{currentVendor?.business_name || 'Vendor Portal'}</span>
               </div>
 
               <NotificationDropdown />

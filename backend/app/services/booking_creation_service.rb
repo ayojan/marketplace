@@ -10,6 +10,7 @@ class BookingCreationService
   attribute :service_id, :integer
   attribute :event_date, :datetime
   attribute :event_end_date, :datetime
+  attribute :start_time, :string
   attribute :event_location, :string
   attribute :total_amount, :decimal
   attribute :requirements, :string
@@ -34,7 +35,10 @@ class BookingCreationService
       # Use explicit orchestration service to create booking with side effects
       result = create_booking_with_orchestration
 
-      return result if result[:success]
+      if result[:success]
+        @booking = result[:booking]
+        return result
+      end
 
       # If creation failed, propagate errors
       result[:error]&.split(',')&.each do |message|
@@ -43,6 +47,11 @@ class BookingCreationService
 
       { success: false, errors: errors.full_messages }
     end
+  rescue ActiveRecord::RecordInvalid => e
+    e.record.errors.each do |error|
+      errors.add(error.attribute, error.message) unless errors[error.attribute].include?(error.message)
+    end
+    { success: false, errors: errors.full_messages }
   rescue StandardError => e
     errors.add(:base, e.message)
     { success: false, errors: errors.full_messages }
@@ -53,20 +62,28 @@ class BookingCreationService
 
   def build_booking
     @service = Service.find(service_id)
-    @vendor_profile = @service.vendor_profiles.first
+    @vendor_profile = @service.vendor_profile
+
+    # If start_time is provided and event_date is midnight, combine them
+    final_event_date = event_date
+    if start_time.present? && final_event_date.present? && final_event_date.hour == 0 && final_event_date.min == 0
+      hours, minutes = start_time.split(':').map(&:to_i)
+      final_event_date = final_event_date.change(hour: hours, min: minutes)
+    end
+    final_event_end_date = event_end_date || (final_event_date ? final_event_date + 4.hours : nil)
 
     # Build booking attributes for validation, don't create yet
     @booking_attributes = {
       customer: customer,
       vendor_profile: @vendor_profile,
       service: @service,
-      event_date: event_date,
-      event_end_date: event_end_date,
+      event_date: final_event_date,
+      event_end_date: final_event_end_date,
       event_location: event_location,
       total_amount: total_amount,
       requirements: requirements,
       special_instructions: special_instructions,
-      event_duration: event_duration,
+      event_duration: event_duration || '4 hours',
       status: 'pending'
     }
 
@@ -90,6 +107,7 @@ class BookingCreationService
     return if availability_checker.available?
 
     errors.add(:event_date, 'is not available for this vendor')
+    @booking&.errors&.add(:event_date, 'is not available for this vendor')
     raise ActiveRecord::RecordInvalid, @booking
   end
 

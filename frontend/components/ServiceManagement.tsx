@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { apiService } from '@/lib/api';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,14 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Plus, 
-  Search, 
-  MoreVertical, 
   Edit2, 
   Trash2, 
-  Check, 
   X,
   Briefcase,
-  AlertCircle
+  Sparkles,
+  Tag,
+  IndianRupee,
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -75,15 +75,46 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
+    // Client-side validation checks
+    if (!formData.name.trim()) {
+      setError('Service name is required');
+      return;
+    }
+
+    if (!formData.service_category_id) {
+      setError('Please select a service category');
+      return;
+    }
+
+    if (formData.description.length < 50) {
+      setError('Service description must be at least 50 characters long');
+      return;
+    }
+
+    if (formData.pricing_type !== 'custom') {
+      const parsedPrice = parseFloat(formData.base_price);
+      if (!formData.base_price || isNaN(parsedPrice) || parsedPrice <= 0) {
+        setError('Base price must be specified and greater than ₹0 for non-custom pricing');
+        return;
+      }
+    }
+
+    setLoading(true);
+
     try {
+      const parsedCatId = parseInt(formData.service_category_id, 10);
+      const parsedPrice = formData.base_price ? parseFloat(formData.base_price) : null;
+
       const serviceData = {
         service: {
-          ...formData,
-          base_price: formData.base_price ? parseFloat(formData.base_price) : null,
-          service_category_id: parseInt(formData.service_category_id)
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          pricing_type: formData.pricing_type,
+          base_price: parsedPrice,
+          status: formData.status,
+          service_category_id: isNaN(parsedCatId) ? null : parsedCatId
         }
       };
 
@@ -99,7 +130,10 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
       resetForm();
       onServiceUpdate && onServiceUpdate();
     } catch (err: any) {
-      setError(err.extractedMessage || 'Failed to save service');
+      const details = err.response?.data?.details;
+      const detailsStr = Array.isArray(details) ? details.join(', ') : details;
+      const mainErr = err.response?.data?.error || err.extractedMessage || 'Failed to save service';
+      setError(detailsStr ? `${mainErr}: ${detailsStr}` : mainErr);
     } finally {
       setLoading(false);
     }
@@ -144,165 +178,284 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-6 font-sans">
+      {/* Top Header Row */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-[#E8E2D9] shadow-xs">
         <div>
-          <h2 className="text-xl font-bold text-white uppercase tracking-widest">Services</h2>
-          <p className="text-slate-500 text-xs mt-1">Manage your professional offerings</p>
+          <h2 className="text-2xl font-serif text-[#221F1C]">Services & Packages</h2>
+          <p className="text-xs text-[#6B6560] mt-1 font-normal">
+            Manage your professional offerings, pricing tiers, and service visibility
+          </p>
         </div>
-        <Button onClick={() => setShowForm(true)} size="sm" className="rounded-lg font-bold">
-          <Plus className="mr-1.5 size-3.5" /> Add Service
+        <Button 
+          onClick={() => { resetForm(); setShowForm(true); }} 
+          className="rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold px-5 h-10 transition-colors shadow-sm cursor-pointer"
+        >
+          <Plus className="mr-1.5 size-4" /> Add New Service
         </Button>
       </div>
 
+      {/* Add / Edit Service Form Container */}
       <AnimatePresence>
         {showForm && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="border border-white/[0.05] shadow-2xl mb-10 bg-[#16191e] rounded-2xl p-8">
-                <div className="flex justify-between items-center mb-8 pb-4 border-b border-white/[0.03]">
-                  <h3 className="text-base font-bold text-white uppercase tracking-widest">{editingService ? 'Edit Service' : 'New Service'}</h3>
-                  <Button variant="ghost" size="icon" onClick={resetForm} className="rounded-full hover:bg-white/[0.05] text-slate-400">
-                    <X className="size-4" />
-                  </Button>
+            <div className="border border-[#E8E2D9] shadow-xl bg-[#FBF8F4] rounded-3xl p-6 sm:p-8">
+              
+              {/* Modal/Form Header */}
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#E8E2D9]">
+                <div className="flex items-center gap-2">
+                  <span className="size-8 rounded-full bg-[#F3EADF] flex items-center justify-center text-[#9E5338]">
+                    <Sparkles className="size-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-xl font-serif text-[#221F1C]">
+                      {editingService ? 'Edit Service Listing' : 'Create New Service Listing'}
+                    </h3>
+                    <p className="text-xs text-[#6B6560] font-normal">
+                      Provide clear details to attract clients across the Ayoj marketplace
+                    </p>
+                  </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase tracking-widest text-slate-400">Service Name</Label>
-                      <Input
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                        className="h-11 rounded-xl bg-background/50 border-white/[0.05] focus-visible:ring-primary/50 text-white"
-                        placeholder="e.g. Wedding Photography Pack"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase tracking-widest text-slate-400">Category</Label>
-                      <select
-                        name="service_category_id"
-                        value={formData.service_category_id}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full h-11 rounded-xl border border-white/[0.05] bg-background/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      >
-                        <option value="" className="bg-[#16191e]">Select category</option>
-                        {categories.map(cat => <option key={cat.id} value={cat.id} className="bg-[#16191e]">{cat.name}</option>)}
-                      </select>
-                    </div>
-                  </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={resetForm} 
+                  className="rounded-full hover:bg-[#F3EADF] text-[#6B6560] cursor-pointer"
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label className="font-bold text-xs uppercase tracking-widest text-slate-400">Description</Label>
-                    <Textarea
-                      name="description"
-                      value={formData.description}
+              {error && (
+                <div className="mb-6 p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl flex items-center gap-2 font-medium">
+                  <X className="size-4 shrink-0 text-red-500" /> {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                
+                {/* Name & Category Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs uppercase tracking-wider text-[#221F1C]">
+                      Service Name <span className="text-[#9E5338]">*</span>
+                    </Label>
+                    <Input
+                      name="name"
+                      value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="rounded-xl min-h-[120px] bg-background/50 border-white/[0.05] focus-visible:ring-primary/50 text-white"
-                      placeholder="Detail what's included in this service..."
+                      className="h-11 rounded-2xl bg-white border-[#E8E2D9] text-[#221F1C] text-xs placeholder:text-[#6B6560]/50 focus-visible:ring-[#9E5338]"
+                      placeholder="e.g. Candid Wedding Photography (Full Day)"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase tracking-widest text-slate-400">Pricing Type</Label>
-                      <select
-                        name="pricing_type"
-                        value={formData.pricing_type}
-                        onChange={handleInputChange}
-                        className="w-full h-11 rounded-xl border border-white/[0.05] bg-background/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      >
-                        <option value="hourly" className="bg-[#16191e]">Hourly</option>
-                        <option value="package" className="bg-[#16191e]">Package</option>
-                        <option value="custom" className="bg-[#16191e]">Custom</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase tracking-widest text-slate-400">Base Price (₹)</Label>
-                      <Input
-                        type="number"
-                        name="base_price"
-                        value={formData.base_price}
-                        onChange={handleInputChange}
-                        className="h-11 rounded-xl bg-background/50 border-white/[0.05] focus-visible:ring-primary/50 text-white"
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="font-bold text-xs uppercase tracking-widest text-slate-400">Status</Label>
-                      <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleInputChange}
-                        className="w-full h-11 rounded-xl border border-white/[0.05] bg-background/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      >
-                        <option value="draft" className="bg-[#16191e]">Draft</option>
-                        <option value="active" className="bg-[#16191e]">Active</option>
-                        <option value="inactive" className="bg-[#16191e]">Inactive</option>
-                      </select>
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs uppercase tracking-wider text-[#221F1C]">
+                      Category <span className="text-[#9E5338]">*</span>
+                    </Label>
+                    <select
+                      name="service_category_id"
+                      value={formData.service_category_id}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full h-11 rounded-2xl border border-[#E8E2D9] bg-white px-3.5 text-xs text-[#221F1C] focus:outline-none focus:ring-1 focus:ring-[#9E5338] cursor-pointer"
+                    >
+                      <option value="">Select a service category</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <Label className="font-bold text-xs uppercase tracking-wider text-[#221F1C]">
+                      Description <span className="text-[#9E5338]">*</span>
+                    </Label>
+                    <span className={`text-[11px] font-medium ${formData.description.length > 0 && formData.description.length < 50 ? 'text-[#9E5338]' : 'text-[#6B6560]'}`}>
+                      {formData.description.length < 50 ? `${50 - formData.description.length} more chars needed` : 'Minimum requirement met'}
+                    </span>
+                  </div>
+                  <Textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
+                    minLength={50}
+                    maxLength={2000}
+                    className="rounded-2xl min-h-[110px] bg-white border-[#E8E2D9] text-[#221F1C] text-xs placeholder:text-[#6B6560]/50 focus-visible:ring-[#9E5338] p-3.5 resize-none"
+                    placeholder="Detail what is included in this package (minimum 50 characters, e.g. deliverables, equipment, team size, duration)..."
+                  />
+                  <div className="flex justify-end px-1">
+                    <span className="text-[11px] text-[#6B6560] font-medium">{formData.description.length}/2000 characters</span>
+                  </div>
+                </div>
+
+                {/* Pricing Type, Base Price, & Status Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs uppercase tracking-wider text-[#221F1C]">Pricing Model</Label>
+                    <select
+                      name="pricing_type"
+                      value={formData.pricing_type}
+                      onChange={handleInputChange}
+                      className="w-full h-11 rounded-2xl border border-[#E8E2D9] bg-white px-3.5 text-xs text-[#221F1C] focus:outline-none focus:ring-1 focus:ring-[#9E5338] cursor-pointer"
+                    >
+                      <option value="hourly">Hourly Rate</option>
+                      <option value="package">Package Deal</option>
+                      <option value="custom">Custom Quote</option>
+                    </select>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.03]">
-                    <Button type="button" variant="outline" onClick={resetForm} className="rounded-lg font-bold px-8 border-white/[0.05] text-slate-300 hover:bg-white/[0.02]">
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={loading} className="rounded-lg font-bold px-8">
-                      {loading ? 'Saving...' : 'Save Service'}
-                    </Button>
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs uppercase tracking-wider text-[#221F1C]">
+                      Base Price (₹) {formData.pricing_type !== 'custom' && <span className="text-[#9E5338]">*</span>}
+                    </Label>
+                    <Input
+                      type="number"
+                      name="base_price"
+                      value={formData.base_price}
+                      onChange={handleInputChange}
+                      required={formData.pricing_type !== 'custom'}
+                      min={1}
+                      className="h-11 rounded-2xl bg-white border-[#E8E2D9] text-[#221F1C] text-xs placeholder:text-[#6B6560]/50 focus-visible:ring-[#9E5338]"
+                      placeholder={formData.pricing_type === 'custom' ? 'Optional for custom quotes' : 'e.g. 50000'}
+                    />
                   </div>
-                </form>
+
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs uppercase tracking-wider text-[#221F1C]">Visibility Status</Label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full h-11 rounded-2xl border border-[#E8E2D9] bg-white px-3.5 text-xs text-[#221F1C] focus:outline-none focus:ring-1 focus:ring-[#9E5338] cursor-pointer"
+                    >
+                      <option value="draft">Draft (Hidden)</option>
+                      <option value="active">Active (Visible)</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#E8E2D9]">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={resetForm} 
+                    className="rounded-full border border-[#E8E2D9] bg-white text-[#221F1C] hover:bg-[#F3EADF] text-xs font-semibold px-6 h-11 cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold px-7 h-11 cursor-pointer shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" /> Saving...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="size-4" /> Save Service
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+              </form>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Services Grid List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {services.length > 0 ? (
           services.map((service, index) => (
             <motion.div
               key={service.id}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="p-5 rounded-xl border border-white/[0.03] bg-[#16191e] hover:border-primary/20 transition-all group flex flex-col cursor-pointer"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: index * 0.05 }}
+              className="p-6 rounded-2xl border border-[#E8E2D9] bg-white hover:border-[#9E5338]/40 hover:shadow-md transition-all group flex flex-col justify-between"
             >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="size-10 rounded-xl bg-white/[0.02] border border-white/[0.03] flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    <Briefcase className="size-5 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.5} />
+              <div>
+                <div className="flex justify-between items-start mb-3">
+                  <div className="size-10 rounded-xl bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-[#9E5338]">
+                    <Briefcase className="size-5" />
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleEdit(service)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors">
+
+                  <div className="flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleEdit(service)} 
+                      className="p-2 rounded-full text-[#6B6560] hover:text-[#9E5338] hover:bg-[#F3EADF] transition-colors cursor-pointer"
+                      title="Edit Service"
+                    >
                       <Edit2 className="size-3.5" />
                     </button>
-                    <button onClick={() => handleDelete(service.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                    <button 
+                      onClick={() => handleDelete(service.id)} 
+                      className="p-2 rounded-full text-[#6B6560] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Delete Service"
+                    >
                       <Trash2 className="size-3.5" />
                     </button>
                   </div>
                 </div>
+
+                <h4 className="text-base font-bold text-[#221F1C] mb-1.5 tracking-tight group-hover:text-[#9E5338] transition-colors">
+                  {service.name}
+                </h4>
                 
-                <h4 className="text-base font-bold text-white mb-1 tracking-tight group-hover:text-primary transition-colors">{service.name}</h4>
-                <p className="text-xs text-slate-400 font-light mb-5 line-clamp-2 leading-relaxed flex-1">{service.description}</p>
-                
-                <div className="flex items-center justify-between pt-4 border-t border-white/[0.03] mt-auto">
-                  <div className="text-sm font-bold text-white">{service.formatted_price}</div>
-                  <Badge variant={service.status === 'active' ? 'default' : 'outline'} className={`text-[9px] uppercase tracking-widest px-2 py-0.5 rounded border-none ${service.status === 'active' ? 'bg-primary/20 text-primary' : 'bg-white/[0.05] text-slate-400'}`}>
-                    {service.status}
-                  </Badge>
+                <p className="text-xs text-[#6B6560] font-normal mb-5 line-clamp-2 leading-relaxed">
+                  {service.description}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-[#E8E2D9]">
+                <div className="text-sm font-bold text-[#9E5338] flex items-center gap-1">
+                  <span>{service.formatted_price}</span>
                 </div>
+
+                <Badge 
+                  className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border-none ${
+                    service.status === 'active' 
+                      ? 'bg-[#F3EADF] text-[#9E5338]' 
+                      : 'bg-[#E8E2D9]/50 text-[#6B6560]'
+                  }`}
+                >
+                  {service.status}
+                </Badge>
+              </div>
             </motion.div>
           ))
         ) : (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-white/[0.03] rounded-2xl">
-            <p className="text-slate-500 text-sm">No services found. Start by adding one.</p>
+          <div className="col-span-full py-16 text-center border-2 border-dashed border-[#E8E2D9] bg-white rounded-3xl p-8">
+            <div className="size-12 rounded-full bg-[#F3EADF] text-[#9E5338] flex items-center justify-center mx-auto mb-3">
+              <Briefcase className="size-6" />
+            </div>
+            <h3 className="text-base font-serif text-[#221F1C] mb-1">No services listed yet</h3>
+            <p className="text-xs text-[#6B6560] mb-4">Add your first service package to start receiving customer inquiries and bookings.</p>
+            <Button 
+              onClick={() => { resetForm(); setShowForm(true); }}
+              className="rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold px-6 h-10 cursor-pointer"
+            >
+              <Plus className="mr-1.5 size-4" /> Add Service Now
+            </Button>
           </div>
         )}
       </div>
@@ -311,3 +464,4 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
 };
 
 export default ServiceManagement;
+

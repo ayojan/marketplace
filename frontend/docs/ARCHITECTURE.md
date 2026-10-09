@@ -167,4 +167,4 @@ This is the foundation setup. Future tasks will implement:
 | `REACT_APP_NAME` | Application name | `Marketplace` |
 | `REACT_APP_VERSION` | Application version | `1.0.0` |
 
-> When the frontend and backend share a hostname (for example via the local nginx proxy), you may point this variable at `/api` and let the proxy strip the prefix. For standalone deployments, configure it with the backend origin (`https://api.jashnify.in` on production).
+> When the frontend and backend share a hostname (for example via the local nginx proxy), you may point this variable at `/api` and let the proxy strip the prefix. For standalone deployments, configure it with the backend origin (`https://api.ayoj.in` on production).

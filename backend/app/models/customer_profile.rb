@@ -71,15 +71,15 @@ class CustomerProfile < ApplicationRecord
   def budget_range_display
     case budget_range
     when 'under_500'
-      'Under $500'
+      'Under ₹50,000'
     when 'between_500_1000'
-      '$500 - $1,000'
+      '₹50,000 - ₹1,00,000'
     when 'between_1000_2500'
-      '$1,000 - $2,500'
+      '₹1,00,000 - ₹2,50,000'
     when 'between_2500_5000'
-      '$2,500 - $5,000'
+      '₹2,50,000 - ₹5,00,000'
     when 'over_5000'
-      'Over $5,000'
+      'Over ₹5,00,000'
     when 'custom'
       'Custom Budget'
     else

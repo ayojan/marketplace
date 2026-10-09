@@ -90,7 +90,8 @@ class ReviewsController < ApiController
     if @review.update(vendor_response: response_text, vendor_responded_at: Time.current)
       render json: { message: 'Response saved', review: review_json(@review) }
     else
-      render json: { error: 'Failed to save response', details: @review.errors.full_messages }, status: :unprocessable_content
+      render json: { error: 'Failed to save response', details: @review.errors.full_messages },
+             status: :unprocessable_content
     end
   end
 
@@ -115,13 +116,13 @@ class ReviewsController < ApiController
   end
 
   def review_params
-    params.require(:review).permit(:booking_id, :rating, :quality_rating, :communication_rating, :value_rating,
-                                   :punctuality_rating, :comment)
+    params.expect(review: %i[booking_id rating quality_rating communication_rating value_rating
+                             punctuality_rating comment])
   end
 
   def review_update_params
-    params.require(:review).permit(:rating, :quality_rating, :communication_rating, :value_rating, :punctuality_rating,
-                                   :comment)
+    params.expect(review: %i[rating quality_rating communication_rating value_rating punctuality_rating
+                             comment])
   end
 
   def review_json(review)

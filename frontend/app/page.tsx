@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { apiService } from '@/lib/api';
 import { 
@@ -16,29 +16,54 @@ import {
   Grid,
   Flower2,
   Brush,
-  Building2
+  Building2,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import Link from 'next/link';
-import Header from '@/components/Header';
+import Header, { CITIES } from '@/components/Header';
 import PhotographerCard from '@/components/PhotographerCard';
 import AyojLogo from '@/components/AyojLogo';
 
 export default function Landing() {
   const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCity, setSelectedCity] = useState('Delhi NCR');
+  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) {
+        setIsCityDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const query = searchQuery.trim();
+    const params = new URLSearchParams();
+    if (query) params.set('search', query);
+    if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
+    const qs = params.toString();
+    router.push(qs ? `/marketplace?${qs}` : '/marketplace');
+  };
 
   // Categories with circular icon representation matching screenshot
   const categoryIcons = [
-    { name: 'Photographers', icon: Camera },
-    { name: 'Makeup Artists', icon: Brush },
-    { name: 'Decorators', icon: Flower2 },
-    { name: 'Event Planners', icon: Sparkles },
-    { name: 'Caterers', icon: Utensils },
-    { name: 'DJs & Entertainment', icon: Music },
-    { name: 'Venues', icon: Building2 },
-    { name: 'More', icon: Grid },
+    { name: 'Photographers', icon: Camera, slug: 'photographer' },
+    { name: 'Makeup Artists', icon: Brush, slug: 'makeup-artist' },
+    { name: 'Decorators', icon: Flower2, slug: 'decorator' },
+    { name: 'Event Planners', icon: Sparkles, slug: 'event-planner' },
+    { name: 'Caterers', icon: Utensils, slug: 'caterer' },
+    { name: 'DJs & Entertainment', icon: Music, slug: 'dj' },
+    { name: 'Venues', icon: Building2, slug: 'venue' },
+    { name: 'More', icon: Grid, slug: 'all' },
   ];
 
   // Popular occasions
@@ -169,9 +194,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 w-full">
           <div className="max-w-2xl space-y-6">
             
-            {/* Tag Line */}
-            <div className="text-xs font-semibold tracking-widest text-[#9E5338] uppercase">
-              EVERY OCCASION TOGETHER
+            {/* Official Brand Tagline */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-semibold tracking-widest text-[#9E5338] uppercase">
+              <Sparkles className="size-3.5 text-[#9E5338]" />
+              <span>Discover · Trust · Celebrate</span>
             </div>
 
             {/* Main Headline */}
@@ -187,14 +213,49 @@ export default function Landing() {
             </p>
 
             {/* Main Search Pill Capsule */}
-            <div className="pt-2">
+            <form onSubmit={handleSearchSubmit} className="pt-2">
               <div className="bg-white border border-[#E8E2D9] rounded-full p-2 shadow-lg shadow-black/5 flex flex-col sm:flex-row items-center gap-2 max-w-xl">
                 
                 {/* Location Selector Inside Search */}
-                <div className="flex items-center gap-1.5 px-4 py-2 text-xs font-normal text-[#221F1C] border-b sm:border-b-0 sm:border-r border-[#E8E2D9] w-full sm:w-auto shrink-0 cursor-pointer">
-                  <MapPin className="size-3.5 text-[#221F1C]" />
-                  <span>Delhi NCR</span>
-                  <ChevronDown className="size-3 text-[#6B6560] ml-1" />
+                <div className="relative w-full sm:w-auto" ref={cityDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-normal text-[#221F1C] border-b sm:border-b-0 sm:border-r border-[#E8E2D9] w-full sm:w-auto shrink-0 cursor-pointer hover:text-[#9E5338] transition-colors"
+                  >
+                    <MapPin className="size-3.5 text-[#9E5338]" />
+                    <span>{selectedCity}</span>
+                    <ChevronDown className="size-3 text-[#6B6560] ml-1" />
+                  </button>
+
+                  {isCityDropdownOpen && (
+                    <div className="absolute left-0 mt-2 w-44 rounded-2xl bg-white border border-[#E8E2D9] shadow-xl py-1.5 z-50">
+                      <div className="px-3 py-1 text-[10px] font-bold text-[#6B6560] uppercase tracking-wider">
+                        Select City
+                      </div>
+                      {['All Cities', ...CITIES].map((city) => {
+                        const isSelected = selectedCity === city;
+                        return (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCity(city);
+                              setIsCityDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-xs text-left cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'bg-[#F3EADF] text-[#9E5338] font-semibold'
+                                : 'text-[#221F1C] hover:bg-[#FAF7F2]'
+                            }`}
+                          >
+                            <span>{city}</span>
+                            {isSelected && <Check className="size-3 text-[#9E5338]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Input Search */}
@@ -202,22 +263,23 @@ export default function Landing() {
                   <Search className="size-4 text-[#6B6560] shrink-0" />
                   <input
                     type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="What do you need? (e.g. Photographer, Makeup...)"
-                    onClick={() => router.push('/marketplace')}
                     className="w-full bg-transparent text-xs text-[#221F1C] placeholder:text-[#6B6560] focus:outline-none"
                   />
                 </div>
 
                 {/* Solid Terracotta Search Pill Button */}
                 <Button 
-                  onClick={() => router.push('/marketplace')}
-                  className="w-full sm:w-auto bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-7 h-10 transition-colors shrink-0"
+                  type="submit"
+                  className="w-full sm:w-auto bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-7 h-10 transition-colors shrink-0 cursor-pointer"
                 >
                   Search
                 </Button>
 
               </div>
-            </div>
+            </form>
 
             {/* Floating Social Proof Pill Badge */}
             <div className="pt-4 flex items-center">
@@ -258,7 +320,7 @@ export default function Landing() {
               return (
                 <button
                   key={cat.name}
-                  onClick={() => router.push(`/marketplace?category=${encodeURIComponent(cat.name)}`)}
+                  onClick={() => router.push(`/marketplace?category=${encodeURIComponent(cat.slug || cat.name)}`)}
                   className="flex flex-col items-center gap-2 group cursor-pointer"
                 >
                   <div className="size-14 rounded-full bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-[#221F1C] group-hover:bg-[#9E5338] group-hover:text-white group-hover:border-[#9E5338] transition-all duration-200 shadow-sm">
@@ -275,7 +337,7 @@ export default function Landing() {
       </section>
 
       {/* Popular Occasions Section */}
-      <section className="py-14 px-4 sm:px-6 bg-[#FBF8F4]">
+      <section id="occasions" className="py-14 px-4 sm:px-6 bg-[#FBF8F4]">
         <div className="max-w-7xl mx-auto space-y-6">
           
           <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-4">
@@ -291,7 +353,7 @@ export default function Landing() {
             {occasions.map((occ) => (
               <div
                 key={occ.name}
-                onClick={() => router.push(`/marketplace?q=${encodeURIComponent(occ.name)}`)}
+                onClick={() => router.push(`/marketplace?occasion=${encodeURIComponent(occ.name.toLowerCase().replace(/\s+/g, '-'))}`)}
                 className="relative aspect-[3/2] sm:aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer border border-[#E8E2D9]"
               >
                 <ImageWithFallback
@@ -352,8 +414,9 @@ export default function Landing() {
             </div>
 
             <div className="flex items-center gap-6 text-xs text-[#6B6560]">
-              <Link href="/marketplace" className="hover:text-[#9E5338] transition-colors">Explore</Link>
-              <Link href="/vendors" className="hover:text-[#9E5338] transition-colors">Vendors</Link>
+              <Link href="/marketplace" className="hover:text-[#9E5338] transition-colors">Marketplace</Link>
+              <Link href="/#occasions" className="hover:text-[#9E5338] transition-colors">Occasions</Link>
+              <Link href="/register?role=vendor" className="hover:text-[#9E5338] transition-colors">For Vendors</Link>
               <Link href="/login" className="hover:text-[#9E5338] transition-colors">Log in</Link>
               <Link href="/register" className="hover:text-[#9E5338] transition-colors">Sign up</Link>
             </div>

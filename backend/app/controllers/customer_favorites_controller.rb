@@ -18,7 +18,7 @@ class CustomerFavoritesController < ApiController
   # POST /customer_favorites
   def create
     vendor_profile_id = params[:vendor_profile_id]
-    
+
     unless VendorProfile.exists?(vendor_profile_id)
       return render json: { error: 'Vendor profile not found' }, status: :not_found
     end
@@ -48,7 +48,7 @@ class CustomerFavoritesController < ApiController
   # DELETE /customer_favorites/by_vendor/:vendor_profile_id
   def destroy_by_vendor
     favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: params[:vendor_profile_id])
-    
+
     if favorite
       favorite.destroy
       render json: { message: 'Vendor removed from favorites' }
@@ -60,7 +60,7 @@ class CustomerFavoritesController < ApiController
   # GET /customer_favorites/check/:vendor_profile_id
   def check
     favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: params[:vendor_profile_id])
-    
+
     render json: {
       is_favorite: favorite.present?,
       favorite_id: favorite&.id
@@ -88,7 +88,7 @@ class CustomerFavoritesController < ApiController
         total_reviews: vendor.total_reviews,
         favorites_count: vendor.favorites_count,
         description: vendor.description,
-        service_categories: vendor.service_categories,
+        service_categories: vendor.respond_to?(:service_categories_list) ? vendor.service_categories_list : [],
         is_verified: vendor.verification_status == 'verified'
       }
     }

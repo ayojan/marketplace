@@ -2,8 +2,8 @@ import ProtectedRoute from '../../../components/ProtectedRoute';
 import BookingFlow from '../../../components/pages/BookingFlow';
 
 export const metadata = {
-  title: 'Book Service - Marketplace',
-  description: 'Book your selected service',
+  title: 'Book Service | Ayoj',
+  description: 'Complete your secure booking with verified event professionals on Ayoj',
 };
 
 export default function BookingPage({ params }) {

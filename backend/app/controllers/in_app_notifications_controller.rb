@@ -7,8 +7,8 @@ class InAppNotificationsController < ApiController
   # GET /in_app_notifications
   def index
     notifications = InAppNotification.for_user(current_user.id)
-                                      .recent_first
-                                      .limit(20)
+                                     .recent_first
+                                     .limit(20)
 
     unread_count = InAppNotification.for_user(current_user.id).unread.count
 

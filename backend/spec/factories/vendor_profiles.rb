@@ -10,7 +10,6 @@ FactoryBot.define do
     location { "#{Faker::Address.city}, #{Faker::Address.state}" }
     phone { '+1-555-123-4567' }
     website { Faker::Internet.url }
-    service_categories { %w[Photography Videography].sample(2).join(', ') }
     business_license { Faker::Alphanumeric.alphanumeric(number: 10).upcase }
     years_experience { rand(0..20) }
     verification_status { :unverified }
@@ -34,7 +33,6 @@ FactoryBot.define do
       description { Faker::Lorem.paragraph(sentence_count: 8) }
       phone { '+1-555-123-4567' }
       website { 'https://example.com' }
-      service_categories { 'Photography, Event Planning, Videography' }
     end
   end
 end
