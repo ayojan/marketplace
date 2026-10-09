@@ -34,18 +34,32 @@ api.interceptors.response.use(
       if (error.response?.status === 401 && !isAuthRequest) {
         tokenService.clearAuthData();
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          const pathname = window.location.pathname;
+          const isProtectedRoute = 
+            pathname.startsWith('/customer') ||
+            pathname.startsWith('/vendor') ||
+            pathname.startsWith('/booking') ||
+            pathname.startsWith('/dashboard');
+
+          if (isProtectedRoute) {
+            window.location.href = '/login';
+          }
         }
       }
       
       // Enhance error object with better message extraction from backend
       if (error.response?.data) {
         const data = error.response.data;
-        // The backend uses multiple formats: { error: "msg" }, { message: "msg" }, or { errors: { message: "msg" } }
-        const backendMessage = 
-          data.error || 
-          data.message || 
-          (data.errors && (typeof data.errors === 'string' ? data.errors : data.errors.message || (Array.isArray(data.errors) && data.errors[0]?.message)));
+        let detailsMsg = '';
+        if (data.details) {
+          detailsMsg = Array.isArray(data.details) ? data.details.join(', ') : String(data.details);
+        }
+        
+        const backendMessage = detailsMsg 
+          ? (data.error ? `${data.error}: ${detailsMsg}` : detailsMsg)
+          : (data.error || 
+             data.message || 
+             (data.errors && (typeof data.errors === 'string' ? data.errors : data.errors.message || (Array.isArray(data.errors) && data.errors[0]?.message))));
         
         if (backendMessage) {
           error.extractedMessage = backendMessage;

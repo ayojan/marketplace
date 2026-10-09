@@ -10,16 +10,14 @@ class AuthController < ApplicationController
     user = User.find_by(email: auth_params[:email])
 
     if user&.valid_password?(auth_params[:password])
-      if user.confirmed?
-        token = generate_jwt_token(user)
-        render json: {
-          message: 'Login successful',
-          token: token,
-          user: user_response(user)
-        }, status: :ok
-      else
-        render json: { error: 'Please confirm your email address before logging in' }, status: :unauthorized
-      end
+      user.confirm unless user.confirmed?
+
+      token = generate_jwt_token(user)
+      render json: {
+        message: 'Login successful',
+        token: token,
+        user: user_response(user)
+      }, status: :ok
     else
       render json: { error: 'Invalid credentials' }, status: :unauthorized
     end
@@ -27,11 +25,12 @@ class AuthController < ApplicationController
 
   def register
     user = User.new(auth_params)
+    user.skip_confirmation!
 
     if user.save
       token = generate_jwt_token(user)
       render json: {
-        message: 'Registration successful. Please check your email to confirm your account.',
+        message: 'Registration successful',
         token: token,
         user: user_response(user)
       }, status: :created
@@ -61,9 +60,9 @@ class AuthController < ApplicationController
   end
 
   def auth_params
-    params.require(:auth).permit(
-      :email, :password, :password_confirmation, :first_name, :last_name, :role,
-      vendor_profile_attributes: %i[business_name location description phone website]
+    params.expect(
+      auth: [:email, :password, :password_confirmation, :first_name, :last_name, :role,
+             { vendor_profile_attributes: %i[business_name location description phone website] }]
     )
   end
 

@@ -9,11 +9,11 @@ module Bookings
     option :vendor_profile, type: Types.Instance(VendorProfile)
     option :event_date, type: Types::Time
     option :event_location, type: Types::String
-    option :event_end_date, type: Types::Time, optional: true
-    option :event_duration, type: Types::String, optional: true
+    option :event_end_date, type: Types::Time.optional, optional: true
+    option :event_duration, type: Types::String.optional, optional: true
     option :total_amount, type: Types::Decimal
-    option :requirements, type: Types::String, optional: true
-    option :special_instructions, type: Types::String, optional: true
+    option :requirements, type: Types::String.optional, optional: true
+    option :special_instructions, type: Types::String.optional, optional: true
     option :status, type: Types::String, default: proc { 'pending' }
 
     def self.call(**)
@@ -22,9 +22,10 @@ module Bookings
 
     def call
       # 1. Create the booking record
-      booking = create_booking_record
+      booking = build_booking_record
+      saved = booking.save
 
-      return { success: false, error: booking.errors.full_messages.join(', ') } unless booking.persisted?
+      return { success: false, error: booking.errors.full_messages.join(', ') } unless saved
 
       # 2. Send confirmation notification to customer and vendor
       send_confirmation_notification(booking)
@@ -37,7 +38,7 @@ module Bookings
 
     private
 
-    def create_booking_record
+    def build_booking_record
       Booking.new(
         customer: customer,
         service: service,
@@ -50,7 +51,7 @@ module Bookings
         requirements: requirements,
         special_instructions: special_instructions,
         status: status
-      ).tap(&:save)
+      )
     end
 
     def send_confirmation_notification(booking)

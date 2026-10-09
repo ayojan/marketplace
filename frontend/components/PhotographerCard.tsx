@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Star, MapPin, Heart } from 'lucide-react';
+import { Star, MapPin, Heart, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { apiService } from '@/lib/api';
+import { tokenService } from '@/lib/tokenService';
 import { toast } from 'sonner';
 
 interface PhotographerCardProps {
@@ -13,6 +15,7 @@ interface PhotographerCardProps {
 }
 
 export default function PhotographerCard({ photographer, onFavoriteToggle }: PhotographerCardProps) {
+  const router = useRouter();
   const [isLiked, setIsLiked] = useState(photographer.is_favorite || false);
   const [isLiking, setIsLiking] = useState(false);
   const id = photographer.id;
@@ -25,7 +28,8 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
 
   useEffect(() => {
     let isMounted = true;
-    if (id && photographer.is_favorite === undefined) {
+    const isAuthed = tokenService.hasToken() && !tokenService.isTokenExpired();
+    if (id && isAuthed && photographer.is_favorite === undefined) {
       apiService.favorites.check(id)
         .then(res => {
           if (isMounted && res.data?.is_favorite) {
@@ -42,6 +46,17 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
     e.stopPropagation();
     if (isLiking) return;
 
+    const isAuthed = tokenService.hasToken() && !tokenService.isTokenExpired();
+    if (!isAuthed) {
+      toast.error('Please sign in to save favorite vendors', {
+        action: {
+          label: 'Sign In',
+          onClick: () => router.push('/login'),
+        },
+      });
+      return;
+    }
+
     setIsLiking(true);
     const nextState = !isLiked;
     setIsLiked(nextState); // Optimistic UI update
@@ -49,15 +64,32 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
     try {
       if (nextState) {
         await apiService.favorites.add(id);
-        toast.success(`Saved ${name} to favorites`);
+        window.dispatchEvent(new Event('favorites-updated'));
+        toast.success(`Saved ${name} to favorites`, {
+          action: {
+            label: 'View Favorites',
+            onClick: () => router.push('/customer/dashboard?tab=saved'),
+          },
+        });
       } else {
         await apiService.favorites.removeByVendor(id);
+        window.dispatchEvent(new Event('favorites-updated'));
         toast.success(`Removed ${name} from favorites`);
       }
       onFavoriteToggle?.(id, nextState);
     } catch (err: any) {
       setIsLiked(!nextState); // Revert optimistic update
-      toast.error(err.extractedMessage || 'Please sign in to save favorite vendors');
+      const isAuthError = err.response?.status === 401;
+      if (isAuthError) {
+        toast.error('Please sign in to save favorite vendors', {
+          action: {
+            label: 'Sign In',
+            onClick: () => router.push('/login'),
+          },
+        });
+      } else {
+        toast.error(err.extractedMessage || 'Unable to update favorites. Please try again.');
+      }
     } finally {
       setIsLiking(false);
     }
@@ -66,7 +98,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   return (
     <div className="bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
       
-      {/* Photo header with heart wishlist button */}
+      {/* Photo header with heart wishlist button and Verified badge */}
       <div className="relative aspect-[16/10] overflow-hidden bg-[#F3EADF]">
         <Image
           src={image}
@@ -75,6 +107,12 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           unoptimized
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
+
+        {/* Verified Partner Badge */}
+        <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-white/60 text-[11px] font-semibold text-[#8E4532] shadow-xs">
+          <ShieldCheck className="size-3.5 text-[#9E5338]" />
+          <span>Verified Partner</span>
+        </div>
 
         {/* Favorite Heart Button */}
         <button 
@@ -88,18 +126,25 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
       </div>
 
       {/* Card Content Body */}
-      <div className="p-4 space-y-3 bg-white">
+      <div className="p-4 space-y-2.5 bg-white">
         
         {/* Vendor Title */}
         <h3 className="text-base font-serif font-bold text-[#221F1C] truncate tracking-tight group-hover:text-[#9E5338] transition-colors">
           {name}
         </h3>
 
-        {/* Rating Line */}
-        <div className="flex items-center gap-1.5 text-xs text-[#221F1C]">
-          <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
-          <span className="font-semibold">{Number(rating).toFixed(1)}</span>
-          <span className="text-[#6B6560]">({totalReviews} reviews)</span>
+        {/* Rating Line & Response Metric */}
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 text-[#221F1C]">
+            <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
+            <span className="font-semibold">{Number(rating).toFixed(1)}</span>
+            <span className="text-[#6B6560]">({totalReviews})</span>
+          </div>
+
+          <span className="inline-flex items-center gap-1 text-[11px] text-[#6B6560] bg-[#FAF7F2] px-2 py-0.5 rounded-md border border-[#E5DED6]">
+            <Clock className="size-3 text-[#9E5338]" />
+            <span>~2h response</span>
+          </span>
         </div>
 
         {/* Location Line */}
@@ -108,11 +153,18 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           <span className="truncate">{location}</span>
         </div>
 
-        {/* Price & View Profile CTA */}
-        <div className="pt-2 border-t border-[#E8E2D9] flex items-center justify-between">
+        {/* Transparent Pricing & View Profile CTA */}
+        <div className="pt-2.5 border-t border-[#E8E2D9] flex items-center justify-between">
           <div>
-            <span className="text-[11px] text-[#6B6560] font-normal">From </span>
-            <span className="text-sm font-bold text-[#221F1C]">{priceRange}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-[#6B6560]">Starting From</span>
+              <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                Transparent
+              </span>
+            </div>
+            <div className="text-sm font-bold text-[#221F1C]">
+              {priceRange} <span className="text-[11px] text-[#6B6560] font-normal">/ event</span>
+            </div>
           </div>
 
           <Link href={`/vendors/${id}`}>

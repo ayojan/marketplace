@@ -23,18 +23,19 @@ RSpec.describe 'Authentication API' do
       expect(json_response['user']['email']).to eq(user.email)
     end
 
-    it 'rejects unconfirmed user login' do
+    it 'auto-confirms unconfirmed user on login' do
       post '/auth/login', params: {
         auth: {
           email: unconfirmed_user.email,
-          password: unconfirmed_user.password
+          password: 'password123'
         }
       }, as: :json
 
-      expect(response).to have_http_status(:unauthorized)
+      expect(response).to have_http_status(:ok)
 
       json_response = JSON.parse(response.body)
-      expect(json_response['error']).to eq('Please confirm your email address before logging in')
+      expect(json_response['message']).to eq('Login successful')
+      expect(json_response['token']).to be_present
     end
 
     it 'rejects invalid credentials' do
@@ -70,11 +71,9 @@ RSpec.describe 'Authentication API' do
       expect(response).to have_http_status(:created)
 
       json_response = JSON.parse(response.body)
-      expect(json_response['message']).to eq(
-        'Registration successful. Please check your email to confirm your account.'
-      )
+      expect(json_response['message']).to eq('Registration successful')
       expect(json_response['user']['email']).to eq('newuser@example.com')
-      expect(json_response['user']['confirmed']).to be false
+      expect(json_response['user']['confirmed']).to be true
     end
 
     it 'rejects registration with invalid data' do

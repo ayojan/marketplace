@@ -138,8 +138,8 @@ vendors_info.each do |v_data|
   end
   service.categories << v_data[:category] unless service.categories.include?(v_data[:category])
 
-  # Create Availability Slots
-  (0..14).each do |day_offset|
+  # Create Availability Slots (up to 90 days ahead)
+  (0..90).each do |day_offset|
     AvailabilitySlot.find_or_create_by!(
       vendor_profile: profile,
       date: Date.current + day_offset.days

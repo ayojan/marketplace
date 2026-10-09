@@ -11,6 +11,8 @@ backend/.bundle
 /.env*
 !/.env*.erb
 .idea
+.agents
+.claude
 
 # Ignore all logfiles and tempfiles.
 backend/log/*

@@ -140,7 +140,7 @@ export const AuthProvider = ({ children }) => {
         payload: { user, token },
       });
 
-      return { success: true };
+      return { success: true, user };
     } catch (error) {
       console.error('Login error details:', {
         status: error.response?.status,

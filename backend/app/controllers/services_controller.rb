@@ -58,16 +58,26 @@ class ServicesController < ApiController
   end
 
   def create
+    unless current_user.vendor_profile
+      current_user.create_vendor_profile!(
+        business_name: "#{current_user.first_name.presence || 'Vendor'}'s Services",
+        location: 'Mumbai, India'
+      )
+    end
+
     @service = Service.new(service_params)
+    @service.vendor_profile = current_user.vendor_profile
 
     if @service.save
-      VendorService.create!(vendor_profile: current_user.vendor_profile, service: @service)
-      @service.reload
-      # Associate with category if provided
-      if params.dig(:service, :category_id)
-        category = Category.find_by(id: params[:service][:category_id])
-        @service.categories << category if category
+      VendorService.find_or_create_by!(vendor_profile: current_user.vendor_profile, service: @service)
+      
+      cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
+      if cat_id.present?
+        category = Category.find_by(id: cat_id)
+        @service.categories << category if category && !@service.categories.include?(category)
       end
+
+      @service.reload
       render json: {
         message: 'Service created successfully',
         service: service_response(@service, include_details: true)
@@ -82,6 +92,16 @@ class ServicesController < ApiController
 
   def update
     if @service.update(service_params)
+      cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
+      if cat_id.present?
+        category = Category.find_by(id: cat_id)
+        if category && !@service.categories.include?(category)
+          @service.categories.clear
+          @service.categories << category
+        end
+      end
+
+      @service.reload
       render json: {
         message: 'Service updated successfully',
         service: service_response(@service, include_details: true)

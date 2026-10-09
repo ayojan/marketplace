@@ -1,32 +1,58 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Camera, Star, ShieldCheck } from 'lucide-react';
+import { Star, ShieldCheck, Briefcase } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import AyojLogo from '@/components/AyojLogo';
 
-export default function AuthLeftPanel() {
-  const testimonial = {
-    name: 'Priya & Rahul Sharma',
-    role: 'Wedding Hosts — Delhi NCR',
-    quote: 'Ayoj made finding our wedding photographer & bridal makeup artist completely stress-free. Exceptional talent!',
-    rating: 5,
-  };
+interface AuthLeftPanelProps {
+  role?: 'customer' | 'vendor';
+}
 
-  const stats = [
-    { label: '2,700+', text: 'Verified Event Pros' },
-    { label: '15,000+', text: 'Celebrations Managed' },
-  ];
+export default function AuthLeftPanel({ role = 'customer' }: AuthLeftPanelProps) {
+  const isVendor = role === 'vendor';
+
+  const testimonial = isVendor
+    ? {
+        name: 'Karan Mehra',
+        role: 'Studio Director, Visual Tales — Delhi NCR',
+        quote:
+          'Ayoj has transformed our wedding business. We receive high-intent inquiries from verified couples and manage all communications effortlessly.',
+        rating: 5,
+        badge: 'Verified Partner',
+      }
+    : {
+        name: 'Priya & Rahul Sharma',
+        role: 'Wedding Hosts — Delhi NCR',
+        quote:
+          'Ayoj made finding our wedding photographer & bridal makeup artist completely stress-free. Exceptional talent and verified reliability!',
+        rating: 5,
+        badge: 'Verified Host',
+      };
+
+  const stats = isVendor
+    ? [
+        { label: '₹4.8 Cr+', text: 'Client Bookings Facilitated' },
+        { label: '2,700+', text: 'Active Event Partners' },
+      ]
+    : [
+        { label: '2,700+', text: 'Verified Event Pros' },
+        { label: '15,000+', text: 'Celebrations Managed' },
+      ];
+
+  const bgImage = isVendor
+    ? 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80'
+    : 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1600&q=80';
 
   return (
     <div className="hidden lg:flex lg:w-[45%] relative flex-col overflow-hidden bg-[#FBF8F4]">
-      {/* Background Photography - Authentic Indian Wedding */}
+      {/* Background Photography */}
       <ImageWithFallback
-        src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1600&q=80"
-        alt="Ayoj Indian Wedding Celebration"
+        src={bgImage}
+        alt={isVendor ? 'Ayoj Event Professional Studio' : 'Ayoj Indian Wedding Celebration'}
         fill
         unoptimized
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
       />
       {/* Editorial Gradient Mask */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#221F1C]/85 via-[#221F1C]/50 to-transparent" />
@@ -67,14 +93,31 @@ export default function AuthLeftPanel() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="max-w-sm"
         >
-          <h2 className="text-4xl font-serif font-normal leading-tight mb-3 text-white">
-            Every moment <br />
-            <span className="italic text-[#F3EADF] font-serif">deserves</span> to be <br />
-            celebrated.
-          </h2>
-          <p className="text-white/80 font-normal leading-relaxed text-sm">
-            Discover and book trusted photographers, makeup artists, decorators, and event planners — all in one place.
-          </p>
+          {isVendor ? (
+            <>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-medium mb-3">
+                <Briefcase className="size-3" /> Partner Network
+              </div>
+              <h2 className="text-4xl font-serif font-normal leading-tight mb-3 text-white">
+                Empower your <br />
+                <span className="italic text-[#F3EADF] font-serif">creative</span> business.
+              </h2>
+              <p className="text-white/80 font-normal leading-relaxed text-sm">
+                Connect directly with high-intent hosts and couples. Showcase your portfolio and grow your calendar with zero listing fees.
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-4xl font-serif font-normal leading-tight mb-3 text-white">
+                Every moment <br />
+                <span className="italic text-[#F3EADF] font-serif">deserves</span> to be <br />
+                celebrated.
+              </h2>
+              <p className="text-white/80 font-normal leading-relaxed text-sm">
+                Discover and book trusted photographers, makeup artists, decorators, and event planners — all in one curated place.
+              </p>
+            </>
+          )}
         </motion.div>
 
         {/* Bottom Testimonial Card */}
@@ -96,7 +139,7 @@ export default function AuthLeftPanel() {
                 ))}
             </div>
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full">
-              <ShieldCheck className="size-3" /> Verified Host
+              <ShieldCheck className="size-3" /> {testimonial.badge}
             </span>
           </div>
           <p className="text-xs text-[#221F1C] mb-3 font-normal leading-relaxed">
@@ -121,4 +164,3 @@ export default function AuthLeftPanel() {
     </div>
   );
 }
-
