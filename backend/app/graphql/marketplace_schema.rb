@@ -8,7 +8,9 @@ class MarketplaceSchema < GraphQL::Schema
   use GraphQL::Dataloader
 
   # Standardize error responses
-  use GraphQL::Execution::Errors, error_handler: Middleware::ErrorHandler.method(:call)
+  rescue_from(StandardError) do |err, _obj, _args, ctx, _field|
+    Middleware::ErrorHandler.call(err, ctx)
+  end
 
   # Query complexity analysis to prevent expensive queries
   max_complexity(1000)
