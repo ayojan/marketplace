@@ -1,6 +1,6 @@
 # Backend Architecture
 
-The Jashnify Backend is built as a **Modular Monolith** using Ruby on Rails and the `packwerk` gem to enforce boundary separation.
+The Ayoj Backend is built as a **Modular Monolith** using Ruby on Rails and the `packwerk` gem to enforce boundary separation.
 
 ## System Overview
 

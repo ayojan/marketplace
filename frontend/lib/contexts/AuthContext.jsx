@@ -254,12 +254,23 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
   };
 
+  const updateUser = (updatedUserData) => {
+    const currentUser = tokenService.getUser() || state.user || {};
+    const newUser = { ...currentUser, ...updatedUserData };
+    tokenService.setUser(newUser);
+    dispatch({
+      type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
+      payload: newUser,
+    });
+  };
+
   const value = {
     ...state,
     login,
     register,
     logout,
     clearError,
+    updateUser,
     loginDemoVendor,
     loginDemoCustomer,
   };

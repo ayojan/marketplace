@@ -1,11 +1,11 @@
-# 🚀 Jashnify Deployment Guide
+# 🚀 Ayoj Deployment Guide
 
-This guide explains how to deploy the Jashnify full-stack application for free using industry-standard services.
+This guide explains how to deploy the Ayoj full-stack application for free using industry-standard services.
 
 ## 🏗 Architecture Overview
 
-- **Frontend:** Next.js on [Vercel](https://vercel.com) (`jashnify.in`)
-- **Backend:** Rails API on [Render](https://render.com) (`api.jashnify.in`)
+- **Frontend:** Next.js on [Vercel](https://vercel.com) (`ayoj.in`)
+- **Backend:** Rails API on [Render](https://render.com) (`api.ayoj.in`)
 - **Database:** PostgreSQL on [Supabase](https://supabase.com)
 - **Cache/Redis:** Redis on [Upstash](https://upstash.com)
 
@@ -32,7 +32,7 @@ This guide explains how to deploy the Jashnify full-stack application for free u
 1. Sign up for [Render](https://render.com) and click **New > Web Service**.
 2. Connect your GitHub repository.
 3. **Configuration:**
-   - **Name:** `jashnify-backend`
+   - **Name:** `ayoj-backend`
    - **Root Directory:** `backend`
    - **Build Command:** `bundle install`
    - **Start Command:** `bundle exec rails s`
@@ -54,34 +54,34 @@ This guide explains how to deploy the Jashnify full-stack application for free u
    - **Root Directory:** Select the `frontend` folder.
    - **Framework Preset:** Next.js.
 4. **Environment Variables:**
-   - `NEXT_PUBLIC_API_URL`: `https://api.jashnify.in`
+   - `NEXT_PUBLIC_API_URL`: `https://api.ayoj.in`
 5. Click **Deploy**.
 
 ### Option B: Render.com
 1. Sign up for [Render](https://render.com) and click **New > Web Service**.
 2. Connect your GitHub repository.
 3. **Configuration:**
-   - **Name:** `jashnify-frontend`
+   - **Name:** `ayoj-frontend`
    - **Root Directory:** `frontend`
    - **Build Command:** `./render-build.sh`
    - **Start Command:** `npm run start`
 4. **Environment Variables:**
-   - `NEXT_PUBLIC_API_URL`: `https://api.jashnify.in`
+   - `NEXT_PUBLIC_API_URL`: `https://api.ayoj.in`
    - `NODE_VERSION`: `20.0.0` or higher
 5. Click **Deploy**.
 
 ---
 
-## Phase 4: Domain Configuration (jashnify.in)
+## Phase 4: Domain Configuration (ayoj.in)
 
 ### 1. Website (Vercel)
-In Vercel **Settings > Domains**, add `jashnify.in`. Add these records to your domain registrar:
+In Vercel **Settings > Domains**, add `ayoj.in`. Add these records to your domain registrar:
 - **A Record:** `@` -> `76.76.21.21`
 - **CNAME Record:** `www` -> `cname.vercel-dns.com`
 
 ### 2. API (Render)
-In Render **Settings > Custom Domains**, add `api.jashnify.in`. Add this record to your domain registrar:
-- **CNAME Record:** `api` -> `jashnify-backend.onrender.com`
+In Render **Settings > Custom Domains**, add `api.ayoj.in`. Add this record to your domain registrar:
+- **CNAME Record:** `api` -> `ayoj-backend.onrender.com`
 
 ---
 
@@ -93,4 +93,4 @@ Once Render finishes the first build, go to the Render dashboard for your servic
 2. Run: `bundle exec rails db:migrate`
 
 ### 2. Keep-Alive (Optional)
-To prevent Render's free tier from sleeping, use [cron-job.org](https://cron-job.org) to ping `https://api.jashnify.in/up` every 14 minutes.
+To prevent Render's free tier from sleeping, use [cron-job.org](https://cron-job.org) to ping `https://api.ayoj.in/up` every 14 minutes.

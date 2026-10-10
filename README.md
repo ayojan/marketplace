@@ -1,4 +1,4 @@
-# Jashnify Marketplace
+# AYOJ Marketplace
 
 A modern marketplace platform for photographers and customers.
 

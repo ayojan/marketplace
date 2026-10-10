@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { apiService } from '@/lib/api';
-import Header from '@/components/Header';
+import Header, { CITIES } from '@/components/Header';
 import AyojLogo from '@/components/AyojLogo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,8 @@ import {
   Phone,
   Trash2,
   Filter,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -121,18 +122,25 @@ const INITIAL_CHECKLIST = [
 ];
 
 const CustomerDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams ? searchParams.get('tab') : null;
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(tabParam || 'overview');
+  const [activeTab, setActiveTab] = useState(
+    tabParam === 'settings' || tabParam === 'profile' ? 'profile' : (tabParam || 'overview')
+  );
 
   // Sync tab from URL query params
   useEffect(() => {
-    if (tabParam && ['overview', 'bookings', 'saved', 'checklist', 'profile'].includes(tabParam)) {
-      setActiveTab(tabParam);
+    if (tabParam) {
+      if (tabParam === 'settings' || tabParam === 'profile') {
+        setActiveTab('profile');
+      } else if (['overview', 'bookings', 'saved', 'checklist', 'reviews'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
     }
   }, [tabParam]);
+
   const [bookingFilter, setBookingFilter] = useState('all');
   const [bookings, setBookings] = useState<any[]>(MOCK_CUSTOMER_BOOKINGS);
   const [savedVendors, setSavedVendors] = useState<any[]>(MOCK_SAVED_VENDORS);
@@ -144,13 +152,28 @@ const CustomerDashboard = () => {
 
   // Editable Profile Settings Form State
   const [profileForm, setProfileForm] = useState({
-    firstName: user?.first_name || 'Priya',
-    lastName: user?.last_name || 'Verma',
-    email: user?.email || 'priya@example.com',
-    phone: '+91 98765 43210',
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
+    email: user?.email || '',
+    phone: '',
     city: 'Delhi NCR',
-    weddingDate: '2026-02-14'
+    weddingDate: '',
+    eventType: 'Wedding',
+    budgetRange: 'between_1000_2500'
   });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Sync user prop when auth finishes loading
+  useEffect(() => {
+    if (user) {
+      setProfileForm(prev => ({
+        ...prev,
+        firstName: prev.firstName || user.first_name || '',
+        lastName: prev.lastName || user.last_name || '',
+        email: user.email || prev.email || '',
+      }));
+    }
+  }, [user]);
 
   const isBookingUpcoming = (b: any) => {
     if (!b) return false;
@@ -276,6 +299,7 @@ const CustomerDashboard = () => {
     fetchSavedVendors();
     fetchChecklist();
     fetchCustomerProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchCustomerProfile = async () => {
@@ -283,13 +307,23 @@ const CustomerDashboard = () => {
       const response = await apiService.customerProfile.get().catch(() => null);
       const profile = response?.data?.customer_profile;
       if (profile) {
+        let extraPrefs: any = {};
+        try {
+          extraPrefs = typeof profile.preferences === 'string'
+            ? JSON.parse(profile.preferences)
+            : (profile.preferences || {});
+        } catch (e) {}
+
         setProfileForm(prev => ({
           ...prev,
-          firstName: profile.first_name || prev.firstName,
-          lastName: profile.last_name || prev.lastName,
-          email: profile.email || prev.email,
+          firstName: profile.first_name || user?.first_name || prev.firstName,
+          lastName: profile.last_name || user?.last_name || prev.lastName,
+          email: profile.email || user?.email || prev.email,
           phone: profile.phone || prev.phone,
-          city: profile.location || prev.city
+          city: profile.location || prev.city,
+          weddingDate: extraPrefs.weddingDate || prev.weddingDate,
+          eventType: profile.event_types || extraPrefs.eventType || prev.eventType,
+          budgetRange: profile.budget_range || extraPrefs.budgetRange || prev.budgetRange,
         }));
       }
     } catch (err) {
@@ -353,16 +387,40 @@ const CustomerDashboard = () => {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSavingProfile(true);
     try {
-      await apiService.customerProfile.update({
+      const payload = {
         first_name: profileForm.firstName,
         last_name: profileForm.lastName,
         phone: profileForm.phone,
-        location: profileForm.city
-      });
-      toast.success('Profile preferences updated successfully');
+        location: profileForm.city,
+        budget_range: profileForm.budgetRange,
+        event_types: profileForm.eventType,
+        preferences: JSON.stringify({
+          weddingDate: profileForm.weddingDate,
+          eventType: profileForm.eventType,
+          budgetRange: profileForm.budgetRange,
+          city: profileForm.city,
+        }),
+      };
+
+      await apiService.customerProfile.update(payload);
+
+      // Immediately sync with client AuthContext & localStorage
+      if (updateUser) {
+        updateUser({
+          first_name: profileForm.firstName,
+          last_name: profileForm.lastName,
+          phone: profileForm.phone,
+          location: profileForm.city,
+        });
+      }
+
+      toast.success('Profile and celebration preferences updated successfully!');
     } catch (err: any) {
       toast.error(err.extractedMessage || 'Failed to update profile');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -921,85 +979,224 @@ const CustomerDashboard = () => {
     </div>
   );
 
-  const renderSettingsTab = () => (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="bg-white p-5 rounded-2xl border border-[#E8E2D9]">
-        <h3 className="text-lg font-serif font-bold text-[#221F1C]">Account Settings & Preferences</h3>
-        <p className="text-xs text-[#6B6560]">Update your personal details, event date, and communication preferences</p>
-      </div>
+  const renderSettingsTab = () => {
+    const initials = `${profileForm.firstName?.charAt(0) || user?.first_name?.charAt(0) || 'U'}${profileForm.lastName?.charAt(0) || user?.last_name?.charAt(0) || ''}`.toUpperCase();
 
-      <form onSubmit={handleSaveProfile} className="bg-white p-6 rounded-2xl border border-[#E8E2D9] space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#221F1C]">First Name</label>
-            <input
-              type="text"
-              value={profileForm.firstName}
-              onChange={e => setProfileForm({ ...profileForm, firstName: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
-            />
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300 max-w-4xl">
+        {/* Profile Identity Card */}
+        <div className="bg-white p-6 rounded-2xl border border-[#E8E2D9] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="size-16 rounded-full bg-[#9E5338] text-white flex items-center justify-center font-serif text-xl font-bold shadow-md ring-4 ring-[#F3EADF]">
+              {initials}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-serif font-bold text-[#221F1C]">
+                  {profileForm.firstName || user?.first_name || 'Guest'} {profileForm.lastName || user?.last_name || 'Host'}
+                </h3>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#F3EADF] text-[#9E5338] font-bold">
+                  Verified Host
+                </span>
+              </div>
+              <p className="text-xs text-[#6B6560] mt-0.5">{profileForm.email || user?.email || ''}</p>
+              <p className="text-[11px] text-[#6B6560] mt-1 flex items-center gap-1.5">
+                <MapPin className="size-3 text-[#9E5338]" />
+                <span>{profileForm.city || 'Delhi NCR'}</span>
+                {profileForm.weddingDate && (
+                  <>
+                    <span className="size-1 rounded-full bg-[#E8E2D9]" />
+                    <CalendarIcon className="size-3 text-[#9E5338]" />
+                    <span>Celebration: {new Date(profileForm.weddingDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                  </>
+                )}
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#221F1C]">Last Name</label>
-            <input
-              type="text"
-              value={profileForm.lastName}
-              onChange={e => setProfileForm({ ...profileForm, lastName: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#221F1C]">Email Address</label>
-            <input
-              type="email"
-              value={profileForm.email}
-              onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#221F1C]">Phone Number</label>
-            <input
-              type="text"
-              value={profileForm.phone}
-              onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#221F1C]">Event Location / City</label>
-            <input
-              type="text"
-              value={profileForm.city}
-              onChange={e => setProfileForm({ ...profileForm, city: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#221F1C]">Target Event Date</label>
-            <input
-              type="date"
-              value={profileForm.weddingDate}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={e => setProfileForm({ ...profileForm, weddingDate: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
-            />
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-[#E8E2D9] flex justify-end">
-          <Button type="submit" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-8 h-10">
-            Save Preference Changes
+          <Button
+            type="button"
+            variant="outline"
+            onClick={logout}
+            className="rounded-full text-xs text-rose-700 hover:text-rose-800 hover:bg-rose-50 border-rose-200 h-9 px-4 cursor-pointer gap-1.5"
+          >
+            <LogOut className="size-3.5" />
+            <span>Sign Out</span>
           </Button>
         </div>
-      </form>
-    </div>
-  );
+
+        {/* Profile Edit Form */}
+        <form onSubmit={handleSaveProfile} className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E8E2D9] shadow-sm space-y-8">
+          
+          {/* Section 1: Personal Details */}
+          <div className="space-y-4">
+            <div className="border-b border-[#E8E2D9] pb-3">
+              <h4 className="text-sm font-serif font-bold text-[#221F1C] flex items-center gap-2">
+                <User className="size-4 text-[#9E5338]" />
+                Personal Information
+              </h4>
+              <p className="text-xs text-[#6B6560]">Your name and primary contact details visible to booked vendors</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  First Name <span className="text-[#9E5338]">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={profileForm.firstName}
+                  onChange={e => setProfileForm({ ...profileForm, firstName: e.target.value })}
+                  placeholder="Enter first name"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  Last Name <span className="text-[#9E5338]">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={profileForm.lastName}
+                  onChange={e => setProfileForm({ ...profileForm, lastName: e.target.value })}
+                  placeholder="Enter last name"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  disabled
+                  value={profileForm.email}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#F3EADF]/60 text-xs text-[#6B6560] cursor-not-allowed"
+                />
+                <span className="text-[10px] text-[#6B6560]">Account primary login email (read-only)</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  Phone / WhatsApp Number
+                </label>
+                <input
+                  type="tel"
+                  value={profileForm.phone}
+                  onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
+                  placeholder="+91 98765 43210"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Celebration & Event Preferences */}
+          <div className="space-y-4">
+            <div className="border-b border-[#E8E2D9] pb-3">
+              <h4 className="text-sm font-serif font-bold text-[#221F1C] flex items-center gap-2">
+                <Sparkles className="size-4 text-[#9E5338]" />
+                Event & Celebration Preferences
+              </h4>
+              <p className="text-xs text-[#6B6560]">Helps recommended photographers and decorators tailor packages for you</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  Primary Location / City
+                </label>
+                <select
+                  value={profileForm.city}
+                  onChange={e => setProfileForm({ ...profileForm, city: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors cursor-pointer"
+                >
+                  {CITIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  Target Event Date
+                </label>
+                <input
+                  type="date"
+                  value={profileForm.weddingDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setProfileForm({ ...profileForm, weddingDate: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  Celebration Type
+                </label>
+                <select
+                  value={profileForm.eventType}
+                  onChange={e => setProfileForm({ ...profileForm, eventType: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors cursor-pointer"
+                >
+                  <option value="Wedding">Wedding / Shaadi</option>
+                  <option value="Pre-Wedding">Pre-Wedding / Engagement</option>
+                  <option value="Birthday">Birthday Celebration</option>
+                  <option value="Corporate">Corporate / Summit</option>
+                  <option value="Anniversary">Anniversary</option>
+                  <option value="Baby Shower">Baby Shower / Godh Bharai</option>
+                  <option value="Other">Other Event</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#221F1C] block">
+                  Estimated Budget Preference
+                </label>
+                <select
+                  value={profileForm.budgetRange}
+                  onChange={e => setProfileForm({ ...profileForm, budgetRange: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors cursor-pointer"
+                >
+                  <option value="under_500">Under ₹50,000</option>
+                  <option value="between_500_1000">₹50,000 – ₹1,50,000</option>
+                  <option value="between_1000_2500">₹1,50,000 – ₹3,00,000</option>
+                  <option value="between_2500_5000">₹3,00,000 – ₹5,00,000</option>
+                  <option value="above_5000">Above ₹5,00,000</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Actions */}
+          <div className="pt-4 border-t border-[#E8E2D9] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <span className="text-xs text-[#6B6560]">
+              All details are secured under Ayoj privacy policy
+            </span>
+
+            <Button 
+              type="submit" 
+              disabled={savingProfile}
+              className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-semibold px-8 h-11 shadow-sm active:scale-95 transition-all cursor-pointer"
+            >
+              {savingProfile ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Saving Changes...
+                </>
+              ) : (
+                'Save Profile Changes'
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#FBF8F4] text-[#221F1C] font-sans selection:bg-[#F3EADF] selection:text-[#9E5338] flex flex-col justify-between">
@@ -1040,17 +1237,19 @@ const CustomerDashboard = () => {
                     </span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-[#221F1C]">
-                    Welcome back, {user?.first_name || 'Priya'} {user?.last_name || 'Verma'}
+                    Welcome back, {user?.first_name || profileForm.firstName || 'Celebration'} {user?.last_name || profileForm.lastName || 'Host'}
                   </h1>
                   <p className="text-xs text-[#6B6560] mt-1">
-                    Upcoming Wedding: <span className="font-semibold text-[#221F1C]">Feb 14, 2026</span> • Delhi NCR
+                    Upcoming Celebration: <span className="font-semibold text-[#221F1C]">
+                      {profileForm.weddingDate ? new Date(profileForm.weddingDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Set Date'}
+                    </span> • {profileForm.city || 'Delhi NCR'}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <Link href="/marketplace">
-                  <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-6 h-10 shadow-sm">
+                  <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-6 h-10 shadow-sm cursor-pointer">
                     Find Creative Partners
                   </Button>
                 </Link>
@@ -1061,13 +1260,13 @@ const CustomerDashboard = () => {
             <div className="mt-8 pt-6 border-t border-[#E8E2D9] flex items-center gap-2 overflow-x-auto no-scrollbar">
               {[
                 { id: 'overview', name: 'Overview', icon: CalendarIcon },
-                { id: 'bookings', name: 'My Bookings', icon: ShoppingBag, badge: bookings.length.toString() },
-                { id: 'saved', name: 'Saved Pros', icon: Heart, badge: savedVendors.length.toString() },
+                { id: 'bookings', name: 'My Bookings', icon: ShoppingBag, badge: bookings.length > 0 ? bookings.length.toString() : undefined },
+                { id: 'saved', name: 'Saved Pros', icon: Heart, badge: savedVendors.length > 0 ? savedVendors.length.toString() : undefined },
                 { id: 'reviews', name: 'My Reviews', icon: Star },
-                { id: 'settings', name: 'Settings', icon: Settings },
+                { id: 'profile', name: 'Profile & Settings', icon: User },
               ].map((tab) => {
                 const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
+                const isActive = activeTab === tab.id || (tab.id === 'profile' && activeTab === 'settings');
                 return (
                   <button
                     key={tab.id}
@@ -1122,7 +1321,7 @@ const CustomerDashboard = () => {
                 {activeTab === 'bookings' && renderBookingsTab()}
                 {activeTab === 'saved' && renderSavedTab()}
                 {activeTab === 'reviews' && renderReviewsTab()}
-                {activeTab === 'settings' && renderSettingsTab()}
+                {(activeTab === 'profile' || activeTab === 'settings') && renderSettingsTab()}
               </motion.div>
             )}
           </AnimatePresence>
