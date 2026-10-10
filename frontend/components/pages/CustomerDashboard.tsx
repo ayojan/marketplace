@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
 const MOCK_CUSTOMER_BOOKINGS = [
@@ -121,8 +122,17 @@ const INITIAL_CHECKLIST = [
 
 const CustomerDashboard = () => {
   const { user, logout } = useAuth();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams ? searchParams.get('tab') : null;
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(tabParam || 'overview');
+
+  // Sync tab from URL query params
+  useEffect(() => {
+    if (tabParam && ['overview', 'bookings', 'saved', 'checklist', 'profile'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
   const [bookingFilter, setBookingFilter] = useState('all');
   const [bookings, setBookings] = useState<any[]>(MOCK_CUSTOMER_BOOKINGS);
   const [savedVendors, setSavedVendors] = useState<any[]>(MOCK_SAVED_VENDORS);

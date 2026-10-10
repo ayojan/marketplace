@@ -19,16 +19,18 @@ export function MobileBottomNav() {
   const { user, isAuthenticated } = useAuth();
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
 
-  // Sync favorites badge count
+  // Sync favorites badge count only when user is actively logged in
   useEffect(() => {
     const loadFavorites = () => {
-      if (tokenService.hasToken() && !tokenService.isTokenExpired()) {
+      if (isAuthenticated && tokenService.hasToken() && !tokenService.isTokenExpired()) {
         apiService.favorites.getAll()
           .then((res: any) => {
             const count = res.data?.favorites?.length || 0;
             setFavoritesCount(count);
           })
-          .catch(() => {});
+          .catch(() => {
+            setFavoritesCount(0);
+          });
       } else {
         setFavoritesCount(0);
       }
@@ -37,7 +39,7 @@ export function MobileBottomNav() {
     loadFavorites();
     window.addEventListener('favorites-updated', loadFavorites);
     return () => window.removeEventListener('favorites-updated', loadFavorites);
-  }, [user]);
+  }, [user, isAuthenticated]);
 
   // Hide the global bottom nav on full-screen booking flow so the checkout CTA has 100% focus
   if (pathname?.startsWith('/booking')) {
@@ -61,26 +63,26 @@ export function MobileBottomNav() {
     },
     {
       label: 'Saved',
-      href: isAuthenticated ? '/customer/favorites' : '/login',
+      href: isAuthenticated ? '/customer/dashboard?tab=saved' : '/login',
       icon: Heart,
       badge: favoritesCount > 0 ? favoritesCount : null,
-      isActive: pathname === '/customer/favorites',
+      isActive: pathname === '/customer/dashboard' && typeof window !== 'undefined' && window.location.search.includes('tab=saved'),
     },
     {
       label: isVendor ? 'Requests' : 'Bookings',
       href: isAuthenticated 
-        ? (isVendor ? '/vendor/bookings' : '/customer/bookings') 
+        ? (isVendor ? '/vendor/dashboard' : '/customer/dashboard?tab=bookings') 
         : '/login',
       icon: CalendarDays,
-      isActive: pathname?.includes('/bookings'),
+      isActive: pathname === '/vendor/dashboard' || (pathname === '/customer/dashboard' && typeof window !== 'undefined' && window.location.search.includes('tab=bookings')),
     },
     {
       label: isAuthenticated ? (isVendor ? 'Vendor' : 'Profile') : 'Log In',
       href: isAuthenticated 
-        ? (isVendor ? '/vendor' : '/customer') 
+        ? (isVendor ? '/vendor/dashboard' : '/customer/dashboard?tab=profile') 
         : '/login',
       icon: User,
-      isActive: pathname === '/customer' || pathname === '/vendor' || pathname === '/login',
+      isActive: pathname === '/customer/dashboard' && typeof window !== 'undefined' && window.location.search.includes('tab=profile'),
     },
   ];
 
