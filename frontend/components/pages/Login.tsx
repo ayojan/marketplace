@@ -26,12 +26,12 @@ const Login = () => {
 
   const handleDemoVendor = () => {
     loginDemoVendor();
-    router.push('/vendor/dashboard');
+    router.push('/');
   };
 
   const handleDemoCustomer = () => {
     loginDemoCustomer();
-    router.push('/customer/dashboard');
+    router.push('/');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,10 +50,8 @@ const Login = () => {
     const result = await login(formData);
 
     if (result.success) {
-      // Intelligently route based on user role returned by the backend
-      const userRole = result.user?.role || 'customer';
-      const defaultDest = userRole === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard';
-      const from = searchParams.get('from') || defaultDest;
+      // Redirect to home page or originally requested return URL
+      const from = searchParams.get('from') || '/';
       router.push(from);
     }
 

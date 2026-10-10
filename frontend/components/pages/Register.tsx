@@ -140,7 +140,7 @@ const Register = () => {
             ? 'Welcome to Ayoj Partner Network!'
             : 'Welcome to Ayoj! Start planning your celebration.'
         );
-        router.push(activeRole === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard');
+        router.push(searchParams?.get('from') || '/');
       }
     }
 

@@ -24,7 +24,6 @@ import {
   Settings,
   Bell,
   Search,
-  LogOut,
   Camera,
   CheckCircle2,
   ChevronRight,
@@ -45,42 +44,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
-const MOCK_CUSTOMER_BOOKINGS = [
-  {
-    id: 'b1',
-    service: { name: 'Full Day Traditional & Candid Wedding Coverage' },
-    vendor: { 
-      id: '4',
-      business_name: 'The Wedding Narratives', 
-      location: 'Delhi NCR', 
-      image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
-      category: 'Photography'
-    },
-    event_date: '2026-02-14',
-    total_amount: 85000,
-    status: 'completed',
-    payment_status: 'Paid in Full',
-    review: { rating: 5, comment: 'Breathtaking candid photos and seamless delivery! Highly recommended team.' }
-  },
-  {
-    id: 'b2',
-    service: { name: 'HD Airbrush Bridal Makeup & Hair Styling' },
-    vendor: { 
-      id: '5',
-      business_name: 'Meera Makeovers', 
-      location: 'Gurgaon', 
-      image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80',
-      category: 'Makeup Artist'
-    },
-    event_date: '2026-03-28',
-    total_amount: 25000,
-    status: 'confirmed',
-    payment_status: 'Deposit Paid (50%)',
-    review: null
-  }
-];
-
-const MOCK_SAVED_VENDORS = [
+const RECOMMENDED_PROS = [
   {
     id: '4',
     name: 'The Wedding Narratives',
@@ -100,29 +64,11 @@ const MOCK_SAVED_VENDORS = [
     reviewsCount: 214,
     price: '₹15,000',
     image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: '6',
-    name: 'Eventica Decor & Floral',
-    category: 'Decorator',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    reviewsCount: 189,
-    price: '₹1,000,000',
-    image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80'
   }
 ];
 
-const INITIAL_CHECKLIST = [
-  { id: 1, title: 'Book Wedding Photographer', completed: true },
-  { id: 2, title: 'Book Bridal Makeup Artist', completed: true },
-  { id: 3, title: 'Finalize Stage Decorator & Theme', completed: false },
-  { id: 4, title: 'Reserve Catering Service Package', completed: false },
-  { id: 5, title: 'Hire DJ & Entertainment Crew', completed: false }
-];
-
 const CustomerDashboard = () => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams ? searchParams.get('tab') : null;
   const [loading, setLoading] = useState(true);
@@ -138,13 +84,15 @@ const CustomerDashboard = () => {
       } else if (['overview', 'bookings', 'saved', 'checklist', 'reviews'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
+    } else {
+      setActiveTab('overview');
     }
   }, [tabParam]);
 
   const [bookingFilter, setBookingFilter] = useState('all');
-  const [bookings, setBookings] = useState<any[]>(MOCK_CUSTOMER_BOOKINGS);
-  const [savedVendors, setSavedVendors] = useState<any[]>(MOCK_SAVED_VENDORS);
-  const [checklist, setChecklist] = useState(INITIAL_CHECKLIST);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [savedVendors, setSavedVendors] = useState<any[]>([]);
+  const [checklist, setChecklist] = useState<any[]>([]);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<any>(null);
   const [chatModalOpen, setChatModalOpen] = useState(false);
@@ -247,22 +195,21 @@ const CustomerDashboard = () => {
     try {
       const response = await apiService.favorites.getAll().catch(() => null);
       const fetchedFavs = response?.data?.favorites || [];
-      if (fetchedFavs.length > 0) {
-        const mapped = fetchedFavs.map((f: any) => ({
-          id: String(f.vendor?.id || f.vendor_profile_id),
-          favorite_id: f.id,
-          name: f.vendor?.business_name || 'Creative Partner',
-          category: Array.isArray(f.vendor?.service_categories) ? f.vendor?.service_categories[0] : (f.vendor?.service_categories || 'Creative Partner'),
-          location: f.vendor?.location || 'Delhi NCR',
-          rating: f.vendor?.average_rating || 4.9,
-          reviewsCount: f.vendor?.total_reviews || 0,
-          price: f.vendor?.base_price ? `₹${f.vendor.base_price.toLocaleString()}` : 'Price on request',
-          image: f.vendor?.image || f.vendor?.profile_image_url || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
-        }));
-        setSavedVendors(mapped);
-      }
+      const mapped = fetchedFavs.map((f: any) => ({
+        id: String(f.vendor?.id || f.vendor_profile_id),
+        favorite_id: f.id,
+        name: f.vendor?.business_name || 'Creative Partner',
+        category: Array.isArray(f.vendor?.service_categories) ? f.vendor?.service_categories[0] : (f.vendor?.service_categories || 'Creative Partner'),
+        location: f.vendor?.location || 'Delhi NCR',
+        rating: f.vendor?.average_rating || 4.9,
+        reviewsCount: f.vendor?.total_reviews || 0,
+        price: f.vendor?.base_price ? `₹${f.vendor.base_price.toLocaleString()}` : 'Price on request',
+        image: f.vendor?.image || f.vendor?.profile_image_url || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
+      }));
+      setSavedVendors(mapped);
     } catch (err) {
       console.error('Failed to load favorites:', err);
+      setSavedVendors([]);
     }
   };
 
@@ -271,25 +218,23 @@ const CustomerDashboard = () => {
       setLoading(true);
       const response = await apiService.bookings.getAll().catch(() => null);
       const fetched = response?.data?.bookings || [];
-      if (fetched.length > 0) {
-        setBookings(fetched);
-      } else {
-        setBookings(MOCK_CUSTOMER_BOOKINGS);
-      }
+      setBookings(fetched);
     } catch (error) {
-      setBookings(MOCK_CUSTOMER_BOOKINGS);
+      console.error('Failed to load bookings:', error);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
   };
 
   const totalSpent = bookings.reduce((sum, b) => sum + (b.total_amount || 0), 0);
+  const reviewedBookings = bookings.filter(b => b.review);
 
   const stats = [
     { label: 'Total Reservations', value: bookings.length.toString(), icon: CalendarIcon, trend: `${bookings.filter(b => isBookingUpcoming(b)).length} Upcoming` },
     { label: 'Saved Pros', value: savedVendors.length.toString(), icon: Heart, trend: 'Wishlist' },
     { label: 'Total Investment', value: `₹${totalSpent.toLocaleString()}`, icon: ShoppingBag, trend: 'Lifetime' },
-    { label: 'Verified Reviews', value: '1 Given', icon: Star, trend: '5.0 Rating' }
+    { label: 'Verified Reviews', value: `${reviewedBookings.length} Given`, icon: Star, trend: reviewedBookings.length > 0 ? 'Verified' : 'None yet' }
   ];
 
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
@@ -335,11 +280,10 @@ const CustomerDashboard = () => {
     try {
       const response = await apiService.checklists.getAll().catch(() => null);
       const fetched = response?.data?.checklist_items || [];
-      if (fetched.length > 0) {
-        setChecklist(fetched);
-      }
+      setChecklist(fetched);
     } catch (err) {
       console.error('Failed to load checklist:', err);
+      setChecklist([]);
     }
   };
 
@@ -564,7 +508,7 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {MOCK_SAVED_VENDORS.slice(0, 2).map((vendor) => (
+              {RECOMMENDED_PROS.map((vendor) => (
                 <Link
                   key={vendor.id}
                   href={`/vendors/${vendor.id}`}
@@ -611,26 +555,32 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="space-y-2.5">
-              {checklist.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleToggleChecklist(item.id)}
-                  className={`w-full flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    item.completed 
-                      ? 'bg-emerald-50/60 border-emerald-200 text-[#221F1C]' 
-                      : 'bg-[#FBF8F4] border-[#E8E2D9] text-[#6B6560] hover:border-[#9E5338]/40'
-                  }`}
-                >
-                  <div className={`size-5 rounded-full flex items-center justify-center border shrink-0 transition-colors ${
-                    item.completed ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-[#E8E2D9] bg-white'
-                  }`}>
-                    {item.completed && <Check size={12} />}
-                  </div>
-                  <span className={`text-xs font-medium ${item.completed ? 'line-through opacity-75' : ''}`}>
-                    {item.title}
-                  </span>
-                </button>
-              ))}
+              {checklist.length === 0 ? (
+                <div className="p-3.5 text-center border border-dashed border-[#E8E2D9] rounded-xl bg-[#FBF8F4]">
+                  <p className="text-xs text-[#6B6560]">No tasks yet. Add a custom milestone below!</p>
+                </div>
+              ) : (
+                checklist.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleToggleChecklist(item.id)}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      item.completed 
+                        ? 'bg-emerald-50/60 border-emerald-200 text-[#221F1C]' 
+                        : 'bg-[#FBF8F4] border-[#E8E2D9] text-[#6B6560] hover:border-[#9E5338]/40'
+                    }`}
+                  >
+                    <div className={`size-5 rounded-full flex items-center justify-center border shrink-0 transition-colors ${
+                      item.completed ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-[#E8E2D9] bg-white'
+                    }`}>
+                      {item.completed && <Check size={12} />}
+                    </div>
+                    <span className={`text-xs font-medium ${item.completed ? 'line-through opacity-75' : ''}`}>
+                      {item.title}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
 
             <form onSubmit={handleAddChecklistTask} className="flex gap-2 pt-2 border-t border-[#E8E2D9]">
@@ -657,26 +607,35 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="space-y-3">
-              {savedVendors.map((pro) => (
-                <Link 
-                  key={pro.id} 
-                  href={`/vendors/${pro.id}`}
-                  className="flex items-center justify-between p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9] hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative size-10 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
-                      <ImageWithFallback src={pro.image} alt={pro.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-300" />
+              {savedVendors.length === 0 ? (
+                <div className="p-4 text-center border border-dashed border-[#E8E2D9] rounded-xl bg-[#FBF8F4]">
+                  <p className="text-xs text-[#6B6560]">No saved vendors yet</p>
+                  <Link href="/marketplace" className="text-[11px] font-bold text-[#9E5338] hover:underline mt-1 inline-block">
+                    Explore vendors
+                  </Link>
+                </div>
+              ) : (
+                savedVendors.slice(0, 3).map((pro) => (
+                  <Link 
+                    key={pro.id} 
+                    href={`/vendors/${pro.id}`}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9] hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="relative size-10 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
+                        <ImageWithFallback src={pro.image} alt={pro.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-[#221F1C] group-hover:text-[#9E5338] transition-colors truncate max-w-[130px]">{pro.name}</p>
+                        <p className="text-[10px] text-[#6B6560] truncate">{pro.category}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-[#221F1C] group-hover:text-[#9E5338] transition-colors truncate max-w-[130px]">{pro.name}</p>
-                      <p className="text-[10px] text-[#6B6560] truncate">{pro.category}</p>
+                    <div className="size-8 rounded-full flex items-center justify-center text-[#9E5338] group-hover:bg-[#F3EADF] transition-colors shrink-0">
+                      <ChevronRight size={16} />
                     </div>
-                  </div>
-                  <div className="size-8 rounded-full flex items-center justify-center text-[#9E5338] group-hover:bg-[#F3EADF] transition-colors shrink-0">
-                    <ChevronRight size={16} />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))
+              )}
             </div>
           </div>
 
@@ -934,99 +893,73 @@ const CustomerDashboard = () => {
     </div>
   );
 
-  const renderReviewsTab = () => (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="bg-white p-5 rounded-2xl border border-[#E8E2D9]">
-        <h3 className="text-lg font-serif font-bold text-[#221F1C]">My Submitted Reviews</h3>
-        <p className="text-xs text-[#6B6560]">Honest ratings and testimonials shared with the Ayoj community</p>
-      </div>
-
-      <div className="space-y-4">
-        {bookings.filter(b => b.review).map((booking) => (
-          <div key={booking.id} className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-3">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className="relative size-12 rounded-xl overflow-hidden border border-[#E8E2D9]">
-                  <ImageWithFallback src={booking.vendor?.image} alt={booking.vendor?.business_name} fill unoptimized className="object-cover" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-serif font-bold text-[#221F1C]">{booking.vendor?.business_name}</h4>
-                  <p className="text-xs text-[#6B6560]">{booking.service?.name}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full text-xs font-bold">
-                {[...Array(booking.review.rating)].map((_, i) => (
-                  <Star key={i} size={12} className="fill-[#D97706] text-[#D97706]" />
-                ))}
-                <span className="ml-1 text-[#221F1C]">{booking.review.rating}.0</span>
-              </div>
-            </div>
-
-            <p className="text-xs text-[#221F1C] bg-[#FBF8F4] p-4 rounded-xl border border-[#E8E2D9] italic leading-relaxed">
-              "{booking.review.comment}"
-            </p>
-
-            <div className="text-[11px] text-[#6B6560] flex items-center justify-between pt-1">
-              <span>Reviewed after event completion on {booking.event_date}</span>
-              <span className="text-emerald-700 font-bold flex items-center gap-1">
-                <CheckCircle2 size={12} /> Verified Review
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderSettingsTab = () => {
-    const initials = `${profileForm.firstName?.charAt(0) || user?.first_name?.charAt(0) || 'U'}${profileForm.lastName?.charAt(0) || user?.last_name?.charAt(0) || ''}`.toUpperCase();
+  const renderReviewsTab = () => {
+    const reviewedBookings = bookings.filter(b => b.review);
 
     return (
-      <div className="space-y-6 animate-in fade-in duration-300 max-w-4xl">
-        {/* Profile Identity Card */}
-        <div className="bg-white p-6 rounded-2xl border border-[#E8E2D9] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <div className="size-16 rounded-full bg-[#9E5338] text-white flex items-center justify-center font-serif text-xl font-bold shadow-md ring-4 ring-[#F3EADF]">
-              {initials}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-serif font-bold text-[#221F1C]">
-                  {profileForm.firstName || user?.first_name || 'Guest'} {profileForm.lastName || user?.last_name || 'Host'}
-                </h3>
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#F3EADF] text-[#9E5338] font-bold">
-                  Verified Host
-                </span>
-              </div>
-              <p className="text-xs text-[#6B6560] mt-0.5">{profileForm.email || user?.email || ''}</p>
-              <p className="text-[11px] text-[#6B6560] mt-1 flex items-center gap-1.5">
-                <MapPin className="size-3 text-[#9E5338]" />
-                <span>{profileForm.city || 'Delhi NCR'}</span>
-                {profileForm.weddingDate && (
-                  <>
-                    <span className="size-1 rounded-full bg-[#E8E2D9]" />
-                    <CalendarIcon className="size-3 text-[#9E5338]" />
-                    <span>Celebration: {new Date(profileForm.weddingDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={logout}
-            className="rounded-full text-xs text-rose-700 hover:text-rose-800 hover:bg-rose-50 border-rose-200 h-9 px-4 cursor-pointer gap-1.5"
-          >
-            <LogOut className="size-3.5" />
-            <span>Sign Out</span>
-          </Button>
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8E2D9]">
+          <h3 className="text-lg font-serif font-bold text-[#221F1C]">My Submitted Reviews</h3>
+          <p className="text-xs text-[#6B6560]">Honest ratings and testimonials shared with the Ayoj community</p>
         </div>
 
+        {reviewedBookings.length === 0 ? (
+          <div className="py-16 text-center bg-white rounded-2xl border border-dashed border-[#E8E2D9]">
+            <Star size={36} className="mx-auto text-[#6B6560] mb-3" />
+            <h4 className="text-sm font-bold text-[#221F1C] mb-1">No Reviews Submitted Yet</h4>
+            <p className="text-xs text-[#6B6560] mb-4">Reviews will appear here after you complete bookings with verified vendors.</p>
+            <Link href="/marketplace">
+              <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-6">
+                Explore Marketplace
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviewedBookings.map((booking) => (
+              <div key={booking.id} className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="relative size-12 rounded-xl overflow-hidden border border-[#E8E2D9]">
+                      <ImageWithFallback src={booking.vendor?.image} alt={booking.vendor?.business_name} fill unoptimized className="object-cover" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-serif font-bold text-[#221F1C]">{booking.vendor?.business_name}</h4>
+                      <p className="text-xs text-[#6B6560]">{booking.service?.name}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full text-xs font-bold">
+                    {[...Array(booking.review.rating)].map((_, i) => (
+                      <Star key={i} size={12} className="fill-[#D97706] text-[#D97706]" />
+                    ))}
+                    <span className="ml-1 text-[#221F1C]">{booking.review.rating}.0</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[#221F1C] bg-[#FBF8F4] p-4 rounded-xl border border-[#E8E2D9] italic leading-relaxed">
+                  "{booking.review.comment}"
+                </p>
+
+                <div className="text-[11px] text-[#6B6560] flex items-center justify-between pt-1">
+                  <span>Reviewed after event completion on {booking.event_date}</span>
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Verified Review
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSettingsTab = () => {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300 w-full">
         {/* Profile Edit Form */}
-        <form onSubmit={handleSaveProfile} className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E8E2D9] shadow-sm space-y-8">
+        <form onSubmit={handleSaveProfile} className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E8E2D9] shadow-sm space-y-8 w-full">
           
           {/* Section 1: Personal Details */}
           <div className="space-y-4">
@@ -1270,7 +1203,12 @@ const CustomerDashboard = () => {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      if (typeof window !== 'undefined') {
+                        window.history.replaceState(null, '', `/customer/dashboard?tab=${tab.id}`);
+                      }
+                    }}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                       isActive
                         ? 'bg-[#F3EADF] text-[#9E5338] border border-[#E8E2D9]'
@@ -1330,10 +1268,10 @@ const CustomerDashboard = () => {
       </div>
 
       {/* Grounded Ayoj Footer */}
-      <footer className="py-10 border-t border-[#E8E2D9] bg-white mt-12">
+      <footer className="py-5 border-t border-[#E8E2D9] bg-white mt-8 mb-16 md:mb-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <AyojLogo size="sm" showTagline={true} />
+            <AyojLogo size="sm" showTagline={false} />
             <p className="text-xs text-[#6B6560]">© 2026 Ayoj Marketplace. Customer Portal.</p>
           </div>
         </div>
