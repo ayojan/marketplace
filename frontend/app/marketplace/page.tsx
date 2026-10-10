@@ -701,6 +701,28 @@ function MarketplaceContent() {
                 )}
               </div>
             </div>
+
+            {/* Quick-Scroll Category Pills for Mobile & Desktop */}
+            <div className="pt-3 flex items-center gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1 max-w-2xl mx-auto -mx-4 px-4 sm:mx-auto sm:px-0">
+              {TRADE_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const isSelected = selectedCategory === cat.slug;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.slug)}
+                    className={`snap-start shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 cursor-pointer border ${
+                      isSelected
+                        ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-xs'
+                        : 'bg-white text-[#221F1C] border-[#E5DED6] hover:border-[#9E5338]/40'
+                    }`}
+                  >
+                    <Icon className="size-3.5" />
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>

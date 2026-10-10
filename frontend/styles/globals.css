@@ -103,3 +103,52 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   Mobile-First Web & Touch Experience Polish
+   ========================================================================== */
+
+/* 1. Eliminate 300ms tap delay and double-tap zoom on interactive elements */
+a, button, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
+}
+
+/* 2. Remove mobile browser default gray tap overlay */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 3. Prevent accidental text selection on navigation & interactive elements */
+button, nav, [role="tab"], .no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* 4. Safe area insets for notched iPhones and gesture navigation bars */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+.bottom-safe {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 5. Hide scrollbars for fluid horizontal swipe carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 6. CRITICAL iOS Safari Fix: Prevent disruptive auto-zoom on input focus */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
