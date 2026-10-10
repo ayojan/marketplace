@@ -17,7 +17,12 @@ import {
   Flower2,
   Brush,
   Building2,
-  Check
+  Check,
+  Instagram,
+  Linkedin,
+  Facebook,
+  Twitter,
+  Youtube
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -26,6 +31,14 @@ import Link from 'next/link';
 import Header, { CITIES } from '@/components/Header';
 import PhotographerCard from '@/components/PhotographerCard';
 import AyojLogo from '@/components/AyojLogo';
+
+const SOCIAL_LINKS = [
+  { name: 'Instagram', href: 'https://instagram.com/ayoj.official', icon: Instagram },
+  { name: 'LinkedIn', href: 'https://linkedin.com/company/ayoj', icon: Linkedin },
+  { name: 'YouTube', href: 'https://youtube.com/@ayojofficial', icon: Youtube },
+  { name: 'X', href: 'https://x.com/ayojofficial', icon: Twitter },
+  { name: 'Facebook', href: 'https://facebook.com/ayojofficial', icon: Facebook },
+];
 
 export default function Landing() {
   const router = useRouter();
@@ -404,21 +417,32 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer with Official Logo & Tagline */}
-      <footer className="py-12 border-t border-[#E8E2D9] bg-[#FBF8F4]">
+      {/* Footer with Official Logo & Social Links */}
+      <footer className="py-5 border-t border-[#E8E2D9] bg-[#FBF8F4] mb-16 md:mb-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex flex-col items-start gap-1">
-              <AyojLogo size="sm" showTagline={true} />
-              <span className="text-xs text-[#6B6560] mt-2">© 2026 Ayoj Marketplace. All rights reserved.</span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+              <AyojLogo size="sm" showTagline={false} />
+              <span className="text-xs text-[#6B6560]">© 2026 Ayoj Marketplace. All rights reserved.</span>
             </div>
 
-            <div className="flex items-center gap-6 text-xs text-[#6B6560]">
-              <Link href="/marketplace" className="hover:text-[#9E5338] transition-colors">Marketplace</Link>
-              <Link href="/#occasions" className="hover:text-[#9E5338] transition-colors">Occasions</Link>
-              <Link href="/register?role=vendor" className="hover:text-[#9E5338] transition-colors">For Vendors</Link>
-              <Link href="/login" className="hover:text-[#9E5338] transition-colors">Log in</Link>
-              <Link href="/register" className="hover:text-[#9E5338] transition-colors">Sign up</Link>
+            <div className="flex items-center gap-2">
+              {SOCIAL_LINKS.map((social) => {
+                const Icon = social.icon;
+                return (
+                  <a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Ayoj on ${social.name}`}
+                    title={`Follow Ayoj on ${social.name}`}
+                    className="size-8 rounded-full border border-[#E8E2D9] bg-white flex items-center justify-center text-[#6B6560] hover:text-[#9E5338] hover:border-[#9E5338]/40 hover:bg-[#FAF7F2] transition-all cursor-pointer shadow-2xs group"
+                  >
+                    <Icon className="size-3.5 transition-transform duration-150 group-hover:scale-110" />
+                  </a>
+                );
+              })}
             </div>
           </div>
         </div>

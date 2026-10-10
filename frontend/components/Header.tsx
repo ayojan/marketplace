@@ -15,47 +15,35 @@ import {
   Sparkles, 
   Star, 
   Store, 
-  ChevronRight 
+  ChevronRight,
+  LayoutDashboard,
+  User,
+  CalendarDays
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import AyojLogo from '@/components/AyojLogo';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
-import { apiService } from '@/lib/api';
-import { tokenService } from '@/lib/tokenService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export const CITIES = ['Delhi NCR', 'Mumbai', 'Bengaluru', 'Jaipur', 'Goa', 'Chandigarh'];
 
 export default function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [selectedCity, setSelectedCity] = useState<string>('Delhi NCR');
   const [isLocationOpen, setIsLocationOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-  // Sync favorites count
-  useEffect(() => {
-    const loadFavorites = () => {
-      if (tokenService.hasToken() && !tokenService.isTokenExpired()) {
-        apiService.favorites.getAll()
-          .then((res: any) => {
-            const count = res.data?.favorites?.length || 0;
-            setFavoritesCount(count);
-          })
-          .catch(() => {});
-      } else {
-        setFavoritesCount(0);
-      }
-    };
-
-    loadFavorites();
-    window.addEventListener('favorites-updated', loadFavorites);
-    return () => window.removeEventListener('favorites-updated', loadFavorites);
-  }, [user]);
 
   // Click outside listener for location dropdown
   useEffect(() => {
@@ -106,7 +94,10 @@ export default function Header() {
     router.push('/');
   };
 
-  const dashboardLink = user?.role === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard';
+  const dashboardLink = user?.role === 'vendor' ? '/vendor/dashboard?tab=overview' : '/customer/dashboard?tab=overview';
+  const userInitials = user 
+    ? `${user.first_name?.charAt(0) || user.business_name?.charAt(0) || user.name?.charAt(0) || 'U'}${user.last_name?.charAt(0) || ''}`.toUpperCase() 
+    : 'U';
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#FBF8F4]/95 backdrop-blur-md border-b border-[#E8E2D9]">
@@ -182,44 +173,91 @@ export default function Header() {
           {/* Notification Dropdown */}
           {user && <NotificationDropdown />}
 
-          {/* Heart Icon / Wishlist with Active Count Badge */}
-          <Link
-            href="/customer/dashboard?tab=saved"
-            title="Saved Favorites"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="relative size-9 rounded-full border border-[#E8E2D9] bg-white flex items-center justify-center text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338]/40 transition-all cursor-pointer"
-          >
-            <Heart className="size-4" />
-            {favoritesCount > 0 && (
-              <span className="absolute -top-1 -right-1 size-4 bg-[#9E5338] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
-                {favoritesCount > 9 ? '9+' : favoritesCount}
-              </span>
-            )}
-          </Link>
-
-          {/* Desktop Auth Controls */}
+          {/* Desktop Auth Controls: Simple Profile Photo / Avatar with Dropdown */}
           {user ? (
-            <div className="hidden sm:flex items-center gap-1.5">
-              <Link href={dashboardLink}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 h-9 rounded-full text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF]"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="User account menu"
+                  title={user.first_name ? `${user.first_name}'s account` : 'Account menu'}
+                  className="hidden sm:flex items-center justify-center size-9 rounded-full border border-[#E8E2D9] hover:border-[#9E5338]/60 bg-white hover:bg-[#FAF7F2] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#9E5338]/20 group p-0.5 shadow-xs"
                 >
-                  Dashboard
-                </Button>
-              </Link>
+                  <Avatar className="size-8 ring-1 ring-[#E8E2D9]/60 transition-transform duration-150 group-hover:scale-105">
+                    {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.first_name || 'User avatar'} />}
+                    <AvatarFallback className="bg-[#9E5338] text-white text-xs font-serif font-bold">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="h-9 px-3 rounded-full text-xs font-medium text-[#6B6560] hover:text-[#9E5338] hover:bg-[#F3EADF] transition-all cursor-pointer"
-              >
-                <LogOut className="size-3.5" />
-                <span className="ml-1">Logout</span>
-              </Button>
-            </div>
+              <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-2xl bg-white border border-[#E8E2D9] shadow-xl animate-in fade-in-0 zoom-in-95 duration-150">
+                {/* Account Details Header */}
+                <div className="px-3 py-2.5 border-b border-[#E8E2D9]/80 bg-[#FAF7F2] rounded-xl mb-1">
+                  <p className="text-xs font-bold text-[#221F1C] truncate">
+                    {user.first_name ? `${user.first_name} ${user.last_name || ''}` : (user.business_name || user.email)}
+                  </p>
+                  <p className="text-[11px] text-[#6B6560] truncate">{user.email}</p>
+                  <div className="mt-1.5">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[#F3EADF] text-[#9E5338]">
+                      {user.role === 'vendor' ? 'Verified Partner' : 'Customer Host'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Dashboard (Linked directly to profile logo) */}
+                <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
+                  <Link href={dashboardLink} className="flex items-center gap-2.5 w-full">
+                    <LayoutDashboard className="size-4 text-[#9E5338]" />
+                    <span>Main Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+
+                {/* Profile & Settings */}
+                <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
+                  <Link 
+                    href={user.role === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard?tab=profile'} 
+                    className="flex items-center gap-2.5 w-full"
+                  >
+                    <User className="size-4 text-[#9E5338]" />
+                    <span>Profile & Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+
+                {/* My Bookings */}
+                <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
+                  <Link 
+                    href={user.role === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard?tab=bookings'} 
+                    className="flex items-center gap-2.5 w-full"
+                  >
+                    <CalendarDays className="size-4 text-[#9E5338]" />
+                    <span>{user.role === 'vendor' ? 'Booking Requests' : 'My Bookings'}</span>
+                  </Link>
+                </DropdownMenuItem>
+
+                {/* Saved Favorites (if customer) */}
+                {user.role !== 'vendor' && (
+                  <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
+                    <Link href="/customer/dashboard?tab=saved" className="flex items-center gap-2.5 w-full">
+                      <Heart className="size-4 text-[#9E5338]" />
+                      <span>Saved Pros</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuSeparator className="my-1 border-t border-[#E8E2D9]" />
+
+                {/* Relocated Logout Option */}
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 hover:text-rose-800 cursor-pointer flex items-center gap-2.5"
+                >
+                  <LogOut className="size-4 text-rose-600" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <div className="hidden sm:flex items-center gap-2">
               <Link href="/login">
@@ -338,31 +376,44 @@ export default function Header() {
             <div className="pt-4 border-t border-[#E8E2D9]">
               {user ? (
                 <div className="space-y-3">
-                  <div className="px-1 text-xs text-[#6B6560]">
-                    Signed in as <span className="font-semibold text-[#221F1C]">{user.name || user.email}</span>
-                    <span className="ml-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F3EADF] text-[#9E5338] capitalize">
+                  <div className="flex items-center justify-between p-3 bg-white border border-[#E8E2D9] rounded-2xl shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="size-10 ring-1 ring-[#E8E2D9]">
+                        {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.first_name || 'Profile'} />}
+                        <AvatarFallback className="bg-[#9E5338] text-white text-xs font-serif font-bold">
+                          {userInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-xs font-bold text-[#221F1C] truncate max-w-[150px]">
+                          {user.first_name ? `${user.first_name} ${user.last_name || ''}` : (user.business_name || user.email)}
+                        </p>
+                        <p className="text-[10px] text-[#6B6560] truncate max-w-[150px]">{user.email}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F3EADF] text-[#9E5338] capitalize">
                       {user.role}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+
+                  <div className="grid grid-cols-2 gap-2">
                     <Link
                       href={dashboardLink}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex-1"
                     >
                       <Button
                         className="w-full bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium h-10 shadow-xs"
                       >
-                        Go to Dashboard
+                        Dashboard
                       </Button>
                     </Link>
                     <Button
                       variant="outline"
                       onClick={handleLogout}
-                      className="border-[#E8E2D9] bg-white hover:bg-[#F3EADF] text-[#6B6560] rounded-full text-xs font-medium h-10 px-4 gap-1.5"
+                      className="w-full border-rose-200 text-rose-700 bg-white hover:bg-rose-50 rounded-full text-xs font-medium h-10 gap-1.5"
                     >
-                      <LogOut className="size-3.5" />
-                      Logout
+                      <LogOut className="size-3.5 text-rose-600" />
+                      Sign Out
                     </Button>
                   </div>
                 </div>

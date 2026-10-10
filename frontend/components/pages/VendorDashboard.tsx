@@ -45,6 +45,8 @@ const VendorDashboard = () => {
   useEffect(() => {
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
+    } else {
+      setActiveTab('overview');
     }
   }, [tabFromUrl]);
   const currentVendor = MOCK_VENDORS[0];
@@ -240,7 +242,12 @@ const VendorDashboard = () => {
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (typeof window !== 'undefined') {
+                    window.history.replaceState(null, '', `/vendor/dashboard?tab=${item.id}`);
+                  }
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === item.id 
                     ? 'bg-[#F3EADF] text-[#9E5338] border border-[#E8E2D9]' 
