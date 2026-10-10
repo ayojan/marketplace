@@ -68,12 +68,13 @@ RSpec.describe PortfolioItem do
     end
 
     describe '.ordered' do
-      let!(:first_item) { create(:portfolio_item, vendor_profile: vendor_profile, display_order: 1) }
-      let!(:second_item) { create(:portfolio_item, vendor_profile: vendor_profile, display_order: 2) }
+      let(:ordering_vendor) { create(:vendor_profile) }
+      let!(:first_item) { create(:portfolio_item, vendor_profile: ordering_vendor, display_order: 1) }
+      let!(:second_item) { create(:portfolio_item, vendor_profile: ordering_vendor, display_order: 2) }
 
       it 'returns items ordered by display_order and created_at' do
         # Filter to only items from this vendor to isolate the test
-        ordered_items = described_class.where(vendor_profile_id: vendor_profile.id).ordered
+        ordered_items = described_class.where(vendor_profile_id: ordering_vendor.id).ordered
         expect(ordered_items.first).to eq(first_item)
         expect(ordered_items.second).to eq(second_item)
       end

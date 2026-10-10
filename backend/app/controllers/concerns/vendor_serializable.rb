@@ -6,6 +6,10 @@ module VendorSerializable
   private
 
   def vendor_summary_json(vendor)
+    featured_items = vendor.featured_portfolio_items
+    first_featured = featured_items.first
+    primary_image = first_featured&.images&.attached? ? image_summary_json(first_featured.images.first)&.dig(:url) : nil
+
     {
       id: vendor.id,
       business_name: vendor.business_name,
@@ -15,11 +19,16 @@ module VendorSerializable
       years_experience: vendor.years_experience,
       is_verified: vendor.verified?,
       service_categories: vendor.service_categories_list,
-      featured_portfolio: vendor.featured_portfolio_items.limit(3).map { |item| portfolio_item_json(item) }
+      profile_image_url: primary_image,
+      image: primary_image,
+      featured_portfolio: featured_items.first(3).map { |item| portfolio_item_json(item) }
     }
   end
 
   def vendor_detail_json(vendor)
+    first_featured = vendor.featured_portfolio_items.first
+    primary_image = first_featured&.images&.attached? ? image_summary_json(first_featured.images.first)&.dig(:url) : nil
+
     {
       id: vendor.id,
       business_name: vendor.business_name,
@@ -34,6 +43,8 @@ module VendorSerializable
       service_categories: vendor.service_categories_list,
       coordinates: vendor.coordinates,
       portfolio_items_count: vendor.portfolio_items.count,
+      profile_image_url: primary_image,
+      image: primary_image,
       featured_portfolio: vendor.featured_portfolio_items.map { |item| portfolio_item_json(item) },
       user: vendor_user_json(vendor.user),
       created_at: vendor.created_at,
@@ -69,13 +80,18 @@ module VendorSerializable
   end
 
   def portfolio_item_json(item)
+    image_list = item.images.attached? ? item.images.map { |image| image_summary_json(image) } : []
+    first_url = image_list.first&.dig(:url)
+
     {
       id: item.id,
       title: item.title,
       description: item.description,
       category: item.category,
       is_featured: item.is_featured,
-      images: item.images.attached? ? item.images.limit(1).map { |image| image_summary_json(image) } : []
+      image_count: image_list.size,
+      primary_image_url: first_url,
+      images: image_list
     }
   end
 

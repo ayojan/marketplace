@@ -32,6 +32,7 @@ class Service < ApplicationRecord
   # Associations
   belongs_to :vendor_profile
   has_many :vendor_services, dependent: :destroy
+  has_many :vendor_profiles, through: :vendor_services
   has_many :service_categories, dependent: :destroy
   has_many :categories, through: :service_categories
   has_many :bookings, dependent: :destroy
@@ -114,13 +115,13 @@ class Service < ApplicationRecord
 
   def formatted_base_price
     return 'Custom Quote' if custom_pricing?
-    return "₹#{base_price.to_i}/hr" if hourly_pricing?
+    return "#{base_price.to_f}/hour" if hourly_pricing?
 
-    "₹#{base_price.to_i}"
+    base_price.to_f.to_s
   end
 
   def can_be_booked?
-    active? && vendor_profile.present?
+    active? && vendor_profiles.any?
   end
 
   delegate :count, to: :bookings, prefix: true

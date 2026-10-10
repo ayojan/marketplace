@@ -18,7 +18,6 @@
 # Indexes
 #
 #  idx_notifications_user_read_date                 (user_id,is_read,created_at)
-#  idx_on_user_id_is_read_created_at_8313b98c79     (user_id,is_read,created_at)
 #  index_in_app_notifications_on_is_read            (is_read)
 #  index_in_app_notifications_on_notification_type  (notification_type)
 #  index_in_app_notifications_on_user_id            (user_id)

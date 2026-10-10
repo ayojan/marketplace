@@ -140,6 +140,18 @@ RSpec.describe VendorsController do
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['availability_slots'].length).to eq(2)
       end
+
+      it 'does not return slots in the past even when start_date is in the past' do
+        past_slot = build(:availability_slot, vendor_profile: vendor_profile, date: 2.days.ago, is_available: true)
+        past_slot.save(validate: false)
+
+        params = { id: vendor_profile.id, start_date: 5.days.ago.to_date.to_s, end_date: (Date.current + 10.days).to_s }
+        get :availability, params: params
+
+        expect(response).to have_http_status(:ok)
+        slot_ids = response.parsed_body['availability_slots'].map { |s| s['id'] }
+        expect(slot_ids).not_to include(past_slot.id)
+      end
     end
   end
 

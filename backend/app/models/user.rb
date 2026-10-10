@@ -49,6 +49,8 @@ class User < ApplicationRecord
   has_many :vendor_bookings, through: :vendor_profile, source: :bookings
   has_many :booking_messages, foreign_key: 'sender_id', dependent: :destroy, inverse_of: :sender
   has_many :reviews, foreign_key: 'customer_id', dependent: :destroy, inverse_of: :customer
+  has_many :review_votes, foreign_key: 'voter_id', dependent: :destroy, inverse_of: :voter
+  has_many :checklist_items, dependent: :destroy
 
   # Notifications
   has_one :email_notification_preference, dependent: :destroy
@@ -114,6 +116,7 @@ class User < ApplicationRecord
   def full_name
     @full_name ||= "#{first_name} #{last_name}".strip
   end
+  alias_method :name, :full_name
 
   # Returns a display name for UI or logs
   def display_name

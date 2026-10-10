@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class GraphqlController < ApplicationController
+  skip_before_action :authenticate_request
+  before_action :set_current_user_optional
+
   # If accessing from outside this domain, nullify the session
   # This allows for outside API access while preventing CSRF attacks,
   # but you'll have to authenticate your user separately
@@ -10,21 +13,31 @@ class GraphqlController < ApplicationController
     variables = prepare_variables(params[:variables])
     query = params[:query]
     operation_name = params[:operationName]
+
+    if query.blank?
+      return render json: { errors: [{ message: 'No query string was present' }] }
+    end
+
     context = {
-      # Query context goes here, for example:
-      # current_user: current_user,
+      current_user: @current_user
     }
     result = MarketplaceSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
     render json: result
   rescue GraphQL::ExecutionError => e
     render json: { errors: [{ message: e.message }] }
   rescue StandardError => e
-    raise e unless Rails.env.development?
-
-    handle_error_in_development(e)
+    render json: { errors: [{ message: e.message }] }
   end
 
   private
+
+  def set_current_user_optional
+    return unless request.headers['Authorization'].present?
+
+    @current_user = AuthorizeApiRequest.new(request.headers).call[:user]
+  rescue StandardError
+    @current_user = nil
+  end
 
   # Handle variables in form data, JSON body, or a blank value
   def prepare_variables(variables_param)

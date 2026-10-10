@@ -65,6 +65,22 @@ RSpec.describe AvailabilitySlot do
       expect(slot).not_to be_valid
       expect(slot.errors[:date]).to include('cannot be in the past')
     end
+
+    it 'validates date is not in the past on update' do
+      slot = create(:availability_slot, vendor_profile: vendor_profile)
+      slot.date = 1.day.ago
+      expect(slot).not_to be_valid
+      expect(slot.errors[:date]).to include('cannot be in the past')
+    end
+
+    it 'validates start_time is not in the past for today slots' do
+      slot = build(:availability_slot,
+                   vendor_profile: vendor_profile,
+                   date: Date.current,
+                   start_time: 2.hours.ago.strftime('%H:%M'))
+      expect(slot).not_to be_valid
+      expect(slot.errors[:start_time]).to include('cannot be in the past')
+    end
   end
 
   describe 'scopes' do
@@ -208,6 +224,26 @@ RSpec.describe AvailabilitySlot do
         it 'returns false' do
           expect(slot.booking_conflict?).to be false
         end
+      end
+    end
+
+    describe '#passed?' do
+      it 'returns true when date is before Date.current' do
+        past_slot = build(:availability_slot, vendor_profile: vendor_profile, date: 1.day.ago)
+        expect(past_slot.passed?).to be true
+      end
+
+      it 'returns false when date is after Date.current' do
+        future_slot = build(:availability_slot, vendor_profile: vendor_profile, date: 2.days.from_now.to_date)
+        expect(future_slot.passed?).to be false
+      end
+
+      it 'checks start_time when date is today' do
+        slot_past_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current, start_time: 2.hours.ago.strftime('%H:%M'))
+        slot_future_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current, start_time: 2.hours.from_now.strftime('%H:%M'))
+
+        expect(slot_past_today.passed?).to be true
+        expect(slot_future_today.passed?).to be false
       end
     end
   end

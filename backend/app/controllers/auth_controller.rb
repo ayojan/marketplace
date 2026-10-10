@@ -60,10 +60,12 @@ class AuthController < ApplicationController
   end
 
   def auth_params
-    params.expect(
+    permitted = params.expect(
       auth: [:email, :password, :password_confirmation, :first_name, :last_name, :role,
              { vendor_profile_attributes: %i[business_name location description phone website] }]
     )
+    permitted[:role] = 'customer' unless %w[customer vendor].include?(permitted[:role].to_s)
+    permitted
   end
 
   def user_response(user)

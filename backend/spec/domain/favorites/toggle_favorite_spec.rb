@@ -76,7 +76,7 @@ RSpec.describe Favorites::ToggleFavorite do
 
     context 'when user tries to favorite their own vendor' do
       let(:customer_user) { create(:user, :customer) }
-      let(:own_vendor) { customer_user.vendor_profile }
+      let(:own_vendor) { create(:vendor_profile, user: customer_user) }
 
       it 'returns authorization failure' do
         result = described_class.call(user: customer_user, vendor_profile_id: own_vendor.id)

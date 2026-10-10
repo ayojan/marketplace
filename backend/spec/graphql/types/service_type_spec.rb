@@ -12,6 +12,7 @@ RSpec.describe Types::ServiceType, type: :graphql do
   let(:service) do
     create(:service, name: 'Wedding Photography', vendor_profile: vendor, service_category: category, base_price: 1500)
   end
+  let!(:vendor_service) { create(:vendor_service, service: service, vendor_profile: vendor) }
 
   let(:query) do
     <<~GQL

@@ -15,6 +15,7 @@ class AvailabilityCheckerService
   validates :date, presence: true
   validates :start_time, presence: true
   validates :end_time, presence: true
+  validate :date_and_time_in_future
 
   def initialize(attributes = {})
     super
@@ -51,7 +52,9 @@ class AvailabilityCheckerService
   def suggested_times
     return [] unless availability_slots.any?
 
-    availability_slots.map do |slot|
+    future_slots = availability_slots.reject(&:passed?)
+
+    future_slots.map do |slot|
       {
         start_time: slot.start_time.strftime('%H:%M'),
         end_time: slot.end_time.strftime('%H:%M'),
@@ -88,5 +91,25 @@ class AvailabilityCheckerService
   def parse_time_to_minutes(time_string)
     time = Time.zone.parse("#{Date.current} #{time_string}")
     (time.hour * 60) + time.min
+  end
+
+  def date_and_time_in_future
+    return unless date.present?
+
+    if date < Date.current
+      errors.add(:date, 'cannot be in the past')
+      return
+    end
+
+    return unless date == Date.current && start_time.present?
+
+    parsed = parse_time(start_time)
+    errors.add(:start_time, 'cannot be in the past') if parsed && parsed <= Time.current
+  end
+
+  def parse_time(time_string)
+    Time.zone.parse("#{date} #{time_string}")
+  rescue ArgumentError, TypeError
+    nil
   end
 end

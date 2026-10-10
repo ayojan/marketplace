@@ -72,6 +72,20 @@ const BookingCalendar = ({ bookings: initialBookings }: any) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + step, 1));
   };
 
+  const isPast = (date: Date | null) => {
+    if (!date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return d < today;
+  };
+
+  const isDayInPast = (day: number | null) => {
+    if (!day) return false;
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return isPast(date);
+  };
+
   const isToday = (day: number | null) => {
     if (!day) return false;
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -116,12 +130,12 @@ const BookingCalendar = ({ bookings: initialBookings }: any) => {
                 key={i}
                 onClick={() => day && setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
                 className={`min-h-[100px] p-2 transition-all cursor-pointer relative group ${
-                  !day ? 'bg-[#0f1115]/50' : 'bg-[#16191e] hover:bg-white/[0.02]'
+                  !day ? 'bg-[#0f1115]/50' : isDayInPast(day) ? 'bg-[#16191e]/60 opacity-60 hover:bg-white/[0.02]' : 'bg-[#16191e] hover:bg-white/[0.02]'
                 } ${isSelected(day) ? 'ring-2 ring-inset ring-primary z-10' : ''}`}
               >
                 {day && (
                   <>
-                    <span className={`text-xs font-bold ${isToday(day) ? 'size-6 bg-primary text-primary-foreground rounded flex items-center justify-center' : 'text-slate-400'}`}>
+                    <span className={`text-xs font-bold ${isToday(day) ? 'size-6 bg-primary text-primary-foreground rounded flex items-center justify-center' : isDayInPast(day) ? 'text-slate-600' : 'text-slate-400'}`}>
                       {day}
                     </span>
                     <div className="mt-2 space-y-1">
@@ -189,9 +203,18 @@ const BookingCalendar = ({ bookings: initialBookings }: any) => {
                 )}
               </div>
 
-              <Button size="sm" className="w-full rounded-lg font-bold">
+              <Button 
+                size="sm" 
+                disabled={isPast(selectedDate)}
+                className="w-full rounded-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+              >
                 <Plus className="mr-1.5 size-3.5" /> Add Availability
               </Button>
+              {isPast(selectedDate) && (
+                <p className="text-[10px] text-slate-500 text-center font-medium">
+                  Past dates cannot be modified for availability
+                </p>
+              )}
             </motion.div>
           </AnimatePresence>
         ) : (

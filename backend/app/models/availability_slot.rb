@@ -32,7 +32,7 @@ class AvailabilitySlot < ApplicationRecord
   validates :is_available, inclusion: { in: [true, false] }
 
   validate :end_time_after_start_time
-  validate :date_not_in_past, on: :create
+  validate :date_and_time_not_in_past, if: -> { new_record? || date_changed? || start_time_changed? }
 
   scope :available, -> { where(is_available: true) }
   scope :for_date, ->(date) { where(date: date) }
@@ -83,6 +83,14 @@ class AvailabilitySlot < ApplicationRecord
            .exists?([conflict_sql, (end_time.hour * 60) + end_time.min, (start_time.hour * 60) + start_time.min])
   end
 
+  def passed?
+    return true if date < Date.current
+    return false if date > Date.current
+    return false unless start_time
+
+    date.in_time_zone.change(hour: start_time.hour, min: start_time.min) <= Time.current
+  end
+
   private
 
   def end_time_after_start_time
@@ -99,11 +107,17 @@ class AvailabilitySlot < ApplicationRecord
     errors.add(:end_time, 'must be after start time')
   end
 
-  def date_not_in_past
+  def date_and_time_not_in_past
     return unless date
 
-    return unless date < Date.current
+    if date < Date.current
+      errors.add(:date, 'cannot be in the past')
+      return
+    end
 
-    errors.add(:date, 'cannot be in the past')
+    return unless date == Date.current && start_time
+
+    slot_datetime = date.in_time_zone.change(hour: start_time.hour, min: start_time.min)
+    errors.add(:start_time, 'cannot be in the past') if slot_datetime <= Time.current
   end
 end

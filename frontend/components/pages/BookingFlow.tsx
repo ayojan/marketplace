@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useId } from 'react';
+import React, { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { apiService } from '@/lib/api';
@@ -54,6 +54,11 @@ interface Service {
   };
 }
 
+interface AlternativeSlot {
+  date: string;
+  start_time: string;
+}
+
 const POPULAR_LOCATIONS = ['Delhi NCR', 'Mumbai', 'Bengaluru', 'Jaipur', 'Goa', 'Chandigarh'];
 
 const COMMON_REQUIREMENTS = [
@@ -74,6 +79,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
   const [loading, setLoading] = useState(true);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [step, setStep] = useState(1);
+  const isFirstRender = useRef(true);
   
   // Form State
   const [bookingDate, setBookingDate] = useState(searchParams.get('date') || '');
@@ -83,7 +89,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
   
   // Availability State
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-  const [alternatives, setAlternatives] = useState<any[]>([]);
+  const [alternatives, setAlternatives] = useState<AlternativeSlot[]>([]);
 
   useEffect(() => {
     const loadService = async () => {
@@ -142,8 +148,42 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
     }
   }, [params.serviceId]);
 
+  const getTodayStr = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const getCurrentTimeStr = () => {
+    const d = new Date();
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
+  const isSlotInPast = useCallback(() => {
+    if (!bookingDate) return false;
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (bookingDate < todayStr) return true;
+    if (bookingDate === todayStr && startTime) {
+      const currentTimeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      return startTime <= currentTimeStr;
+    }
+    return false;
+  }, [bookingDate, startTime]);
+
   const checkAvailability = useCallback(async () => {
     if (!bookingDate || !startTime) return;
+
+    if (isSlotInPast()) {
+      setIsAvailable(false);
+      setCheckingAvailability(false);
+      setAlternatives([]);
+      return;
+    }
 
     // If service ID is not a numeric database ID (e.g. s1), skip backend check to prevent 404
     const isNumeric = /^\d+$/.test(String(params.serviceId));
@@ -177,21 +217,44 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
       }
     } catch (err) {
       console.warn('Availability check soft-fallback:', err);
-      // Soft-fallback: allow proceeding if availability endpoint is optional or in dev mode
-      setIsAvailable(true);
+      // Soft-fallback: allow proceeding only if slot is not in the past
+      if (!isSlotInPast()) {
+        setIsAvailable(true);
+      } else {
+        setIsAvailable(false);
+      }
     } finally {
       setCheckingAvailability(false);
     }
-  }, [params.serviceId, bookingDate, startTime]);
+  }, [params.serviceId, bookingDate, startTime, isSlotInPast]);
 
+  // Scroll restoration: smooth scroll to top on step transitions
   useEffect(() => {
-    if (bookingDate && startTime) {
-      checkAvailability();
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
+
+  // Debounced availability check (500ms) to avoid rapid API calls during user inputs
+  useEffect(() => {
+    if (!bookingDate || !startTime) return;
+
+    const timer = setTimeout(() => {
+      checkAvailability();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [bookingDate, startTime, checkAvailability]);
 
   const handleConfirmBooking = async () => {
     if (!service) return;
+
+    if (isSlotInPast()) {
+      toast.error('Cannot book a date or time in the past');
+      return;
+    }
     
     setLoading(true);
     try {
@@ -350,12 +413,12 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
                         <div className="space-y-5">
                            {/* Location Input */}
                            <div className="space-y-2">
-                              <label className="text-xs font-bold text-[#221F1C] block">
+                              <label htmlFor="booking-location" className="text-xs font-bold text-[#221F1C] block">
                                  Event Location / Venue Address <span className="text-[#9E5338]">*</span>
                               </label>
                               <div className="relative">
                                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#6B6560]" />
-                                 <input 
+                                 <input id="booking-location"
                                    type="text" 
                                    value={location}
                                    onChange={(e) => setLocation(e.target.value)}
@@ -386,10 +449,10 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
 
                            {/* Requirements Textarea */}
                            <div className="space-y-2">
-                              <label className="text-xs font-bold text-[#221F1C] block">
+                              <label htmlFor="booking-requirements" className="text-xs font-bold text-[#221F1C] block">
                                  Special Requirements & Vision
                               </label>
-                              <textarea 
+                              <textarea id="booking-requirements"
                                 value={requirements}
                                 onChange={(e) => setRequirements(e.target.value)}
                                 className="w-full bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl p-3.5 text-xs text-[#221F1C] placeholder:text-[#6B6560] focus:outline-none focus:border-[#9E5338] min-h-[120px] resize-none transition-colors" 
@@ -442,29 +505,30 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                            <div className="space-y-2">
-                              <label className="text-xs font-bold text-[#221F1C] block">
+                              <label htmlFor="booking-date" className="text-xs font-bold text-[#221F1C] block">
                                  Event Date <span className="text-[#9E5338]">*</span>
                               </label>
                               <div className="relative">
                                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#6B6560]" />
-                                 <input 
+                                 <input id="booking-date"
                                    type="date" 
                                    value={bookingDate}
-                                   min={new Date().toISOString().split('T')[0]}
+                                   min={getTodayStr()}
                                    onChange={(e) => setBookingDate(e.target.value)}
                                    className="w-full bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl h-11 pl-10 pr-4 text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors" 
                                  />
                               </div>
                            </div>
                            <div className="space-y-2">
-                              <label className="text-xs font-bold text-[#221F1C] block">
+                              <label htmlFor="booking-time" className="text-xs font-bold text-[#221F1C] block">
                                  Starting Time <span className="text-[#9E5338]">*</span>
                               </label>
                               <div className="relative">
                                  <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#6B6560]" />
-                                 <input 
+                                 <input id="booking-time"
                                    type="time" 
                                    value={startTime}
+                                   min={bookingDate === getTodayStr() ? getCurrentTimeStr() : undefined}
                                    onChange={(e) => setStartTime(e.target.value)}
                                    className="w-full bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl h-11 pl-10 pr-4 text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors" 
                                  />
@@ -474,7 +538,12 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
 
                         {/* Availability Status Feedback */}
                         <div>
-                           {checkingAvailability ? (
+                           {isSlotInPast() ? (
+                              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-2.5 text-xs text-amber-800 font-medium">
+                                 <AlertCircle className="size-4.5 text-amber-600 shrink-0" />
+                                 <span>The selected date or time has already passed. Please choose an upcoming date and time.</span>
+                              </div>
+                           ) : checkingAvailability ? (
                               <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9] flex items-center gap-3 text-xs text-[#6B6560]">
                                  <Loader2 className="size-4 animate-spin text-[#9E5338]" /> Checking professional availability for this slot...
                               </div>
@@ -532,7 +601,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
                            </Button>
                            <Button 
                              onClick={() => setStep(3)} 
-                             disabled={!bookingDate || !startTime || isAvailable === false || checkingAvailability}
+                             disabled={!bookingDate || !startTime || isAvailable === false || checkingAvailability || isSlotInPast()}
                              className="flex-[2] h-11 rounded-full font-medium text-xs bg-[#9E5338] hover:bg-[#86442B] text-white shadow-xs transition-colors cursor-pointer"
                            >
                              Review Booking

@@ -6,6 +6,7 @@ import { apiService } from '../../lib/api';
 import { ShieldCheck, Star, Search, MapPin, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Service {
   id: string;
@@ -14,6 +15,7 @@ interface Service {
   base_price: number;
   formatted_price: string;
   pricing_type: string;
+  images?: { id?: number | string; url?: string }[];
   vendor_profile: {
     id: string;
     business_name: string;
@@ -21,6 +23,8 @@ interface Service {
     average_rating: number;
     total_reviews: number;
     verification_status: string;
+    image?: string;
+    profile_image_url?: string;
   };
   category: {
     name: string;
@@ -128,31 +132,48 @@ const ServiceSearch = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {services.map((service) => (
                 <div key={service.id} className="group bg-card rounded-[2rem] border border-border/50 overflow-hidden hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-500 flex flex-col">
-                  <div className="aspect-[4/3] bg-secondary/30 relative overflow-hidden">
+                  {/* Entire visible photo clickable to open vendor profile */}
+                  <Link 
+                    href={`/vendors/${service.vendor_profile.id}`}
+                    className="block aspect-[4/3] bg-secondary/30 relative overflow-hidden cursor-pointer group/img"
+                    aria-label={`View ${service.vendor_profile.business_name} profile`}
+                  >
                     <div className="absolute top-6 left-6 z-10">
                       <Badge className="bg-background/80 backdrop-blur-md text-primary border border-primary/20 hover:bg-background px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold">
                         {service.category.name}
                       </Badge>
                     </div>
-                    <div className="w-full h-full bg-slate-900/50 flex flex-col items-center justify-center text-slate-600 font-medium gap-3">
-                      <div className="p-4 rounded-full bg-slate-800/50 border border-slate-700/50">
-                        <Search className="size-8 opacity-20" />
+                    {(service.images?.[0]?.url || service.vendor_profile.profile_image_url || service.vendor_profile.image) ? (
+                      <Image
+                        src={service.images?.[0]?.url || service.vendor_profile.profile_image_url || service.vendor_profile.image || ''}
+                        alt={service.name}
+                        fill
+                        unoptimized
+                        className="object-cover group-hover/img:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-900/50 flex flex-col items-center justify-center text-slate-600 font-medium gap-3">
+                        <div className="p-4 rounded-full bg-slate-800/50 border border-slate-700/50">
+                          <Search className="size-8 opacity-20" />
+                        </div>
+                        <span className="text-sm opacity-40 uppercase tracking-tighter">No Preview Available</span>
                       </div>
-                      <span className="text-sm opacity-40 uppercase tracking-tighter">No Preview Available</span>
-                    </div>
-                  </div>
+                    )}
+                  </Link>
                   
                   <div className="p-8 flex-1 flex flex-col relative">
                     <div className="flex justify-between items-start mb-6">
                       <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
-                            {service.vendor_profile.business_name}
-                          </p>
-                          {service.vendor_profile.verification_status === 'verified' && (
-                            <ShieldCheck size={14} className="text-blue-400 fill-blue-400/10" />
-                          )}
-                        </div>
+                        <Link href={`/vendors/${service.vendor_profile.id}`} className="block">
+                          <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
+                              {service.vendor_profile.business_name}
+                            </p>
+                            {service.vendor_profile.verification_status === 'verified' && (
+                              <ShieldCheck size={14} className="text-blue-400 fill-blue-400/10" />
+                            )}
+                          </div>
+                        </Link>
                         <h3 className="text-2xl font-bold text-white group-hover:text-primary transition-colors leading-tight">
                           {service.name}
                         </h3>
@@ -175,7 +196,7 @@ const ServiceSearch = () => {
                         </span>
                       </div>
                       <Link 
-                        href={`/photographer/${service.vendor_profile.id}`}
+                        href={`/vendors/${service.vendor_profile.id}`}
                         className="bg-secondary text-white px-6 py-3 rounded-full hover:bg-primary transition-all text-sm font-bold border border-border/50"
                       >
                         View Profile

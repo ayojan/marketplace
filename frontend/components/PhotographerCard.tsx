@@ -9,8 +9,22 @@ import { apiService } from '@/lib/api';
 import { tokenService } from '@/lib/tokenService';
 import { toast } from 'sonner';
 
+interface Vendor {
+  id: string;
+  name?: string;
+  business_name?: string;
+  image?: string;
+  profile_image_url?: string;
+  rating?: number;
+  average_rating?: number;
+  total_reviews?: number;
+  location?: string;
+  base_price?: number;
+  is_favorite?: boolean;
+}
+
 interface PhotographerCardProps {
-  photographer: any;
+  photographer: Vendor;
   onFavoriteToggle?: (vendorId: string, isFav: boolean) => void;
 }
 
@@ -98,28 +112,35 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   return (
     <div className="bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
       
-      {/* Photo header with heart wishlist button and Verified badge */}
+      {/* Photo header - Entire visible photo clickable to open vendor profile */}
       <div className="relative aspect-[16/10] overflow-hidden bg-[#F3EADF]">
-        <Image
-          src={image}
-          alt={name}
-          fill
-          unoptimized
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        <Link 
+          href={`/vendors/${id}`}
+          className="block w-full h-full cursor-pointer relative"
+          aria-label={`View ${name} profile`}
+        >
+          <Image
+            src={image}
+            alt={name}
+            fill
+            unoptimized
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
 
-        {/* Verified Partner Badge */}
-        <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-white/60 text-[11px] font-semibold text-[#8E4532] shadow-xs">
-          <ShieldCheck className="size-3.5 text-[#9E5338]" />
-          <span>Verified Partner</span>
-        </div>
+          {/* Verified Partner Badge */}
+          <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-white/60 text-[11px] font-semibold text-[#8E4532] shadow-xs pointer-events-none">
+            <ShieldCheck className="size-3.5 text-[#9E5338]" />
+            <span>Verified Partner</span>
+          </div>
+        </Link>
 
-        {/* Favorite Heart Button */}
+        {/* Favorite Heart Button - Interactive overlay */}
         <button 
+          type="button"
           onClick={handleToggleFavorite}
           disabled={isLiking}
           title={isLiked ? "Remove from saved" : "Save to favorites"}
-          className="absolute top-3 right-3 size-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-[#9E5338] transition-all cursor-pointer z-10"
+          className="absolute top-3 right-3 size-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-[#9E5338] transition-all cursor-pointer z-20"
         >
           <Heart className={`size-4 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
         </button>
@@ -128,10 +149,12 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
       {/* Card Content Body */}
       <div className="p-4 space-y-2.5 bg-white">
         
-        {/* Vendor Title */}
-        <h3 className="text-base font-serif font-bold text-[#221F1C] truncate tracking-tight group-hover:text-[#9E5338] transition-colors">
-          {name}
-        </h3>
+        {/* Clickable Vendor Title */}
+        <Link href={`/vendors/${id}`} className="block">
+          <h3 className="text-base font-serif font-bold text-[#221F1C] truncate tracking-tight group-hover:text-[#9E5338] transition-colors cursor-pointer">
+            {name}
+          </h3>
+        </Link>
 
         {/* Rating Line & Response Metric */}
         <div className="flex items-center justify-between text-xs">
@@ -177,24 +200,5 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
       </div>
 
     </div>
-  );
-}
-
-function ChevronRight(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m9 18 6-6-9-6" />
-    </svg>
   );
 }

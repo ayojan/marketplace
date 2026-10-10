@@ -27,7 +27,8 @@ class CustomerFavorite < ApplicationRecord
   belongs_to :vendor_profile, counter_cache: :favorites_count
 
   # == Validations ==
-  validates :user_id, uniqueness: { scope: :vendor_profile_id, message: 'can only favorite a vendor once' }
+  validates :user_id, presence: true, uniqueness: { scope: :vendor_profile_id, message: 'can only favorite a vendor once' }
+  validates :vendor_profile_id, presence: true
 
   # == Scopes ==
   scope :for_user, ->(user_id) { where(user_id: user_id) }

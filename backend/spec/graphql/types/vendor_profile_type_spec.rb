@@ -117,7 +117,10 @@ RSpec.describe Types::VendorProfileType, type: :graphql do
   end
 
   it 'returns service categories list correctly' do
-    vendor.update!(service_categories: 'Photography, Videography, Event Planning')
+    ['Photography', 'Videography', 'Event Planning'].each do |cat_name|
+      cat = create(:category, name: cat_name)
+      create(:service, vendor_profile: vendor, service_category: cat, name: "#{cat_name} Service")
+    end
 
     variables = { id: vendor.id }
     result = schema.execute(query, variables: variables, context: context)
@@ -125,7 +128,7 @@ RSpec.describe Types::VendorProfileType, type: :graphql do
     vendor_data = result.dig('data', 'vendorProfile')
     categories = vendor_data['serviceCategoriesList']
 
-    expect(categories).to eq(['Photography', 'Videography', 'Event Planning'])
+    expect(categories).to match_array(['Photography', 'Videography', 'Event Planning'])
   end
 
   it 'returns associated services and portfolio items' do

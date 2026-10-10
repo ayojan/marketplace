@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { apiService } from '@/lib/api';
 import Header from '@/components/Header';
@@ -48,7 +48,7 @@ const MOCK_CUSTOMER_BOOKINGS = [
     id: 'b1',
     service: { name: 'Full Day Traditional & Candid Wedding Coverage' },
     vendor: { 
-      id: '1',
+      id: '4',
       business_name: 'The Wedding Narratives', 
       location: 'Delhi NCR', 
       image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
@@ -64,7 +64,7 @@ const MOCK_CUSTOMER_BOOKINGS = [
     id: 'b2',
     service: { name: 'HD Airbrush Bridal Makeup & Hair Styling' },
     vendor: { 
-      id: '2',
+      id: '5',
       business_name: 'Meera Makeovers', 
       location: 'Gurgaon', 
       image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80',
@@ -80,7 +80,7 @@ const MOCK_CUSTOMER_BOOKINGS = [
 
 const MOCK_SAVED_VENDORS = [
   {
-    id: '1',
+    id: '4',
     name: 'The Wedding Narratives',
     category: 'Photographer',
     location: 'Delhi NCR',
@@ -90,7 +90,7 @@ const MOCK_SAVED_VENDORS = [
     image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
   },
   {
-    id: '2',
+    id: '5',
     name: 'Meera Makeovers',
     category: 'Makeup Artist',
     location: 'Gurgaon',
@@ -100,7 +100,7 @@ const MOCK_SAVED_VENDORS = [
     image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80'
   },
   {
-    id: '3',
+    id: '6',
     name: 'Eventica Decor & Floral',
     category: 'Decorator',
     location: 'Delhi NCR',
@@ -142,10 +142,73 @@ const CustomerDashboard = () => {
     weddingDate: '2026-02-14'
   });
 
-  useEffect(() => {
-    fetchCompletedBookings();
-    fetchSavedVendors();
-  }, []);
+  const isBookingUpcoming = (b: any) => {
+    if (!b) return false;
+    const s = String(b.status || '').toLowerCase();
+    if (s === 'completed' || s === 'cancelled' || s === 'declined') {
+      return false;
+    }
+    // Any pending, accepted, confirmed, or in-progress booking is upcoming
+    if (['confirmed', 'accepted', 'pending', 'counter_offered'].includes(s)) {
+      return true;
+    }
+    // Fallback date check: if event is today or future
+    if (b.event_date) {
+      const eventTime = new Date(b.event_date).getTime();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return !isNaN(eventTime) && eventTime >= today.getTime();
+    }
+    return false;
+  };
+
+  const isBookingCompleted = (b: any) => {
+    return String(b?.status || '').toLowerCase() === 'completed';
+  };
+
+  const renderStatusBadge = (status: string) => {
+    const s = String(status || '').toLowerCase();
+    switch (s) {
+      case 'completed':
+        return (
+          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs px-3 py-1 font-semibold">
+            <CheckCircle2 size={12} className="mr-1" /> Completed
+          </Badge>
+        );
+      case 'confirmed':
+      case 'accepted':
+        return (
+          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs px-3 py-1 font-semibold">
+            <Sparkles size={12} className="mr-1" /> Confirmed
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge className="bg-[#F3EADF] text-[#9E5338] border-[#E8E2D9] text-xs px-3 py-1 font-semibold">
+            <Clock size={12} className="mr-1" /> Pending Approval
+          </Badge>
+        );
+      case 'counter_offered':
+        return (
+          <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-xs px-3 py-1 font-semibold">
+            Counter Offer
+          </Badge>
+        );
+      case 'declined':
+      case 'cancelled':
+        return (
+          <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-xs px-3 py-1 font-semibold capitalize">
+            {s}
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-[#FBF8F4] text-[#6B6560] border-[#E8E2D9] text-xs px-3 py-1 font-semibold capitalize">
+            {s}
+          </Badge>
+        );
+    }
+  };
 
   const fetchSavedVendors = async () => {
     try {
@@ -170,10 +233,10 @@ const CustomerDashboard = () => {
     }
   };
 
-  const fetchCompletedBookings = async () => {
+  const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await apiService.bookings.getAll({ status: 'completed' }).catch(() => null);
+      const response = await apiService.bookings.getAll().catch(() => null);
       const fetched = response?.data?.bookings || [];
       if (fetched.length > 0) {
         setBookings(fetched);
@@ -190,7 +253,7 @@ const CustomerDashboard = () => {
   const totalSpent = bookings.reduce((sum, b) => sum + (b.total_amount || 0), 0);
 
   const stats = [
-    { label: 'Total Reservations', value: bookings.length.toString(), icon: CalendarIcon, trend: '1 Upcoming' },
+    { label: 'Total Reservations', value: bookings.length.toString(), icon: CalendarIcon, trend: `${bookings.filter(b => isBookingUpcoming(b)).length} Upcoming` },
     { label: 'Saved Pros', value: savedVendors.length.toString(), icon: Heart, trend: 'Wishlist' },
     { label: 'Total Investment', value: `₹${totalSpent.toLocaleString()}`, icon: ShoppingBag, trend: 'Lifetime' },
     { label: 'Verified Reviews', value: '1 Given', icon: Star, trend: '5.0 Rating' }
@@ -199,7 +262,7 @@ const CustomerDashboard = () => {
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
 
   useEffect(() => {
-    fetchCompletedBookings();
+    fetchBookings();
     fetchSavedVendors();
     fetchChecklist();
     fetchCustomerProfile();
@@ -293,11 +356,13 @@ const CustomerDashboard = () => {
     }
   };
 
-  const filteredBookings = bookings.filter(b => {
-    if (bookingFilter === 'upcoming') return b.status === 'confirmed';
-    if (bookingFilter === 'completed') return b.status === 'completed';
-    return true;
-  });
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(b => {
+      if (bookingFilter === 'upcoming') return isBookingUpcoming(b);
+      if (bookingFilter === 'completed') return isBookingCompleted(b);
+      return true;
+    });
+  }, [bookings, bookingFilter]);
 
   const renderOverview = () => (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -359,34 +424,27 @@ const CustomerDashboard = () => {
                   >
                     <div className="flex items-start gap-4">
                       {booking.vendor?.image && (
-                        <div className="relative size-16 rounded-xl overflow-hidden shrink-0 border border-[#E8E2D9]">
+                        <Link href={`/vendors/${booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden shrink-0 border border-[#E8E2D9] group/vimg cursor-pointer">
                           <ImageWithFallback
                             src={booking.vendor.image}
                             alt={booking.vendor.business_name}
                             fill
                             unoptimized
-                            className="object-cover"
+                            className="object-cover group-hover/vimg:scale-105 transition-transform duration-300"
                           />
-                        </div>
+                        </Link>
                       )}
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-serif font-bold text-[#221F1C]">{booking.service?.name}</h4>
-                          {booking.status === 'completed' && (
-                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <CheckCircle2 size={12} /> Completed
-                            </span>
-                          )}
-                          {booking.status === 'confirmed' && (
-                            <span className="text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] border border-[#E8E2D9] px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Sparkles size={12} /> Upcoming
-                            </span>
-                          )}
+                          {renderStatusBadge(booking.status)}
                         </div>
 
-                        <p className="text-xs font-semibold text-[#6B6560]">
-                          {booking.vendor?.business_name} • <span className="text-[#9E5338] font-normal">{booking.vendor?.location}</span>
-                        </p>
+                        <Link href={`/vendors/${booking.vendor?.id || 4}`} className="inline-block hover:text-[#9E5338] transition-colors cursor-pointer">
+                          <p className="text-xs font-semibold text-[#6B6560]">
+                            {booking.vendor?.business_name} • <span className="text-[#9E5338] font-normal">{booking.vendor?.location}</span>
+                          </p>
+                        </Link>
                         
                         <div className="flex items-center gap-4 text-xs text-[#6B6560] pt-1">
                           <span className="flex items-center gap-1 font-medium">
@@ -439,20 +497,33 @@ const CustomerDashboard = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {MOCK_SAVED_VENDORS.slice(0, 2).map((vendor) => (
-                <div key={vendor.id} className="p-4 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] flex gap-3.5 items-center">
+                <Link
+                  key={vendor.id}
+                  href={`/vendors/${vendor.id}`}
+                  className="p-4 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] flex gap-3.5 items-center hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
+                >
                   <div className="relative size-14 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
-                    <ImageWithFallback src={vendor.image} alt={vendor.name} fill unoptimized className="object-cover" />
+                    <ImageWithFallback 
+                      src={vendor.image} 
+                      alt={vendor.name} 
+                      fill 
+                      unoptimized 
+                      className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-xs font-bold text-[#221F1C] truncate">{vendor.name}</h4>
-                    <p className="text-[10px] text-[#6B6560]">{vendor.category} • {vendor.location}</p>
+                    <h4 className="text-xs font-bold text-[#221F1C] truncate group-hover:text-[#9E5338] transition-colors">
+                      {vendor.name}
+                    </h4>
+                    <p className="text-[10px] text-[#6B6560] truncate">{vendor.category} • {vendor.location}</p>
                     <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-[#221F1C]">
                       <Star size={12} className="fill-[#D97706] text-[#D97706]" />
                       <span>{vendor.rating}</span>
                       <span className="text-[#6B6560] font-normal">({vendor.reviewsCount})</span>
                     </div>
                   </div>
-                </div>
+                  <ChevronRight size={16} className="text-[#9E5338] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+                </Link>
               ))}
             </div>
           </div>
@@ -519,22 +590,24 @@ const CustomerDashboard = () => {
 
             <div className="space-y-3">
               {savedVendors.map((pro) => (
-                <div key={pro.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9]">
-                  <div className="flex items-center gap-2.5">
+                <Link 
+                  key={pro.id} 
+                  href={`/vendors/${pro.id}`}
+                  className="flex items-center justify-between p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9] hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <div className="relative size-10 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
-                      <ImageWithFallback src={pro.image} alt={pro.name} fill unoptimized className="object-cover" />
+                      <ImageWithFallback src={pro.image} alt={pro.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-300" />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-[#221F1C] truncate max-w-[120px]">{pro.name}</p>
-                      <p className="text-[10px] text-[#6B6560]">{pro.category}</p>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[#221F1C] group-hover:text-[#9E5338] transition-colors truncate max-w-[130px]">{pro.name}</p>
+                      <p className="text-[10px] text-[#6B6560] truncate">{pro.category}</p>
                     </div>
                   </div>
-                  <Link href={`/vendors/${pro.id}`}>
-                    <Button size="sm" variant="ghost" className="size-8 p-0 rounded-full text-[#9E5338] hover:bg-[#F3EADF]">
-                      <ChevronRight size={16} />
-                    </Button>
-                  </Link>
-                </div>
+                  <div className="size-8 rounded-full flex items-center justify-center text-[#9E5338] group-hover:bg-[#F3EADF] transition-colors shrink-0">
+                    <ChevronRight size={16} />
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -583,7 +656,7 @@ const CustomerDashboard = () => {
               bookingFilter === 'upcoming' ? 'bg-[#9E5338] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#221F1C]'
             }`}
           >
-            Upcoming
+            Upcoming ({bookings.filter(b => isBookingUpcoming(b)).length})
           </button>
           <button
             onClick={() => setBookingFilter('completed')}
@@ -591,41 +664,58 @@ const CustomerDashboard = () => {
               bookingFilter === 'completed' ? 'bg-[#9E5338] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#221F1C]'
             }`}
           >
-            Completed
+            Completed ({bookings.filter(b => isBookingCompleted(b)).length})
           </button>
         </div>
       </div>
 
       <div className="space-y-4">
-        {filteredBookings.map((booking) => (
-          <div key={booking.id} className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm hover:border-[#9E5338]/40 transition-all space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E2D9]">
-              <div className="flex items-center gap-4">
-                <div className="relative size-16 rounded-xl overflow-hidden border border-[#E8E2D9] shrink-0">
-                  <ImageWithFallback src={booking.vendor?.image} alt={booking.vendor?.business_name} fill unoptimized className="object-cover" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-md">
-                    {booking.vendor?.category}
-                  </span>
-                  <h4 className="text-base font-serif font-bold text-[#221F1C] mt-1">{booking.service?.name}</h4>
-                  <p className="text-xs text-[#6B6560] font-medium">{booking.vendor?.business_name} • {booking.vendor?.location}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 self-end md:self-center">
-                {booking.status === 'completed' && (
-                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs px-3 py-1 font-semibold">
-                    <CheckCircle2 size={12} className="mr-1" /> Completed
-                  </Badge>
-                )}
-                {booking.status === 'confirmed' && (
-                  <Badge className="bg-[#F3EADF] text-[#9E5338] border-[#E8E2D9] text-xs px-3 py-1 font-semibold">
-                    <Sparkles size={12} className="mr-1" /> Confirmed
-                  </Badge>
-                )}
-              </div>
+        {filteredBookings.length === 0 ? (
+          <div className="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-[#E8E2D9] space-y-3">
+            <div className="size-12 rounded-full bg-[#F3EADF] text-[#9E5338] flex items-center justify-center mx-auto">
+              <CalendarIcon className="size-6" />
             </div>
+            <h4 className="font-serif font-bold text-base text-[#221F1C]">
+              {bookingFilter === 'upcoming' 
+                ? 'No Upcoming Bookings Found' 
+                : bookingFilter === 'completed' 
+                  ? 'No Completed Bookings Found' 
+                  : 'No Event Bookings Found'}
+            </h4>
+            <p className="text-xs text-[#6B6560] max-w-sm mx-auto">
+              {bookingFilter === 'upcoming'
+                ? 'You do not have any upcoming bookings scheduled. Explore verified marketplace pros to book for your celebration!'
+                : 'Browse our directory to reserve verified photographers, makeup artists, and event specialists.'}
+            </p>
+            <Link href="/vendors" className="inline-block mt-2">
+              <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs">
+                Explore Verified Pros
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          filteredBookings.map((booking) => (
+            <div key={booking.id} className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm hover:border-[#9E5338]/40 transition-all space-y-4">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E2D9]">
+                <div className="flex items-center gap-4">
+                  <Link href={`/vendors/${booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden border border-[#E8E2D9] shrink-0 group/vimg cursor-pointer">
+                    <ImageWithFallback src={booking.vendor?.image} alt={booking.vendor?.business_name} fill unoptimized className="object-cover group-hover/vimg:scale-105 transition-transform duration-300" />
+                  </Link>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-md">
+                      {booking.vendor?.category || 'Creative Partner'}
+                    </span>
+                    <h4 className="text-base font-serif font-bold text-[#221F1C] mt-1">{booking.service?.name}</h4>
+                    <Link href={`/vendors/${booking.vendor?.id || 4}`} className="hover:text-[#9E5338] transition-colors cursor-pointer inline-block">
+                      <p className="text-xs text-[#6B6560] font-medium">{booking.vendor?.business_name} • {booking.vendor?.location}</p>
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 self-end md:self-center">
+                  {renderStatusBadge(booking.status)}
+                </div>
+              </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-[#FBF8F4] p-4 rounded-xl border border-[#E8E2D9]">
               <div>
@@ -687,8 +777,9 @@ const CustomerDashboard = () => {
                 )}
               </div>
             </div>
-          </div>
-        ))}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -724,21 +815,25 @@ const CustomerDashboard = () => {
             <div key={vendor.id} className="bg-white rounded-2xl border border-[#E8E2D9] overflow-hidden shadow-sm hover:border-[#9E5338]/40 transition-all group flex flex-col justify-between">
               <div>
                 <div className="relative aspect-[16/10] w-full bg-[#FBF8F4]">
-                  <ImageWithFallback src={vendor.image} alt={vendor.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <Link href={`/vendors/${vendor.id}`} className="block w-full h-full cursor-pointer">
+                    <ImageWithFallback src={vendor.image} alt={vendor.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <span className="absolute bottom-3 left-3 text-[10px] font-bold uppercase tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md pointer-events-none">
+                      {vendor.category}
+                    </span>
+                  </Link>
                   <button
                     onClick={() => handleRemoveSavedVendor(vendor.id)}
-                    className="absolute top-3 right-3 size-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-md"
+                    className="absolute top-3 right-3 size-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-md z-10"
                   >
                     <Trash2 size={14} />
                   </button>
-                  <span className="absolute bottom-3 left-3 text-[10px] font-bold uppercase tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md">
-                    {vendor.category}
-                  </span>
                 </div>
 
                 <div className="p-5 space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-base font-serif font-bold text-[#221F1C]">{vendor.name}</h4>
+                    <Link href={`/vendors/${vendor.id}`}>
+                      <h4 className="text-base font-serif font-bold text-[#221F1C] hover:text-[#9E5338] transition-colors cursor-pointer">{vendor.name}</h4>
+                    </Link>
                     <div className="flex items-center gap-1 text-xs font-bold text-[#221F1C]">
                       <Star size={13} className="fill-[#D97706] text-[#D97706]" />
                       {vendor.rating}
@@ -880,6 +975,7 @@ const CustomerDashboard = () => {
             <input
               type="date"
               value={profileForm.weddingDate}
+              min={new Date().toISOString().split('T')[0]}
               onChange={e => setProfileForm({ ...profileForm, weddingDate: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
             />
@@ -907,7 +1003,7 @@ const CustomerDashboard = () => {
             setSelectedBookingForReview(null);
           }}
           onSuccess={() => {
-            fetchCompletedBookings();
+            fetchBookings();
             toast.success('Review submitted successfully!');
           }}
           bookingId={selectedBookingForReview?.id || 0}

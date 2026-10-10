@@ -8,7 +8,7 @@ class CustomerFavoritesController < ApiController
   def index
     favorites = CustomerFavorite.for_user(current_user.id)
                                 .recent_first
-                                .includes(:vendor_profile)
+                                .includes(vendor_profile: { services: :categories })
 
     render json: {
       favorites: favorites.map { |fav| favorite_json(fav) }
@@ -18,14 +18,21 @@ class CustomerFavoritesController < ApiController
   # POST /customer_favorites
   def create
     vendor_profile_id = params[:vendor_profile_id]
+    vendor_profile = VendorProfile.find_by(id: vendor_profile_id)
 
-    unless VendorProfile.exists?(vendor_profile_id)
+    unless vendor_profile
       return render json: { error: 'Vendor profile not found' }, status: :not_found
+    end
+
+    begin
+      AuthorizationService.authorize!(current_user, vendor_profile, :toggle_favorite)
+    rescue AuthorizationService::NotAuthorizedError => e
+      return render json: { error: e.message }, status: :forbidden
     end
 
     favorite = CustomerFavorite.find_or_initialize_by(
       user_id: current_user.id,
-      vendor_profile_id: vendor_profile_id
+      vendor_profile_id: vendor_profile.id
     )
 
     if favorite.save

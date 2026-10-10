@@ -52,7 +52,7 @@ class ServiceSearchService
 
   def base_scope
     Service.active
-           .joins(vendor_services: { vendor_profile: :user })
+           .joins(vendor_profile: :user)
            .where(users: { role: 'vendor' })
            .distinct
   end
@@ -87,7 +87,7 @@ class ServiceSearchService
     scope = scope.where(pricing_type: pricing_type) if pricing_type.present? && Service.pricing_types.key?(pricing_type)
 
     # Vendor filter
-    scope = scope.where(vendor_services: { vendor_profile_id: vendor_id }) if vendor_id.present?
+    scope = scope.where(services: { vendor_profile_id: vendor_id }) if vendor_id.present?
 
     scope
   end
@@ -113,7 +113,10 @@ class ServiceSearchService
   end
 
   def paginated_services
-    sorted_services.limit(per_page).offset((page - 1) * per_page)
+    sorted_services
+      .includes(:categories, service_images: { image_attachment: :blob }, vendor_profile: { portfolio_items: { images_attachments: :blob } })
+      .limit(per_page)
+      .offset((page - 1) * per_page)
   end
 
   def total_count

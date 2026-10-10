@@ -5,6 +5,10 @@ class RecalculateVendorTrustStatsJob
 
   sidekiq_options retry: 3, dead: true, queue: 'low'
 
+  def sidekiq_options
+    self.class.get_sidekiq_options
+  end
+
   # Use unique job constraint to prevent duplicate jobs for same vendor
   # Requires: gem 'sidekiq-unique-jobs'
   # For now, document the intention to add this
