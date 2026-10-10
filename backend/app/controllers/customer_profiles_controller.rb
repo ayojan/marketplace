@@ -23,7 +23,6 @@ class CustomerProfilesController < ApiController
       current_user.update(user_params)
     end
 
-
     if @customer_profile.update(customer_profile_params)
       render json: {
         message: 'Customer profile updated successfully',
