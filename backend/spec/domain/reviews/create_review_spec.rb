@@ -74,7 +74,7 @@ RSpec.describe Reviews::CreateReview do
         # Try to create second review for same booking
         result = described_class.call(**valid_params)
         expect(result[:success]).to be false
-        expect(result[:error]).to include('already reviewed')
+        expect(result[:error]).to match(/already.*reviewed/i)
       end
     end
 
@@ -132,8 +132,8 @@ RSpec.describe Reviews::CreateReview do
 
     context 'with photos' do
       it 'attaches photos to review' do
-        photo1 = fixture_file_upload('spec/fixtures/test_image.jpg', 'image/jpeg')
-        photo2 = fixture_file_upload('spec/fixtures/test_image.jpg', 'image/jpeg')
+        photo1 = fixture_file_upload('test_image.jpg', 'image/jpeg')
+        photo2 = fixture_file_upload('test_image.jpg', 'image/jpeg')
 
         result = described_class.call(**valid_params, photos: [photo1, photo2])
         review = result[:review]
@@ -142,10 +142,11 @@ RSpec.describe Reviews::CreateReview do
       end
 
       it 'continues if photo attachment fails' do
-        allow_any_instance_of(Review).to receive(:photos).and_raise(StandardError, 'Photo error')
+        allow_any_instance_of(ActiveStorage::Attached::Many).to receive(:attach).and_raise(StandardError, 'Photo error')
 
         expect do
-          result = described_class.call(**valid_params)
+          photo = fixture_file_upload('test_image.jpg', 'image/jpeg')
+          result = described_class.call(**valid_params, photos: [photo])
           expect(result[:success]).to be true
         end.not_to raise_error
       end

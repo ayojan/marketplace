@@ -110,10 +110,10 @@ RSpec.describe User do
     end
 
     describe '#auto_confirm_user' do
-      it 'confirms user automatically on creation' do
+      it 'does not auto-confirm user on creation to require proper confirmation flow' do
         new_user = build(:user, confirmed_at: nil)
         new_user.save
-        expect(new_user.confirmed?).to be true
+        expect(new_user.confirmed?).to be false
       end
     end
 
@@ -183,10 +183,7 @@ RSpec.describe User do
       end
 
       it 'returns false if confirmed_at is nil' do
-        # We need to skip the auto-confirmation for this test
-        user = build(:user)
-        allow(user).to receive(:auto_confirm_user)
-        user.confirmed_at = nil
+        user = build(:user, confirmed_at: nil)
         user.save(validate: false)
         expect(user.confirmed?).to be false
       end
@@ -228,9 +225,7 @@ RSpec.describe User do
 
     describe '.unconfirmed' do
       it 'returns only unconfirmed users' do
-        unconfirmed_user = build(:user)
-        allow(unconfirmed_user).to receive(:auto_confirm_user)
-        unconfirmed_user.confirmed_at = nil
+        unconfirmed_user = build(:user, confirmed_at: nil)
         unconfirmed_user.save(validate: false)
         expect(described_class.unconfirmed).to include(unconfirmed_user)
       end

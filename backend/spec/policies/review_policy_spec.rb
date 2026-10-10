@@ -60,7 +60,7 @@ RSpec.describe ReviewPolicy do
     context 'when user is the vendor' do
       let(:user) { vendor_user }
 
-      it { is_expected.to permit(:vote_helpful) }
+      it { is_expected.not_to permit(:vote_helpful) }
     end
 
     context 'when user is not authenticated' do

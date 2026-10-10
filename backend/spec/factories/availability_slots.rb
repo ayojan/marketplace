@@ -5,12 +5,13 @@ FactoryBot.define do
     vendor_profile
 
     date { rand(1..30).days.from_now.to_date }
-    start_time { '09:00' }
-    end_time { '17:00' }
-    is_available { true }
+    start_time { date == Date.current ? (Time.current + 1.hour).strftime('%H:%M') : '09:00' }
+    end_time { date == Date.current ? (Time.current + 3.hours).strftime('%H:%M') : '17:00' }
 
     trait :today do
       date { Date.current }
+      start_time { (Time.current + 1.hour).strftime('%H:%M') }
+      end_time { (Time.current + 3.hours).strftime('%H:%M') }
     end
 
     trait :tomorrow do

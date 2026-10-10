@@ -5,10 +5,12 @@ module Favorites
     extend Dry::Initializer
 
     option :user, type: Types.Instance(User)
-    option :vendor_profile_id, type: Types::Integer
+    option :vendor_profile_id, type: Types::Coercible::Integer
 
-    def self.call(**)
-      new(**).call
+    def self.call(**kwargs)
+      new(**kwargs).call
+    rescue Dry::Types::ConstraintError, Dry::Types::CoercionError, ArgumentError => e
+      { success: false, error: e.message }
     end
 
     def call

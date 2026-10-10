@@ -62,9 +62,11 @@ class BookingMessage < ApplicationRecord
     return unless sender.vendor?
     return if booking.vendor_first_response_at.present?
 
+    response_time = [sent_at, booking.created_at || Time.current].compact.max
+
     # Update using raw SQL to avoid triggering booking callbacks
     # This ensures the timestamp is recorded without side effects
-    Booking.where(id: booking.id).update_all(vendor_first_response_at: sent_at)
+    Booking.where(id: booking.id).update_all(vendor_first_response_at: response_time)
   rescue StandardError => e
     Rails.logger.error("Failed to record vendor first response: #{e.message}")
   end

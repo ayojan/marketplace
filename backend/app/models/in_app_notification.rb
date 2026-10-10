@@ -18,7 +18,6 @@
 # Indexes
 #
 #  idx_notifications_user_read_date                 (user_id,is_read,created_at)
-#  idx_on_user_id_is_read_created_at_8313b98c79     (user_id,is_read,created_at)
 #  index_in_app_notifications_on_is_read            (is_read)
 #  index_in_app_notifications_on_notification_type  (notification_type)
 #  index_in_app_notifications_on_user_id            (user_id)
@@ -33,7 +32,7 @@ class InAppNotification < ApplicationRecord
   belongs_to :user
 
   # == Validations ==
-  validates :title, :message, :notification_type, presence: true
+  validates :user_id, :title, :message, :notification_type, presence: true
   validates :notification_type, inclusion: {
     in: %w[booking_created booking_accepted booking_rejected booking_cancelled booking_reminder
            new_message review_received],
@@ -57,12 +56,12 @@ class InAppNotification < ApplicationRecord
   end
 
   def self.create_notification(user_id:, title:, message:, notification_type:, related_type: nil, related_id: nil)
-    create(
+    create!(
       user_id: user_id,
       title: title,
       message: message,
       notification_type: notification_type,
-      related_type: related_type,
+      related_type: related_type.presence,
       related_id: related_id
     )
   end

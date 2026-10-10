@@ -6,6 +6,10 @@ class BookingReminderJob
   # Low priority: batch job that can run at non-peak times
   sidekiq_options queue: 'low', retry: 3, dead: true
 
+  def sidekiq_options
+    self.class.get_sidekiq_options
+  end
+
   def perform
     # Find bookings happening in 24 hours (+/- 30 minutes window)
     tomorrow_start = 24.hours.from_now - 30.minutes

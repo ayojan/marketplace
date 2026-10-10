@@ -6,7 +6,7 @@ FactoryBot.define do
     sender factory: %i[user]
 
     message { Faker::Lorem.sentence(word_count: rand(5..50)) }
-    sent_at { rand(1..24).hours.ago }
+    sent_at { Time.current }
 
     trait :from_customer do
       sender factory: %i[user customer]

@@ -145,7 +145,7 @@ RSpec.describe BookingsController do
       json_response = response.parsed_body
       expect(json_response['booking']['service']['id']).to eq(service.id)
       expect(json_response['booking']['customer']['id']).to eq(customer.id)
-      expect(json_response['booking']['vendor']['id']).to eq(vendor.id)
+      expect(json_response['booking']['vendor']['id']).to eq(vendor.vendor_profile.id)
       expect(json_response['booking']['status']).to eq('pending')
       expect(json_response['message']).to eq('Booking created successfully')
     end
@@ -433,6 +433,28 @@ RSpec.describe BookingsController do
       expect(response).to have_http_status(:bad_request)
       json_response = response.parsed_body
       expect(json_response['errors']).to be_present
+    end
+
+    it 'returns unavailable status when date is in the past' do
+      auth_as(customer)
+      params = valid_params.merge(date: 1.day.ago.to_date.to_s)
+      post :check_availability, params: params
+
+      expect(response).to have_http_status(:ok)
+      json_response = response.parsed_body
+      expect(json_response['available']).to be false
+      expect(json_response['message']).to eq('Cannot book a date in the past')
+    end
+
+    it 'returns unavailable status when time has already passed today' do
+      auth_as(customer)
+      params = valid_params.merge(date: Date.current.to_s, start_time: 2.hours.ago.strftime('%H:%M'))
+      post :check_availability, params: params
+
+      expect(response).to have_http_status(:ok)
+      json_response = response.parsed_body
+      expect(json_response['available']).to be false
+      expect(json_response['message']).to eq('Cannot book a time slot in the past')
     end
   end
 

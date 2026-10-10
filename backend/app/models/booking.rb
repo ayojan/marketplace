@@ -62,8 +62,8 @@ class Booking < ApplicationRecord
   validates :status, presence: true
 
   # NOTE: Complex validation logic (vendor_availability) moved to BookingValidationService
-  # Keep minimal validations in model - only data integrity constraints
-  validate :event_date_in_future, on: :create
+  validate :event_date_in_future, if: -> { new_record? || event_date_changed? }
+  validate :event_end_date_after_event_date, if: -> { event_end_date.present? && (new_record? || event_date_changed? || event_end_date_changed?) }
 
   scope :upcoming, -> { where('event_date > ?', Time.current) }
   scope :for_vendor_profile, ->(vendor_profile) { where(vendor_profile: vendor_profile) }
@@ -117,5 +117,11 @@ class Booking < ApplicationRecord
     return unless event_date
 
     errors.add(:event_date, 'must be in the future') if event_date <= Time.current
+  end
+
+  def event_end_date_after_event_date
+    return unless event_end_date && event_date
+
+    errors.add(:event_end_date, 'must be after event date') if event_end_date <= event_date
   end
 end

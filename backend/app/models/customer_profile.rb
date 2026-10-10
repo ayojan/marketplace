@@ -20,7 +20,7 @@
 #
 #  index_customer_profiles_on_budget_range  (budget_range)
 #  index_customer_profiles_on_location      (location)
-#  index_customer_profiles_on_user_id       (user_id)
+#  index_customer_profiles_on_user_id       (user_id) UNIQUE
 #
 # Foreign Keys
 #

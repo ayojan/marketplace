@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_15_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_15_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -155,7 +155,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_15_000001) do
     t.integer "total_bookings", default: 0
     t.index ["budget_range"], name: "index_customer_profiles_on_budget_range"
     t.index ["location"], name: "index_customer_profiles_on_location"
-    t.index ["user_id"], name: "index_customer_profiles_on_user_id"
+    t.index ["user_id"], name: "index_customer_profiles_on_user_id", unique: true, comment: "Ensures each user has at most one customer profile"
   end
 
   create_table "email_notification_preferences", force: :cascade do |t|
@@ -186,7 +186,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_15_000001) do
     t.index ["notification_type"], name: "index_in_app_notifications_on_notification_type"
     t.index ["related_type", "related_id"], name: "index_notifications_on_polymorphic"
     t.index ["user_id", "is_read", "created_at"], name: "idx_notifications_user_read_date"
-    t.index ["user_id", "is_read", "created_at"], name: "idx_on_user_id_is_read_created_at_8313b98c79"
     t.index ["user_id"], name: "index_in_app_notifications_on_user_id"
     t.check_constraint "related_type IS NULL OR (related_type::text = ANY (ARRAY['Booking'::character varying, 'Review'::character varying, 'BookingMessage'::character varying]::text[]))", name: "check_notification_related_type_valid"
   end
@@ -338,7 +337,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_15_000001) do
     t.index ["favorites_count"], name: "index_vendor_profiles_on_favorites_count"
     t.index ["latitude", "longitude"], name: "index_vendor_profiles_on_coordinates"
     t.index ["location"], name: "index_vendor_profiles_on_location"
-    t.index ["user_id"], name: "index_vendor_profiles_on_user_id", comment: "Ensures each user has at most one vendor profile"
+    t.index ["user_id"], name: "index_vendor_profiles_on_user_id", unique: true, comment: "Ensures each user has at most one vendor profile"
     t.index ["verification_status"], name: "index_vendor_profiles_on_verification_status"
     t.check_constraint "completion_rate IS NULL OR completion_rate >= 0::numeric AND completion_rate <= 1.0", name: "check_completion_rate_valid"
     t.check_constraint "response_time_hours IS NULL OR response_time_hours >= 0::numeric", name: "check_response_time_non_negative"

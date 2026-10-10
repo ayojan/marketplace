@@ -21,8 +21,11 @@ class BookingCreationService
   validates :service_id, presence: true
   validates :event_date, presence: true
   validates :total_amount, numericality: { greater_than: 0 }
+  validate :event_date_in_future
   def call
     return { success: false, errors: errors.full_messages } unless valid?
+
+    transaction_succeeded = false
 
     ActiveRecord::Base.transaction do
       # Build booking attributes (do not create yet)
@@ -32,19 +35,25 @@ class BookingCreationService
       check_availability
       prevent_double_booking
 
-      # Use explicit orchestration service to create booking with side effects
-      result = create_booking_with_orchestration
+      # Create booking record inside transaction, skipping asynchronous side effects
+      result = create_booking_record
 
       if result[:success]
         @booking = result[:booking]
-        return result
+        transaction_succeeded = true
+      else
+        # If creation failed, propagate errors and roll back
+        result[:error]&.split(',')&.each do |message|
+          errors.add(:base, message.strip)
+        end
+        raise ActiveRecord::Rollback
       end
+    end
 
-      # If creation failed, propagate errors
-      result[:error]&.split(',')&.each do |message|
-        errors.add(:base, message.strip)
-      end
-
+    if transaction_succeeded && @booking&.persisted?
+      send_confirmation_notification
+      { success: true, booking: @booking }
+    else
       { success: false, errors: errors.full_messages }
     end
   rescue ActiveRecord::RecordInvalid => e
@@ -72,6 +81,9 @@ class BookingCreationService
     end
     final_event_end_date = event_end_date || (final_event_date ? final_event_date + 4.hours : nil)
 
+    @final_event_date = final_event_date
+    @final_event_end_date = final_event_end_date
+
     # Build booking attributes for validation, don't create yet
     @booking_attributes = {
       customer: customer,
@@ -91,37 +103,59 @@ class BookingCreationService
     @booking = Booking.new(@booking_attributes)
   end
 
-  def create_booking_with_orchestration
-    # Use explicit orchestration service to create booking with side effects
-    Bookings::CreateBooking.call(**@booking_attributes)
+  def create_booking_record
+    # Save booking record via domain service without triggering async notifications yet
+    Bookings::CreateBooking.call(**@booking_attributes, skip_notifications: true)
+  end
+
+  def send_confirmation_notification
+    # Trigger notifications strictly outside database transaction
+    Notifications::SendBookingConfirmation.call(booking: @booking)
+  rescue StandardError => e
+    Rails.logger.error("Failed to send booking confirmation for #{@booking&.id}: #{e.message}")
   end
 
   def check_availability
+    booking_date_time = @final_event_date || event_date
+    if booking_date_time <= Time.current
+      errors.add(:event_date, 'must be in the future')
+      @booking.errors.add(:event_date, 'must be in the future') if @booking.respond_to?(:errors)
+      raise ActiveRecord::RecordInvalid, @booking
+    end
+
     availability_checker = AvailabilityCheckerService.new(
       vendor_profile: @vendor_profile,
-      date: event_date.to_date,
-      start_time: event_date.strftime('%H:%M'),
-      end_time: (event_end_date || (event_date + 2.hours)).strftime('%H:%M')
+      date: booking_date_time.to_date,
+      start_time: booking_date_time.strftime('%H:%M'),
+      end_time: (@final_event_end_date || event_end_date || (booking_date_time + 2.hours)).strftime('%H:%M')
     )
 
     return if availability_checker.available?
 
     errors.add(:event_date, 'is not available for this vendor')
-    @booking&.errors&.add(:event_date, 'is not available for this vendor')
+    @booking.errors.add(:event_date, 'is not available for this vendor') if @booking.respond_to?(:errors)
     raise ActiveRecord::RecordInvalid, @booking
   end
 
   def prevent_double_booking
+    booking_date_time = @final_event_date || event_date
     conflict_resolver = ConflictResolutionService.new(
       vendor_profile: @vendor_profile,
-      event_date: event_date,
-      event_end_date: event_end_date || (event_date + 2.hours),
+      event_date: booking_date_time,
+      event_end_date: @final_event_end_date || event_end_date || (booking_date_time + 2.hours),
       exclude_booking_id: nil
     )
 
     return unless conflict_resolver.conflict?
 
     errors.add(:event_date, 'conflicts with another booking')
+    @booking.errors.add(:event_date, 'conflicts with another booking') if @booking.respond_to?(:errors)
     raise ActiveRecord::RecordInvalid, @booking
+  end
+
+  def event_date_in_future
+    return unless event_date
+
+    errors.add(:event_date, 'must be in the future') if event_date <= Time.current
   end
 end

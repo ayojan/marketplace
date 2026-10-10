@@ -8,8 +8,8 @@ module Notifications
     option :title, type: Types::String
     option :message, type: Types::String
     option :notification_type, type: Types::String
-    option :related_type, type: Types::String, optional: true
-    option :related_id, type: Types::Integer, optional: true
+    option :related_type, type: Types::String.optional, default: proc { nil }
+    option :related_id, type: Types::Integer.optional, default: proc { nil }
     option :skip_email, type: Types::Bool, default: proc { false }
 
     def self.call(**)
@@ -47,6 +47,8 @@ module Notifications
       return false unless user_has_preferences?
 
       pref = @user.email_notification_preference
+      return false if pref.nil? || pref.destroyed?
+
       case @notification_type
       when 'booking_created'
         pref.booking_created?
@@ -68,7 +70,8 @@ module Notifications
     end
 
     def user_has_preferences?
-      @user.email_notification_preference.present?
+      pref = @user.email_notification_preference
+      pref.present? && !pref.destroyed?
     end
 
     def send_email_notification

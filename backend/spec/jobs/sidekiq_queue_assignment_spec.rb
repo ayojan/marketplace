@@ -3,16 +3,22 @@
 require 'rails_helper'
 
 RSpec.describe 'Sidekiq Queue Assignments' do
+  let(:queues) do
+    if Sidekiq.respond_to?(:options) && Sidekiq.options[:queues].present?
+      Sidekiq.options[:queues]
+    else
+      YAML.load_file(Rails.root.join('config/sidekiq.yml'))[:queues]
+    end
+  end
+
   describe 'Queue Priority Configuration' do
     it 'defines three queue tiers' do
-      queues = Sidekiq.options[:queues]
       expect(queues).to include(['critical', 3])
       expect(queues).to include(['default', 1])
       expect(queues).to include(['low', 1])
     end
 
     it 'critical queue has higher weight than default' do
-      queues = Sidekiq.options[:queues]
       critical_weight = queues.find { |q| q[0] == 'critical' }[1]
       default_weight = queues.find { |q| q[0] == 'default' }[1]
       expect(critical_weight).to be > default_weight
@@ -24,7 +30,7 @@ RSpec.describe 'Sidekiq Queue Assignments' do
       # Reserved for future authentication/payment jobs
       it 'is reserved for high-priority operations' do
         # No jobs currently assigned, but queue is available
-        expect(Sidekiq.options[:queues]).to include(['critical', 3])
+        expect(queues).to include(['critical', 3])
       end
     end
 
@@ -68,7 +74,6 @@ RSpec.describe 'Sidekiq Queue Assignments' do
       # Default queue has weight 1
       # They won't starve each other
 
-      queues = Sidekiq.options[:queues]
       low_queue = queues.find { |q| q[0] == 'low' }
       default_queue = queues.find { |q| q[0] == 'default' }
 
@@ -76,7 +81,6 @@ RSpec.describe 'Sidekiq Queue Assignments' do
     end
 
     it 'ensures critical queue gets more processing power' do
-      queues = Sidekiq.options[:queues]
       critical_weight = queues.find { |q| q[0] == 'critical' }[1]
       default_weight = queues.find { |q| q[0] == 'default' }[1]
 

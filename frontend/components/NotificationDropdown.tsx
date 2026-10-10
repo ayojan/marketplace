@@ -73,7 +73,9 @@ export const NotificationDropdown: React.FC = () => {
     setUnreadCount(prev => Math.max(0, prev - 1));
     try {
       await apiService.notifications.markAsRead(id);
-    } catch (err) {}
+    } catch (err) {
+      console.warn('Failed to mark notification as read:', err);
+    }
   };
 
   const handleMarkAllRead = async () => {
@@ -81,7 +83,9 @@ export const NotificationDropdown: React.FC = () => {
     setUnreadCount(0);
     try {
       await apiService.notifications.markAllRead();
-    } catch (err) {}
+    } catch (err) {
+      console.warn('Failed to mark all notifications as read:', err);
+    }
   };
 
   const getIcon = (type: string) => {

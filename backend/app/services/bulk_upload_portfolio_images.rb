@@ -5,7 +5,7 @@ class BulkUploadPortfolioImages
 
   def initialize(portfolio_item, images)
     @portfolio_item = portfolio_item
-    @images = images
+    @images = Array.wrap(images).compact
   end
 
   def call

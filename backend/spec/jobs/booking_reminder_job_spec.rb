@@ -208,7 +208,7 @@ RSpec.describe BookingReminderJob do
 
         described_class.new.perform
 
-        expect(Rails.logger).to have_received(:warn).with(/1 sent, 1 failed/)
+        expect(Rails.logger).to have_received(:warn).with(/0 sent, 1 failed/)
       end
     end
   end

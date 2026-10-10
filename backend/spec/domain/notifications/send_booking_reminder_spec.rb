@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Notifications::SendBookingReminder do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:vendor_user) { create(:user, :vendor) }
   let(:vendor_profile) { vendor_user.vendor_profile }
   let(:customer) { create(:user, :customer) }

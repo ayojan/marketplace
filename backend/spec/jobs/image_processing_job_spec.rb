@@ -34,8 +34,8 @@ RSpec.describe ImageProcessingJob do
   end
 
   describe 'job configuration' do
-    it 'is configured to use default queue' do
-      expect(described_class.queue_name).to eq('default')
+    it 'is configured to use low queue' do
+      expect(described_class.queue_name).to eq('low')
     end
   end
 end

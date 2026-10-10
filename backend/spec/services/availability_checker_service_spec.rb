@@ -63,6 +63,32 @@ RSpec.describe AvailabilityCheckerService, type: :service do
       end
     end
 
+    context 'when checking past date or past time' do
+      it 'returns false and adds errors when date is in the past' do
+        service = described_class.new(
+          vendor_profile: vendor_profile,
+          date: 1.day.ago.to_date,
+          start_time: '10:00',
+          end_time: '12:00'
+        )
+
+        expect(service.available?).to be false
+        expect(service.errors[:date]).to include('cannot be in the past')
+      end
+
+      it 'returns false and adds errors when start_time has already passed today' do
+        service = described_class.new(
+          vendor_profile: vendor_profile,
+          date: Date.current,
+          start_time: 2.hours.ago.strftime('%H:%M'),
+          end_time: 1.hour.ago.strftime('%H:%M')
+        )
+
+        expect(service.available?).to be false
+        expect(service.errors[:start_time]).to include('cannot be in the past')
+      end
+    end
+
     context 'when vendor has overnight availability slots' do
       before do
         slot = build(:availability_slot,

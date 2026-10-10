@@ -34,6 +34,9 @@ class BookingResponseService
       log_status_change
     end
 
+    # Send notifications strictly after the transaction commits to PostgreSQL
+    send_custom_notification_for_response
+
     { success: true, booking: @booking.reload }
   rescue StandardError => e
     { success: false, errors: [e.message] }
@@ -69,9 +72,6 @@ class BookingResponseService
     raise StandardError, result[:error] unless result[:success]
 
     @booking = result[:booking]
-
-    # Send custom notification based on response type
-    send_custom_notification_for_response
   end
 
   def send_custom_notification_for_response

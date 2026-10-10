@@ -233,12 +233,32 @@ end
 
 module BookingManagement::AvailabilityActions
   def check_availability
+    parsed_date = Date.parse(params[:date])
+    if parsed_date < Date.current
+      return render json: {
+        available: false,
+        message: 'Cannot book a date in the past',
+        errors: ['Booking date cannot be in the past']
+      }
+    end
+
+    if parsed_date == Date.current && params[:start_time].present?
+      requested_time = begin
+        Time.zone.parse("#{parsed_date} #{params[:start_time]}")
+      rescue StandardError
+        nil
+      end
+      if requested_time && requested_time <= Time.current
+        return render json: {
+          available: false,
+          message: 'Cannot book a time slot in the past',
+          errors: ['Booking time slot has already passed']
+        }
+      end
+    end
+
     availability_checker = build_availability_checker
-    is_available = if availability_checker.vendor_profile.availability_slots.for_date(Date.parse(params[:date])).exists?
-                     availability_checker.available?
-                   else
-                     true
-                   end
+    is_available = availability_checker.available?
 
     if is_available
       render json: { available: true, message: 'Time slot is available' }
@@ -254,6 +274,15 @@ module BookingManagement::AvailabilityActions
   end
 
   def suggest_alternatives
+    parsed_date = Date.parse(params[:date])
+    if parsed_date < Date.current
+      return render json: {
+        has_conflict: true,
+        message: 'Cannot suggest alternatives for a past date',
+        alternative_times: []
+      }
+    end
+
     conflict_resolver = build_conflict_resolver
 
     render json: {

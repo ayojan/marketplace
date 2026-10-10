@@ -26,7 +26,7 @@ RSpec.describe AuthorizationService do
     context 'when user is not authorized' do
       it 'raises NotAuthorizedError' do
         expect do
-          described_class.authorize!(other_user, vendor_profile, :toggle_favorite)
+          described_class.authorize!(vendor_user, vendor_profile, :toggle_favorite)
         end.to raise_error(AuthorizationService::NotAuthorizedError, /not authorized/)
       end
     end

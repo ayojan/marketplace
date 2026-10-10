@@ -175,7 +175,7 @@ RSpec.describe ServiceSearchService, type: :service do
         result = described_class.new(vendor_id: vendor_profile.id).call
 
         expect(result[:services].count).to eq(3)
-        expect(result[:services].all? { |s| s.vendor_profiles.include?(vendor_profile) }).to be true
+        expect(result[:services].all? { |s| s.vendor_profile == vendor_profile }).to be true
         expect(result[:filters][:vendor_id]).to eq(vendor_profile.id)
       end
     end

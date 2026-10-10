@@ -66,6 +66,7 @@ class Types::VendorProfileType < Types::BaseObject
         method: :profile_complete?,
         description: 'Indicates whether the profile is considered complete'
   field :rating_display, String, null: false, description: 'Human readable rating summary'
+  field :service_categories, String, null: true, description: 'Categories the vendor belongs to'
   field :service_categories_list, [String], null: false, description: 'List of categories the vendor belongs to'
   field :verified, Boolean, null: false, method: :verified?, description: 'Convenience alias for the verification state'
 
@@ -81,6 +82,8 @@ class Types::VendorProfileType < Types::BaseObject
   field :trust_stats, Types::VendorTrustStatsType, null: false, description: 'Trust and credibility metrics'
 
   delegate :rating_display, to: :object
+
+  delegate :service_categories, to: :object
 
   delegate :service_categories_list, to: :object
 

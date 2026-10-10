@@ -9,4 +9,12 @@ class ApplicationJob < ActiveJob::Base
 
   # Retry on Redis connection errors
   retry_on Redis::CannotConnectError, wait: 10.seconds, attempts: 5
+
+  def self.sidekiq_options
+    { 'queue' => queue_name.to_s }
+  end
+
+  def sidekiq_options
+    self.class.sidekiq_options
+  end
 end

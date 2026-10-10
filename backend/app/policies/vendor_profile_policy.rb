@@ -30,8 +30,8 @@ class VendorProfilePolicy < ApplicationPolicy
     user.vendor? && record.user_id == user.id
   end
 
-  # Customers can toggle favorites on any vendor
+  # Customers can toggle favorites on other vendors
   def toggle_favorite?
-    user.customer?
+    user.customer? && record.user_id != user.id
   end
 end

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { apiService } from '../../lib/api';
 import { MOCK_VENDORS } from '@/lib/mockVendorData';
 import AyojLogo from '@/components/AyojLogo';
@@ -16,9 +17,17 @@ import {
   ArrowLeft,
   ArrowRight,
   AlertTriangle,
-  Info
+  Info,
+  Camera,
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Sparkles
 } from 'lucide-react';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -53,6 +62,10 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   const [addons, setAddons] = useState<string[]>([]);
   const [bookingDate, setBookingDate] = useState('');
 
+  // Category filter & Lightbox states
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   const loadVendorData = useCallback(async () => {
     setLoading(true);
     const mockVendor = MOCK_VENDORS.find(v => v.id === params?.id) || MOCK_VENDORS[0];
@@ -66,44 +79,57 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
       ]);
 
       if (vendorRes?.data?.vendor) {
-        setVendor(vendorRes.data.vendor);
-        setServices(servicesRes?.data?.services || mockVendor.services);
-        setPortfolio(portfolioRes?.data?.portfolio_items || mockVendor.portfolio);
-        setReviews(reviewsRes?.data?.reviews || mockVendor.recent_activity);
-        if (servicesRes?.data?.services?.length && servicesRes.data.services.length > 0) {
-          setSelectedService(servicesRes.data.services[0]);
+        const vendorData = vendorRes.data.vendor;
+        setVendor(vendorData);
+
+        // Portfolio items strictly belonging to THIS vendor from API
+        const vendorPortfolioItems = 
+          (portfolioRes?.data?.portfolio_items && portfolioRes.data.portfolio_items.length > 0)
+            ? portfolioRes.data.portfolio_items
+            : (vendorData.featured_portfolio && vendorData.featured_portfolio.length > 0)
+              ? vendorData.featured_portfolio
+              : [];
+
+        setPortfolio(vendorPortfolioItems);
+
+        const vendorServices = servicesRes?.data?.services || [];
+        setServices(vendorServices);
+        if (vendorServices.length > 0) {
+          setSelectedService(vendorServices[0]);
         } else {
-          setSelectedService(mockVendor.services[0] as any);
+          setSelectedService(null);
         }
+
+        setReviews(reviewsRes?.data?.reviews || []);
       } else {
-        setVendor({
-          id: mockVendor.id,
-          business_name: mockVendor.business_name,
-          location: mockVendor.location,
-          average_rating: mockVendor.rating,
-          total_reviews: mockVendor.total_reviews,
-          is_verified: mockVendor.verified,
-          description: `Premier ${mockVendor.category} specialist based in ${mockVendor.location}. Providing top-tier services for grand weddings and celebrations.`,
-        });
-        setServices(mockVendor.services as any);
-        setPortfolio(mockVendor.portfolio);
-        setReviews(mockVendor.recent_activity);
-        setSelectedService(mockVendor.services[0] as any);
+        // Fallback only if this is an explicitly matched mock vendor ID in dev/mock data
+        const matchedMock = MOCK_VENDORS.find(v => String(v.id) === String(params?.id));
+        if (matchedMock) {
+          setVendor({
+            id: matchedMock.id,
+            business_name: matchedMock.business_name,
+            location: matchedMock.location,
+            average_rating: matchedMock.rating,
+            total_reviews: matchedMock.total_reviews,
+            is_verified: matchedMock.verified,
+            description: `Premier ${matchedMock.category} specialist based in ${matchedMock.location}. Providing top-tier services for grand weddings and celebrations.`,
+          });
+          setServices((matchedMock.services as any) || []);
+          setPortfolio(matchedMock.portfolio || []);
+          setReviews(matchedMock.recent_activity || []);
+          setSelectedService((matchedMock.services?.[0] as any) || null);
+        } else {
+          setVendor(null);
+          setPortfolio([]);
+          setServices([]);
+          setSelectedService(null);
+        }
       }
     } catch (err) {
-      setVendor({
-        id: mockVendor.id,
-        business_name: mockVendor.business_name,
-        location: mockVendor.location,
-        average_rating: mockVendor.rating,
-        total_reviews: mockVendor.total_reviews,
-        is_verified: mockVendor.verified,
-        description: `Premier ${mockVendor.category} specialist based in ${mockVendor.location}. Providing top-tier services for grand weddings and celebrations.`,
-      });
-      setServices(mockVendor.services as any);
-      setPortfolio(mockVendor.portfolio);
-      setReviews(mockVendor.recent_activity);
-      setSelectedService(mockVendor.services[0] as any);
+      setVendor(null);
+      setPortfolio([]);
+      setServices([]);
+      setSelectedService(null);
     } finally {
       setLoading(false);
     }
@@ -112,6 +138,101 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   useEffect(() => {
     loadVendorData();
   }, [loadVendorData]);
+
+  // Extract all individual photos across collections so every uploaded media item is visible
+  const allPhotos = useMemo(() => {
+    const list: Array<{
+      id: string | number;
+      url: string;
+      title: string;
+      category: string;
+      isFeatured?: boolean;
+    }> = [];
+
+    portfolio.forEach((item, itemIdx) => {
+      const itemTitle = item.title || `Showcase ${itemIdx + 1}`;
+      const itemCategory = item.category || 'General';
+      const isFeatured = !!item.is_featured;
+
+      // When portfolio item has an images array attached
+      if (Array.isArray(item.images) && item.images.length > 0) {
+        item.images.forEach((img: any, imgIdx: number) => {
+          const imgUrl = typeof img === 'string' ? img : (img.url || img.thumbnail_url);
+          if (imgUrl) {
+            list.push({
+              id: img.id || `${item.id}-img-${imgIdx}`,
+              url: imgUrl,
+              title: itemTitle,
+              category: itemCategory,
+              isFeatured
+            });
+          }
+        });
+      } else {
+        // Single image per item fallback
+        const singleUrl =
+          item.primary_image_url ||
+          item.image_url ||
+          item.url ||
+          (typeof item === 'string' ? item : null);
+
+        if (singleUrl) {
+          list.push({
+            id: item.id || `photo-${itemIdx}`,
+            url: singleUrl,
+            title: itemTitle,
+            category: itemCategory,
+            isFeatured
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [portfolio]);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    allPhotos.forEach(p => {
+      if (p.category) set.add(p.category);
+    });
+    return ['All', ...Array.from(set)];
+  }, [allPhotos]);
+
+  const filteredPhotos = useMemo(() => {
+    if (selectedCategory === 'All') return allPhotos;
+    return allPhotos.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
+  }, [allPhotos, selectedCategory]);
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+  };
+
+  const closeLightbox = () => {
+    setLightboxIndex(null);
+  };
+
+  const nextPhoto = useCallback((e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setLightboxIndex(prev => (prev !== null && filteredPhotos.length > 0 ? (prev + 1) % filteredPhotos.length : null));
+  }, [filteredPhotos.length]);
+
+  const prevPhoto = useCallback((e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setLightboxIndex(prev => (prev !== null && filteredPhotos.length > 0 ? (prev - 1 + filteredPhotos.length) % filteredPhotos.length : null));
+  }, [filteredPhotos.length]);
+
+  // Keyboard accessibility for lightbox navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIndex === null) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') nextPhoto();
+      if (e.key === 'ArrowLeft') prevPhoto();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, nextPhoto, prevPhoto]);
 
   const handleRequestVerification = async () => {
     try {
@@ -137,9 +258,18 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
     setAddons(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
   };
 
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
   const handleBookingRequest = () => {
     if (!bookingDate) {
       toast.error('Please select a date first');
+      return;
+    }
+    if (bookingDate < todayStr) {
+      toast.error('Booking date cannot be in the past');
       return;
     }
     toast.success('Requesting booking for ' + bookingDate);
@@ -181,8 +311,24 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
             
             {/* Vendor Pro Banner Header */}
             <section className="space-y-4">
-               <div className="flex items-start justify-between">
-                  <div className="space-y-3">
+               <div className="flex flex-col sm:flex-row gap-5 items-start">
+                  <div className="size-20 sm:size-24 rounded-2xl overflow-hidden relative border border-[#E8E2D9] bg-[#F3EADF] shrink-0 shadow-xs">
+                    {(vendor.profile_image_url || vendor.image || allPhotos[0]?.url) ? (
+                      <Image
+                        src={vendor.profile_image_url || vendor.image || allPhotos[0]?.url}
+                        alt={vendor.business_name}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[#F3EADF] text-[#9E5338] font-serif font-bold text-2xl">
+                        {(vendor.business_name || 'V').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 flex-1">
                     <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#221F1C] tracking-tight">{vendor.business_name}</h1>
                     
                     {/* Verification Status Banner */}
@@ -228,25 +374,104 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                </p>
             </section>
 
-            {/* Gallery Preview */}
+            {/* Gallery Preview & Uploaded Works */}
             <section className="space-y-4">
                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-serif font-bold text-[#221F1C]">Selected Portfolio</h2>
-                  <button className="text-xs font-bold text-[#9E5338] hover:underline cursor-pointer">View Gallery</button>
+                  <div>
+                    <h2 className="text-xl font-serif font-bold text-[#221F1C]">Selected Portfolio</h2>
+                    <p className="text-xs text-[#6B6560] mt-0.5">
+                      {allPhotos.length > 0 
+                        ? `Showcase of client celebrations, candids, and editorial highlights (${allPhotos.length} ${allPhotos.length === 1 ? 'photo' : 'photos'})`
+                        : 'Showcase of client celebrations, candids, and editorial highlights'}
+                    </p>
+                  </div>
+
+                  {isOwner && (
+                    <Link href="/vendor/dashboard?tab=portfolio">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full border-[#E8E2D9] text-[#9E5338] hover:bg-[#F5ECE2] text-xs h-8 px-3 gap-1 shadow-xs cursor-pointer"
+                      >
+                        <Plus className="size-3.5" /> Manage Photos
+                      </Button>
+                    </Link>
+                  )}
                </div>
-               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {(portfolio.length > 0 ? portfolio : [...Array(6)]).slice(0, 6).map((item, i) => (
-                    <div key={i} className="relative aspect-[4/5] rounded-xl overflow-hidden border border-[#E8E2D9] bg-[#F3EADF] group">
-                       <Image 
-                         src={item?.primary_image_url || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e'} 
-                         alt="work gallery" 
-                         fill 
-                         className="object-cover transition-transform duration-500 group-hover:scale-105" 
-                         unoptimized 
-                       />
-                    </div>
-                  ))}
-               </div>
+
+               {/* Category filter pills if multiple categories */}
+               {categories.length > 2 && (
+                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                   {categories.map((cat) => (
+                     <button
+                       key={cat}
+                       type="button"
+                       onClick={() => setSelectedCategory(cat)}
+                       className={`px-3 py-1 rounded-full whitespace-nowrap transition-all text-xs font-medium border cursor-pointer ${
+                         selectedCategory === cat
+                           ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-xs'
+                           : 'bg-white text-[#6B6560] border-[#E8E2D9] hover:border-[#9E5338]/40 hover:text-[#221F1C]'
+                       }`}
+                     >
+                       {cat}
+                     </button>
+                   ))}
+                 </div>
+               )}
+
+               {/* Photo Grid or Empty State */}
+               {allPhotos.length > 0 ? (
+                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {filteredPhotos.map((photo, i) => (
+                      <div 
+                        key={photo.id || i}
+                        onClick={() => openLightbox(i)}
+                        className="relative aspect-4/5 rounded-2xl overflow-hidden border border-[#E8E2D9] bg-[#F3EADF] group cursor-pointer shadow-xs"
+                      >
+                         <Image 
+                           src={photo.url} 
+                           alt={photo.title || 'work gallery'} 
+                           fill 
+                           className="object-cover transition-transform duration-500 group-hover:scale-105" 
+                           unoptimized 
+                         />
+
+                         {/* Hover Overlay */}
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3.5">
+                            <span className="self-start px-2 py-0.5 rounded-full text-[9px] font-bold bg-white/95 text-[#221F1C] backdrop-blur-xs shadow-xs">
+                              {photo.category}
+                            </span>
+                            <div className="flex items-center justify-between text-white">
+                              <span className="text-xs font-semibold line-clamp-1">{photo.title}</span>
+                              <Eye className="size-4 shrink-0 ml-1.5 text-white/90" />
+                            </div>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+               ) : (
+                 <div className="p-8 rounded-2xl border border-dashed border-[#E8E2D9] bg-[#FAF7F2] text-center space-y-3">
+                   <div className="size-12 rounded-full bg-[#F3EADF] text-[#9E5338] flex items-center justify-center mx-auto">
+                     <Camera className="size-6" />
+                   </div>
+                   <div className="space-y-1">
+                     <h3 className="font-serif font-bold text-[#221F1C] text-base">No Portfolio Showcases Yet</h3>
+                     <p className="text-xs text-[#6B6560] max-w-sm mx-auto">
+                       This vendor has not uploaded portfolio galleries or showcases yet. Check back soon for event highlights!
+                     </p>
+                   </div>
+                   {isOwner && (
+                     <Link href="/vendor/dashboard?tab=portfolio">
+                       <Button
+                         size="sm"
+                         className="mt-2 bg-[#9E5338] hover:bg-[#85432B] text-white rounded-full text-xs"
+                       >
+                         <Plus className="size-3.5 mr-1" /> Upload Your First Showcase
+                       </Button>
+                     </Link>
+                   )}
+                 </div>
+               )}
             </section>
 
             {/* Packages */}
@@ -347,6 +572,7 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                         <input 
                           type="date" 
                           value={bookingDate}
+                          min={todayStr}
                           onChange={(e) => setBookingDate(e.target.value)}
                           className="w-full bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl h-11 px-3 text-[#221F1C] focus:outline-none focus:border-[#9E5338] text-xs font-medium" 
                         />
@@ -405,6 +631,74 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
           </div>
         </div>
       </main>
+
+      {/* Full-Screen High-Resolution Lightbox */}
+      <AnimatePresence>
+        {lightboxIndex !== null && filteredPhotos[lightboxIndex] && (
+          <div 
+            onClick={closeLightbox}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-zoom-out"
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={closeLightbox}
+              className="absolute top-5 right-5 size-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-50 cursor-pointer"
+            >
+              <X className="size-5" />
+            </button>
+
+            {/* Previous Arrow */}
+            {filteredPhotos.length > 1 && (
+              <button
+                type="button"
+                onClick={prevPhoto}
+                className="absolute left-4 top-1/2 -translate-y-1/2 size-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-50 cursor-pointer"
+              >
+                <ChevronLeft className="size-6" />
+              </button>
+            )}
+
+            {/* Next Arrow */}
+            {filteredPhotos.length > 1 && (
+              <button
+                type="button"
+                onClick={nextPhoto}
+                className="absolute right-4 top-1/2 -translate-y-1/2 size-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-50 cursor-pointer"
+              >
+                <ChevronRight className="size-6" />
+              </button>
+            )}
+
+            {/* Center Image Container */}
+            <div 
+              onClick={(e) => e.stopPropagation()} 
+              className="relative max-w-4xl max-h-[85vh] w-full flex flex-col items-center cursor-default"
+            >
+              <div className="relative w-full h-[70vh]">
+                <Image
+                  src={filteredPhotos[lightboxIndex].url}
+                  alt={filteredPhotos[lightboxIndex].title || 'Photo view'}
+                  fill
+                  unoptimized
+                  className="object-contain"
+                />
+              </div>
+
+              {/* Caption pill */}
+              <div className="mt-3 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md text-white text-xs flex items-center gap-3">
+                <span className="font-semibold">{filteredPhotos[lightboxIndex].title}</span>
+                <span className="text-white/40">•</span>
+                <span className="text-white/80">{filteredPhotos[lightboxIndex].category}</span>
+                <span className="text-white/40">•</span>
+                <span className="text-white/60">
+                  {lightboxIndex + 1} of {filteredPhotos.length}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

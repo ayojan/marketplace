@@ -16,7 +16,7 @@ module Notifications
 
       # Return early if already sent (idempotent)
       if booking_reminder_already_sent?
-        Rails.logger.debug { "Booking reminder already sent for booking #{booking.id}" }
+        Rails.logger.debug("Booking reminder already sent for booking #{booking.id}")
         return { success: true, already_sent: true }
       end
 
@@ -26,15 +26,24 @@ module Notifications
         return { success: false, error: 'Failed to mark reminder as sent' }
       end
 
+      errors = []
       # Send reminders to customer
-      send_customer_reminder
+      begin
+        send_customer_reminder
+      rescue StandardError => e
+        errors << e
+      end
+
       # Send reminders to vendor
-      send_vendor_reminder
+      begin
+        send_vendor_reminder
+      rescue StandardError => e
+        errors << e
+      end
+
+      raise errors.first if errors.any?
 
       { success: true, already_sent: false }
-    rescue StandardError => e
-      Rails.logger.error("Failed to send booking reminder for booking #{booking.id}: #{e.class} #{e.message}")
-      { success: false, error: e.message }
     end
 
     private
@@ -54,7 +63,7 @@ module Notifications
       )
     rescue StandardError => e
       Rails.logger.error("Failed to send customer reminder for booking #{booking.id}: #{e.message}")
-      # Log but don't re-raise; we already marked it as sent
+      raise
     end
 
     def send_vendor_reminder
@@ -68,7 +77,7 @@ module Notifications
       )
     rescue StandardError => e
       Rails.logger.error("Failed to send vendor reminder for booking #{booking.id}: #{e.message}")
-      # Log but don't re-raise; we already marked it as sent
+      raise
     end
 
     def customer_reminder_message

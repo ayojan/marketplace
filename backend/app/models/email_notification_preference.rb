@@ -29,7 +29,7 @@ class EmailNotificationPreference < ApplicationRecord
   belongs_to :user
 
   # == Validations ==
-  validates :user_id, uniqueness: true
+  validates :user_id, presence: true, uniqueness: true
 
   # == Scopes ==
   scope :for_user, ->(user_id) { where(user_id: user_id) }

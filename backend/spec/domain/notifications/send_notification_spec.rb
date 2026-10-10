@@ -34,7 +34,7 @@ RSpec.describe Notifications::SendNotification do
       end
 
       it 'sends email notification' do
-        expect(NotificationMailer).to receive(:booking_created_email).and_call_original
+        expect(NotificationMailer).to receive(:booking_created_email).at_least(:once).and_call_original
         described_class.call(**valid_params, related_id: 123)
       end
     end

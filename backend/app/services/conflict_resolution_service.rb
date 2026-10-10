@@ -52,6 +52,7 @@ class ConflictResolutionService
 
   def suggest_alternative_times
     return [] unless conflict?
+    return [] if event_date && event_date < Date.current.beginning_of_day
 
     # Get vendor's availability for the requested date
     availability_slots = vendor_profile.availability_slots
@@ -138,6 +139,8 @@ module ConflictResolutionService::FreeSlotCalculator
   end
 
   def add_free_slot(free_slots, start_time, duration)
+    return if start_time <= Time.current
+
     free_slots << {
       start_time: start_time.strftime('%H:%M'),
       end_time: (start_time + duration).strftime('%H:%M'),

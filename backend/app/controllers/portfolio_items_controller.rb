@@ -4,6 +4,7 @@
 class PortfolioItemsController < ApiController
   # Authentication is handled by ApiController
   before_action :authenticate_user!, except: %i[index show]
+  before_action :ensure_vendor_role, only: %i[create]
   before_action :set_vendor_profile, only: %i[index create]
   before_action :set_portfolio_item, only: %i[show update destroy upload_images remove_image duplicate]
   before_action :ensure_vendor_access, only: %i[update destroy upload_images remove_image duplicate]
@@ -23,7 +24,11 @@ class PortfolioItemsController < ApiController
       # Vendor accessing their own portfolio - requires authentication
       authenticate_user!
       ensure_vendor_role
-      return unless current_user.vendor_profile
+      return if performed?
+
+      unless current_user&.vendor_profile
+        return render json: { portfolio_items: [], categories: [] }
+      end
 
       @portfolio_items = current_user.vendor_profile.portfolio_items.ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
@@ -43,8 +48,9 @@ class PortfolioItemsController < ApiController
 
   # POST /portfolio_items
   def create
-    ensure_vendor_role
-    return unless current_user.vendor_profile
+    unless current_user&.vendor_profile
+      return render json: { errors: ['Vendor profile not found'] }, status: :not_found
+    end
 
     result = CreatePortfolioItem.call(current_user.vendor_profile, portfolio_item_params)
 
@@ -88,7 +94,8 @@ class PortfolioItemsController < ApiController
 
   # POST /portfolio_items/:id/upload_images
   def upload_images
-    result = BulkUploadPortfolioImages.call(@portfolio_item, params[:images])
+    uploaded_files = params[:images] || params[:image]
+    result = BulkUploadPortfolioImages.call(@portfolio_item, uploaded_files)
 
     if result[:success]
       render json: {
@@ -186,7 +193,17 @@ class PortfolioItemsController < ApiController
 
   def set_vendor_profile
     vendor_id = params[:vendor_profile_id] || params[:vendor_id]
-    @vendor_profile = VendorProfile.find(vendor_id) if vendor_id
+    return unless vendor_id
+
+    if vendor_id == 'me'
+      authenticate_user!
+      @vendor_profile = current_user&.vendor_profile
+      unless @vendor_profile
+        render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found
+      end
+    else
+      @vendor_profile = VendorProfile.find(vendor_id)
+    end
   rescue ActiveRecord::RecordNotFound
     render json: { errors: ['Vendor profile not found'] }, status: :not_found
   end
@@ -223,6 +240,7 @@ class PortfolioItemsController < ApiController
       is_featured: item.is_featured,
       created_at: item.created_at,
       updated_at: item.updated_at,
+      primary_image_url: item.images.attached? ? (url_for(item.images.first) rescue nil) : nil,
       images: item.images.attached? ? item.images.map { |image| image_json(image) } : [],
       image_count: item.image_count,
       vendor_profile: {
@@ -233,13 +251,29 @@ class PortfolioItemsController < ApiController
   end
 
   def image_json(image)
+    image_url = begin
+      url_for(image)
+    rescue StandardError
+      nil
+    end
+
+    thumb_url = begin
+      if image.respond_to?(:representable?) && image.representable?
+        url_for(image.variant(resize_to_limit: [300, 300]))
+      else
+        image_url
+      end
+    rescue StandardError
+      image_url
+    end
+
     {
       id: image.id,
       filename: image.filename.to_s,
       content_type: image.content_type,
       byte_size: image.byte_size,
-      url: url_for(image),
-      thumbnail_url: url_for(image.variant(resize_to_limit: [300, 300]))
+      url: image_url,
+      thumbnail_url: thumb_url || image_url
     }
   end
 end

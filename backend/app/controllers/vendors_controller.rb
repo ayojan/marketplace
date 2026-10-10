@@ -7,7 +7,9 @@ class VendorsController < ApiController
   before_action :set_vendor_profile, only: %i[show services availability portfolio vendor_reviews]
 
   def index
-    @vendors = apply_filters(VendorProfile.includes(:user, :services))
+    @vendors = apply_filters(
+      VendorProfile.includes(:user, services: :categories, portfolio_items: { images_attachments: :blob })
+    )
     total_count = @vendors.count
 
     @vendors = apply_pagination(@vendors)
@@ -31,14 +33,17 @@ class VendorsController < ApiController
   end
 
   def availability
-    # Get availability for the next 30 days by default
-    start_date = params[:start_date]&.to_date || Date.current
-    end_date = params[:end_date]&.to_date || (start_date + 30.days)
+    # Get availability for the next 30 days by default, disallowing past dates
+    raw_start = params[:start_date]&.to_date || Date.current
+    start_date = [raw_start, Date.current].max
+    raw_end = params[:end_date]&.to_date || (start_date + 30.days)
+    end_date = [raw_end, start_date].max
 
     availability_slots = @vendor_profile.availability_slots
                                         .where(date: start_date..end_date)
                                         .where(is_available: true)
                                         .order(:date, :start_time)
+                                        .reject(&:passed?)
 
     render json: {
       availability_slots: availability_slots.map { |slot| availability_slot_json(slot) },
@@ -61,12 +66,11 @@ class VendorsController < ApiController
   end
 
   def vendor_reviews
-    # This will be implemented in a later task when reviews are added
+    reviews = Review.published.where(vendor_profile_id: @vendor_profile.id).recent.includes(:customer, :service)
     render json: {
-      reviews: [],
+      reviews: reviews.map { |r| { id: r.id, rating: r.rating, comment: r.comment, created_at: r.created_at } },
       average_rating: @vendor_profile.average_rating,
-      total_reviews: @vendor_profile.total_reviews,
-      rating_breakdown: { '5' => 0, '4' => 0, '3' => 0, '2' => 0, '1' => 0 }
+      total_reviews: @vendor_profile.total_reviews
     }
   end
 

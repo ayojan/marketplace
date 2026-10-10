@@ -170,14 +170,27 @@ export const apiService = {
   portfolioItems: {
     getAll: (params) => api.get('/portfolio_items', { params }),
     getById: (id) => api.get(`/portfolio_items/${id}`),
-    create: (data) => api.post('/portfolio_items', data),
+    create: (data) => {
+      if (data instanceof FormData) {
+        return api.post('/portfolio_items', data, {
+          headers: { 'Content-Type': undefined },
+        });
+      }
+      return api.post('/portfolio_items', data);
+    },
     update: (id, data) => api.put(`/portfolio_items/${id}`, data),
     delete: (id) => api.delete(`/portfolio_items/${id}`),
     uploadImages: (id, files) => {
-      const formData = new FormData();
-      files.forEach((f) => formData.append('images[]', f));
+      let formData;
+      if (files instanceof FormData) {
+        formData = files;
+      } else {
+        formData = new FormData();
+        const fileList = Array.isArray(files) ? files : Array.from(files || []);
+        fileList.forEach((f) => formData.append('images[]', f));
+      }
       return api.post(`/portfolio_items/${id}/upload_images`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
       });
     },
     removeImage: (id, imageId) =>

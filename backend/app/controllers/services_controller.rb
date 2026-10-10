@@ -144,6 +144,15 @@ class ServicesController < ApiController
   # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
   def service_response(service, include_details: false)
     # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
+    vendor = service.vendor_profile
+    featured_item = vendor&.featured_portfolio_items&.first
+    featured_img = featured_item&.images&.first if featured_item&.images&.attached?
+    vendor_img_url = featured_img ? (url_for(featured_img) rescue nil) : nil
+
+    category_info = if (cat = service.service_category)
+                      { id: cat.id, name: cat.name }
+                    end
+
     response = {
       id: service.id,
       name: service.name,
@@ -153,16 +162,15 @@ class ServicesController < ApiController
       formatted_price: service.formatted_base_price,
       status: service.status,
       vendor: {
-        id: service.vendor_profile.id,
-        business_name: service.vendor_profile.business_name,
-        location: service.vendor_profile.location
+        id: vendor&.id,
+        business_name: vendor&.business_name,
+        location: vendor&.location,
+        average_rating: vendor&.average_rating,
+        total_reviews: vendor&.total_reviews,
+        image: vendor_img_url,
+        profile_image_url: vendor_img_url
       },
-      category: if service.service_category
-                  {
-                    id: service.service_category.id,
-                    name: service.service_category.name
-                  }
-                end,
+      category: category_info,
       images: service.service_images.map do |img|
         {
           id: img.id,

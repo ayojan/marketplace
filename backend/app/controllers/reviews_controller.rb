@@ -18,30 +18,44 @@ class ReviewsController < ApiController
     render json: { reviews: @reviews.map { |r| review_json(r) } }
   end
 
-  # GET /api/vendors/:vendor_id/reviews
+  # GET /api/vendors/:vendor_id/reviews or /vendors/:id/reviews
   def vendor_reviews
-    @reviews = Review.published.where(vendor_profile_id: params[:vendor_id]).recent.includes(:customer, :service)
-    render json: { reviews: @reviews.map { |r| review_json(r) } }
+    vendor_id = params[:vendor_id] || params[:id]
+    @reviews = Review.published.where(vendor_profile_id: vendor_id).recent.includes(:customer, :service)
+    vendor = VendorProfile.find_by(id: vendor_id)
+    render json: {
+      reviews: @reviews.map { |r| review_json(r) },
+      average_rating: vendor&.average_rating || 0.0,
+      total_reviews: vendor&.total_reviews || @reviews.count
+    }
   end
 
   # POST /api/reviews
   def create
     @booking = Booking.find(review_params[:booking_id])
 
-    # Validation is also in model, but early check here
     unless @booking.customer == current_user
       return render json: { error: 'You can only review your own bookings' }, status: :forbidden
     end
 
-    @review = Review.new(review_params)
-    @review.customer = current_user
-    @review.vendor_profile = @booking.vendor_profile
-    @review.service = @booking.service
+    result = Reviews::CreateReview.call(
+      customer: current_user,
+      booking: @booking,
+      service: @booking.service,
+      vendor_profile: @booking.vendor_profile,
+      rating: review_params[:rating].to_i,
+      quality_rating: review_params[:quality_rating]&.to_i,
+      communication_rating: review_params[:communication_rating]&.to_i,
+      value_rating: review_params[:value_rating]&.to_i,
+      punctuality_rating: review_params[:punctuality_rating]&.to_i,
+      comment: review_params[:comment],
+      photos: Array.wrap(params[:photos]).compact
+    )
 
-    if @review.save
-      render json: { message: 'Review submitted successfully', review: review_json(@review) }, status: :created
+    if result[:success]
+      render json: { message: 'Review submitted successfully', review: review_json(result[:review]) }, status: :created
     else
-      render json: { error: 'Review submission failed', details: @review.errors.full_messages },
+      render json: { error: 'Review submission failed', details: Array.wrap(result[:error]) },
              status: :unprocessable_content
     end
   end
@@ -65,32 +79,41 @@ class ReviewsController < ApiController
   # POST /api/reviews/:id/vote
   def vote
     @review = Review.find(params[:id])
-    vote = ReviewVote.find_by(review_id: @review.id, voter_id: current_user.id)
+    existing_vote = ReviewVote.find_by(review_id: @review.id, voter_id: current_user.id)
 
-    if vote
-      vote.destroy
-      @review.decrement!(:helpful_votes)
+    if existing_vote
+      existing_vote.destroy
+      Review.where(id: @review.id).where('helpful_votes > 0').update_all('helpful_votes = helpful_votes - 1')
+      @review.reload
       render json: { message: 'Vote removed', helpful_votes: @review.helpful_votes, voted: false }
     else
-      ReviewVote.create!(review: @review, voter: current_user)
-      @review.increment!(:helpful_votes)
-      render json: { message: 'Review marked as helpful', helpful_votes: @review.helpful_votes, voted: true }
+      result = Reviews::VoteHelpful.call(review: @review, voter: current_user)
+      if result[:success]
+        render json: { message: 'Review marked as helpful', helpful_votes: result[:helpful_votes], voted: true }
+      else
+        render json: { error: result[:error] }, status: :unprocessable_content
+      end
     end
   end
 
   # POST /api/reviews/:id/respond
   def respond
     @review = Review.find(params[:id])
-    unless current_user.vendor_profile == @review.vendor_profile
-      return render json: { error: 'Only the vendor can respond to this review' }, status: :forbidden
+    response_text = params[:vendor_response] || params.dig(:review, :vendor_response)
+    if response_text.blank?
+      return render json: { error: 'Response text is required' }, status: :bad_request
     end
 
-    response_text = params[:vendor_response] || params.dig(:review, :vendor_response)
+    result = Reviews::RespondToReview.call(
+      review: @review,
+      vendor: current_user,
+      response: response_text
+    )
 
-    if @review.update(vendor_response: response_text, vendor_responded_at: Time.current)
-      render json: { message: 'Response saved', review: review_json(@review) }
+    if result[:success]
+      render json: { message: 'Response saved', review: review_json(result[:review]) }
     else
-      render json: { error: 'Failed to save response', details: @review.errors.full_messages },
+      render json: { error: 'Failed to save response', details: Array.wrap(result[:error]) },
              status: :unprocessable_content
     end
   end

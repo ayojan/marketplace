@@ -8,17 +8,19 @@ module Reviews
     option :booking, type: Types.Instance(Booking)
     option :service, type: Types.Instance(Service)
     option :vendor_profile, type: Types.Instance(VendorProfile)
-    option :rating, type: Types::Integer
-    option :quality_rating, type: Types::Integer, optional: true
-    option :communication_rating, type: Types::Integer, optional: true
-    option :value_rating, type: Types::Integer, optional: true
-    option :punctuality_rating, type: Types::Integer, optional: true
-    option :comment, type: Types::String, optional: true
+    option :rating, type: Types::Coercible::Integer
+    option :quality_rating, type: Types::Coercible::Integer.optional, default: proc { nil }
+    option :communication_rating, type: Types::Coercible::Integer.optional, default: proc { nil }
+    option :value_rating, type: Types::Coercible::Integer.optional, default: proc { nil }
+    option :punctuality_rating, type: Types::Coercible::Integer.optional, default: proc { nil }
+    option :comment, type: Types::String.optional, default: proc { nil }
     option :photos, type: Types::Array, default: proc { [] }
     option :status, type: Types::String, default: proc { 'published' }
 
-    def self.call(**)
-      new(**).call
+    def self.call(**kwargs)
+      new(**kwargs).call
+    rescue Dry::Types::ConstraintError, Dry::Types::CoercionError, ArgumentError => e
+      { success: false, error: e.message }
     end
 
     def call

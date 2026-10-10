@@ -35,7 +35,7 @@
 #  index_vendor_profiles_on_coordinates          (latitude,longitude)
 #  index_vendor_profiles_on_favorites_count      (favorites_count)
 #  index_vendor_profiles_on_location             (location)
-#  index_vendor_profiles_on_user_id              (user_id)
+#  index_vendor_profiles_on_user_id              (user_id) UNIQUE
 #  index_vendor_profiles_on_verification_status  (verification_status)
 #
 # Foreign Keys
@@ -51,7 +51,7 @@ RSpec.describe VendorProfile do
   describe 'associations' do
     it { is_expected.to belong_to(:user) }
     it { is_expected.to have_many(:vendor_services).dependent(:destroy) }
-    it { is_expected.to have_many(:services).through(:vendor_services) }
+    it { is_expected.to have_many(:services).dependent(:destroy) }
     it { is_expected.to have_many(:categories).through(:services) }
     it { is_expected.to have_many(:bookings).dependent(:destroy) }
   end

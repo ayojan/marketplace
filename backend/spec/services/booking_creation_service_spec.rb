@@ -151,6 +151,17 @@ RSpec.describe BookingCreationService, type: :service do
       end
     end
 
+    context 'when event_date is in the past' do
+      it 'fails validation and does not create booking' do
+        service_instance = described_class.new(valid_params.merge(event_date: 1.day.ago))
+
+        expect { service_instance.call }.not_to change(Booking, :count)
+        result = service_instance.call
+        expect(result[:success]).to be false
+        expect(service_instance.errors[:event_date]).to include('must be in the future')
+      end
+    end
+
     context 'when transaction rollback' do
       it 'rolls back when booking save fails' do
         # Make the booking invalid by stubbing save to return false

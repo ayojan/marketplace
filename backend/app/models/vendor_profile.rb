@@ -37,7 +37,7 @@
 #  index_vendor_profiles_on_coordinates          (latitude,longitude)
 #  index_vendor_profiles_on_favorites_count      (favorites_count)
 #  index_vendor_profiles_on_location             (location)
-#  index_vendor_profiles_on_user_id              (user_id)
+#  index_vendor_profiles_on_user_id              (user_id) UNIQUE
 #  index_vendor_profiles_on_verification_status  (verification_status)
 #
 # Foreign Keys
@@ -122,11 +122,33 @@ class VendorProfile < ApplicationRecord
 
   alias has_description? description?
 
-  # Derived from services -> categories association
-  def service_categories_list
-    services.joins(:categories).distinct.pluck('categories.name')
+  # Derived from services -> categories association with virtual attribute support
+  def service_categories
+    if @service_categories.present?
+      @service_categories
+    else
+      list = service_categories_list
+      list.present? ? list.join(', ') : ''
+    end
   end
-  alias service_categories service_categories_list
+
+  def service_categories=(val)
+    @service_categories = val.is_a?(Array) ? val.join(', ') : val.to_s
+  end
+
+  def service_categories_list
+    if @service_categories.present?
+      @service_categories.split(',').map(&:strip).reject(&:blank?)
+    elsif services.loaded? && services.all? { |s| s.association(:categories).loaded? }
+      services.flat_map(&:categories).map(&:name).uniq
+    else
+      services.joins(:categories).distinct.pluck('categories.name')
+    end
+  end
+
+  def service_categories_list=(val)
+    self.service_categories = val
+  end
 
   def profile_complete?
     business_name.present? &&
@@ -160,7 +182,13 @@ class VendorProfile < ApplicationRecord
   end
 
   def featured_portfolio_items
-    portfolio_items.featured.ordered.limit(6)
+    if portfolio_items.loaded?
+      items = portfolio_items.select(&:is_featured).sort_by { |i| [i.display_order || 0, i.created_at || Time.current] }.first(6)
+      items.presence || portfolio_items.sort_by { |i| [i.display_order || 0, i.created_at || Time.current] }.first(6)
+    else
+      items = portfolio_items.featured.ordered.limit(6)
+      items.presence || portfolio_items.ordered.limit(6)
+    end
   end
 
   def portfolio_categories
