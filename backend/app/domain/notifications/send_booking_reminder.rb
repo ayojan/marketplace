@@ -16,7 +16,7 @@ module Notifications
 
       # Return early if already sent (idempotent)
       if booking_reminder_already_sent?
-        Rails.logger.debug("Booking reminder already sent for booking #{booking.id}")
+        Rails.logger.debug { "Booking reminder already sent for booking #{booking.id}" }
         return { success: true, already_sent: true }
       end
 

@@ -128,7 +128,7 @@ RSpec.describe Types::VendorProfileType, type: :graphql do
     vendor_data = result.dig('data', 'vendorProfile')
     categories = vendor_data['serviceCategoriesList']
 
-    expect(categories).to match_array(['Photography', 'Videography', 'Event Planning'])
+    expect(categories).to contain_exactly('Photography', 'Videography', 'Event Planning')
   end
 
   it 'returns associated services and portfolio items' do

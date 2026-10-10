@@ -8,8 +8,8 @@ module Notifications
     option :title, type: Types::String
     option :message, type: Types::String
     option :notification_type, type: Types::String
-    option :related_type, type: Types::String.optional, default: proc { nil }
-    option :related_id, type: Types::Integer.optional, default: proc { nil }
+    option :related_type, type: Types::String.optional, default: proc {}
+    option :related_id, type: Types::Integer.optional, default: proc {}
     option :skip_email, type: Types::Bool, default: proc { false }
 
     def self.call(**)

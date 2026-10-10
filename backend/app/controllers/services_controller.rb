@@ -147,7 +147,13 @@ class ServicesController < ApiController
     vendor = service.vendor_profile
     featured_item = vendor&.featured_portfolio_items&.first
     featured_img = featured_item&.images&.first if featured_item&.images&.attached?
-    vendor_img_url = featured_img ? (url_for(featured_img) rescue nil) : nil
+    vendor_img_url = if featured_img
+                       begin
+                         url_for(featured_img)
+                       rescue StandardError
+                         nil
+                       end
+                     end
 
     category_info = if (cat = service.service_category)
                       { id: cat.id, name: cat.name }

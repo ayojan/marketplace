@@ -14,7 +14,5 @@ class ApplicationJob < ActiveJob::Base
     { 'queue' => queue_name.to_s }
   end
 
-  def sidekiq_options
-    self.class.sidekiq_options
-  end
+  delegate :sidekiq_options, to: :class
 end

@@ -17,8 +17,8 @@ module Bookings
     option :status, type: Types::String, default: proc { 'pending' }
     option :skip_notifications, type: Types::Bool, default: proc { false }
 
-    def self.call(**kwargs)
-      new(**kwargs).call
+    def self.call(**)
+      new(**).call
     rescue Dry::Types::ConstraintError, Dry::Types::CoercionError, ArgumentError => e
       { success: false, error: e.message }
     end

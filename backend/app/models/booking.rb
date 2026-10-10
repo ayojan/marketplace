@@ -63,7 +63,9 @@ class Booking < ApplicationRecord
 
   # NOTE: Complex validation logic (vendor_availability) moved to BookingValidationService
   validate :event_date_in_future, if: -> { new_record? || event_date_changed? }
-  validate :event_end_date_after_event_date, if: -> { event_end_date.present? && (new_record? || event_date_changed? || event_end_date_changed?) }
+  validate :event_end_date_after_event_date, if: lambda {
+    event_end_date.present? && (new_record? || event_date_changed? || event_end_date_changed?)
+  }
 
   scope :upcoming, -> { where('event_date > ?', Time.current) }
   scope :for_vendor_profile, ->(vendor_profile) { where(vendor_profile: vendor_profile) }

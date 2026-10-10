@@ -94,7 +94,7 @@ class AvailabilityCheckerService
   end
 
   def date_and_time_in_future
-    return unless date.present?
+    return if date.blank?
 
     if date < Date.current
       errors.add(:date, 'cannot be in the past')

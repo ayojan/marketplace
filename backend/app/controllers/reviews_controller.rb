@@ -100,9 +100,7 @@ class ReviewsController < ApiController
   def respond
     @review = Review.find(params[:id])
     response_text = params[:vendor_response] || params.dig(:review, :vendor_response)
-    if response_text.blank?
-      return render json: { error: 'Response text is required' }, status: :bad_request
-    end
+    return render json: { error: 'Response text is required' }, status: :bad_request if response_text.blank?
 
     result = Reviews::RespondToReview.call(
       review: @review,

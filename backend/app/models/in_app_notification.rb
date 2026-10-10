@@ -32,7 +32,7 @@ class InAppNotification < ApplicationRecord
   belongs_to :user
 
   # == Validations ==
-  validates :user_id, :title, :message, :notification_type, presence: true
+  validates :title, :message, :notification_type, presence: true
   validates :notification_type, inclusion: {
     in: %w[booking_created booking_accepted booking_rejected booking_cancelled booking_reminder
            new_message review_received],

@@ -6,7 +6,7 @@ class JwtService
   def self.secret_key
     Rails.application.secret_key_base.presence ||
       Rails.application.credentials.secret_key_base.presence ||
-      (Rails.env.development? || Rails.env.test? ? 'marketplace-dev-secret-key-at-least-32-chars' : nil) ||
+      (Rails.env.local? ? 'marketplace-dev-secret-key-at-least-32-chars' : nil) ||
       raise('SECRET_KEY_BASE is missing')
   end
 

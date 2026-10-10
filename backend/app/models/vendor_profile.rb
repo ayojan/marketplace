@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength, Rails/UniqueValidationWithoutIndex
+# rubocop:disable Metrics/ClassLength
 
 # == Schema Information
 #
@@ -138,7 +138,7 @@ class VendorProfile < ApplicationRecord
 
   def service_categories_list
     if @service_categories.present?
-      @service_categories.split(',').map(&:strip).reject(&:blank?)
+      @service_categories.split(',').map(&:strip).compact_blank
     elsif services.loaded? && services.all? { |s| s.association(:categories).loaded? }
       services.flat_map(&:categories).map(&:name).uniq
     else
@@ -183,7 +183,9 @@ class VendorProfile < ApplicationRecord
 
   def featured_portfolio_items
     if portfolio_items.loaded?
-      items = portfolio_items.select(&:is_featured).sort_by { |i| [i.display_order || 0, i.created_at || Time.current] }.first(6)
+      items = portfolio_items.select(&:is_featured).sort_by do |i|
+        [i.display_order || 0, i.created_at || Time.current]
+      end.first(6)
       items.presence || portfolio_items.sort_by { |i| [i.display_order || 0, i.created_at || Time.current] }.first(6)
     else
       items = portfolio_items.featured.ordered.limit(6)
@@ -291,4 +293,4 @@ class VendorProfile < ApplicationRecord
     errors.add(:website, 'is not a valid URL') unless valid_scheme && valid_domain
   end
 end
-# rubocop:enable Metrics/ClassLength, Rails/UniqueValidationWithoutIndex
+# rubocop:enable Metrics/ClassLength

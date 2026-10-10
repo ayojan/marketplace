@@ -20,9 +20,7 @@ class CustomerFavoritesController < ApiController
     vendor_profile_id = params[:vendor_profile_id]
     vendor_profile = VendorProfile.find_by(id: vendor_profile_id)
 
-    unless vendor_profile
-      return render json: { error: 'Vendor profile not found' }, status: :not_found
-    end
+    return render json: { error: 'Vendor profile not found' }, status: :not_found unless vendor_profile
 
     begin
       AuthorizationService.authorize!(current_user, vendor_profile, :toggle_favorite)

@@ -149,7 +149,7 @@ RSpec.describe VendorsController do
         get :availability, params: params
 
         expect(response).to have_http_status(:ok)
-        slot_ids = response.parsed_body['availability_slots'].map { |s| s['id'] }
+        slot_ids = response.parsed_body['availability_slots'].pluck('id')
         expect(slot_ids).not_to include(past_slot.id)
       end
     end

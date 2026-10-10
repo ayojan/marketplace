@@ -239,8 +239,10 @@ RSpec.describe AvailabilitySlot do
       end
 
       it 'checks start_time when date is today' do
-        slot_past_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current, start_time: 2.hours.ago.strftime('%H:%M'))
-        slot_future_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current, start_time: 2.hours.from_now.strftime('%H:%M'))
+        slot_past_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current,
+                                                    start_time: 2.hours.ago.strftime('%H:%M'))
+        slot_future_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current,
+                                                      start_time: 2.hours.from_now.strftime('%H:%M'))
 
         expect(slot_past_today.passed?).to be true
         expect(slot_future_today.passed?).to be false

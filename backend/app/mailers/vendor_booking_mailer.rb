@@ -8,7 +8,9 @@ class VendorBookingMailer < ApplicationMailer
     @service = booking.service
 
     mail(to: @vendor.user.email, subject: "New Booking Request - #{@service.name}") do |format|
-      format.text { render plain: "Hello #{@vendor.business_name},\n\nYou have a new booking request from #{@customer.user.name} for #{@service.name}." }
+      format.text do
+        render plain: "Hello #{@vendor.business_name},\n\nYou have a new booking request from #{@customer.user.name} for #{@service.name}."
+      end
       format.html { render 'new_booking_notification' }
     end
   end
@@ -20,8 +22,12 @@ class VendorBookingMailer < ApplicationMailer
     @service = booking.service
 
     mail(to: @vendor.user.email, subject: "Booking Cancelled - #{@service.name}") do |format|
-      format.text { render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been cancelled." }
-      format.html { render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been cancelled." }
+      format.text do
+        render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been cancelled."
+      end
+      format.html do
+        render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been cancelled."
+      end
     end
   end
 
@@ -32,8 +38,12 @@ class VendorBookingMailer < ApplicationMailer
     @service = booking.service
 
     mail(to: @vendor.user.email, subject: "Booking Modified - #{@service.name}") do |format|
-      format.text { render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been modified." }
-      format.html { render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been modified." }
+      format.text do
+        render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been modified."
+      end
+      format.html do
+        render plain: "Hello #{@vendor.business_name},\n\nThe booking with #{@customer.user.name} for #{@service.name} has been modified."
+      end
     end
   end
 end

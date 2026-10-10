@@ -26,9 +26,7 @@ class PortfolioItemsController < ApiController
       ensure_vendor_role
       return if performed?
 
-      unless current_user&.vendor_profile
-        return render json: { portfolio_items: [], categories: [] }
-      end
+      return render json: { portfolio_items: [], categories: [] } unless current_user&.vendor_profile
 
       @portfolio_items = current_user.vendor_profile.portfolio_items.ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
@@ -48,9 +46,7 @@ class PortfolioItemsController < ApiController
 
   # POST /portfolio_items
   def create
-    unless current_user&.vendor_profile
-      return render json: { errors: ['Vendor profile not found'] }, status: :not_found
-    end
+    return render json: { errors: ['Vendor profile not found'] }, status: :not_found unless current_user&.vendor_profile
 
     result = CreatePortfolioItem.call(current_user.vendor_profile, portfolio_item_params)
 
@@ -198,9 +194,7 @@ class PortfolioItemsController < ApiController
     if vendor_id == 'me'
       authenticate_user!
       @vendor_profile = current_user&.vendor_profile
-      unless @vendor_profile
-        render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found
-      end
+      render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found unless @vendor_profile
     else
       @vendor_profile = VendorProfile.find(vendor_id)
     end
@@ -227,7 +221,7 @@ class PortfolioItemsController < ApiController
   end
 
   def portfolio_item_params
-    params.require(:portfolio_item).permit(:title, :description, :category, :display_order, :is_featured, images: [])
+    params.expect(portfolio_item: [:title, :description, :category, :display_order, :is_featured, { images: [] }])
   end
 
   def portfolio_item_json(item)
@@ -240,7 +234,13 @@ class PortfolioItemsController < ApiController
       is_featured: item.is_featured,
       created_at: item.created_at,
       updated_at: item.updated_at,
-      primary_image_url: item.images.attached? ? (url_for(item.images.first) rescue nil) : nil,
+      primary_image_url: if item.images.attached?
+                           begin
+                             url_for(item.images.first)
+                           rescue StandardError
+                             nil
+                           end
+                         end,
       images: item.images.attached? ? item.images.map { |image| image_json(image) } : [],
       image_count: item.image_count,
       vendor_profile: {
