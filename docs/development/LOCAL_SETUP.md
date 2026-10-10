@@ -1,6 +1,6 @@
 # Local Development Setup
 
-This guide will help you set up the Jashnify Marketplace on your local machine.
+This guide will help you set up the Ayoj Marketplace on your local machine.
 
 ## Recommended: Host-based Development
 

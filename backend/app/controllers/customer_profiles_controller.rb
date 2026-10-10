@@ -11,13 +11,18 @@ class CustomerProfilesController < ApiController
 
   # PUT/PATCH /customer_profile
   def update
-    # Update user names if provided in user params or root params
-    if params[:first_name].present? || params[:last_name].present?
+    # Update user names if provided in nested customer_profile params or root params
+    cust_data = params[:customer_profile] || params
+    first_name = cust_data[:first_name].presence || params[:first_name].presence
+    last_name = cust_data[:last_name].presence || params[:last_name].presence
+
+    if first_name.present? || last_name.present?
       user_params = {}
-      user_params[:first_name] = params[:first_name] if params[:first_name].present?
-      user_params[:last_name] = params[:last_name] if params[:last_name].present?
+      user_params[:first_name] = first_name if first_name.present?
+      user_params[:last_name] = last_name if last_name.present?
       current_user.update(user_params)
     end
+
 
     if @customer_profile.update(customer_profile_params)
       render json: {
