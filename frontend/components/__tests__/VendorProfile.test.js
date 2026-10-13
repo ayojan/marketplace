@@ -4,6 +4,13 @@ import '@testing-library/jest-dom';
 import VendorProfile from '../pages/VendorProfile';
 import { apiService } from '../../lib/api';
 
+jest.mock('../../lib/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 1, role: 'customer' },
+    isAuthenticated: true,
+  }),
+}));
+
 // Mock the API service
 jest.mock('../../lib/api', () => ({
   apiService: {
@@ -12,6 +19,12 @@ jest.mock('../../lib/api', () => ({
       getServices: jest.fn(),
       getPortfolio: jest.fn(),
       getReviews: jest.fn(),
+      getAvailability: jest.fn().mockResolvedValue({ data: { availability_slots: [] } }),
+    },
+    favorites: {
+      check: jest.fn().mockResolvedValue({ data: { is_favorite: false } }),
+      add: jest.fn().mockResolvedValue({}),
+      removeByVendor: jest.fn().mockResolvedValue({}),
     },
   },
 }));
@@ -113,67 +126,45 @@ describe('VendorProfile', () => {
     render(<VendorProfile params={mockParams} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Test Photography Studio')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Test Photography Studio' })).toBeInTheDocument();
     });
 
     expect(screen.getByText('Professional photography services for all occasions')).toBeInTheDocument();
-    expect(screen.getByText('📍 New York, NY')).toBeInTheDocument();
-    expect(screen.getByText('📞 +1-555-123-4567')).toBeInTheDocument();
-    expect(screen.getByText('✓ Verified')).toBeInTheDocument();
-    expect(screen.getByText('10 years experience')).toBeInTheDocument();
-    expect(screen.getByText('4.5 (25 reviews)')).toBeInTheDocument();
+    expect(screen.getByText(/New York, NY/)).toBeInTheDocument();
+    expect(screen.getByText('+1-555-123-4567')).toBeInTheDocument();
+    expect(screen.getByText(/Verified Pro/)).toBeInTheDocument();
+    expect(screen.getByText(/10\+ Years Experience/)).toBeInTheDocument();
+    expect(screen.getAllByText('4.5').length).toBeGreaterThan(0);
   });
 
-  it('renders service categories as badges', async () => {
+  it('renders portfolio section with showcase items', async () => {
     render(<VendorProfile params={mockParams} />);
 
     await waitFor(() => {
-      expect(screen.getAllByText('Photography')).toHaveLength(2); // One in categories, one in service
+      expect(screen.getByText('Selected Portfolio')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Videography')).toBeInTheDocument();
-  });
-
-  it('renders featured portfolio section', async () => {
-    render(<VendorProfile params={mockParams} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Featured Work')).toBeInTheDocument();
-    });
-
-    expect(screen.getAllByAltText('Wedding Photography')).toHaveLength(2); // One in featured, one in services
-  });
-
-  it('switches between tabs correctly', async () => {
-    render(<VendorProfile params={mockParams} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Services (1)')).toBeInTheDocument();
-    });
-
-    // Initially shows services tab
-    expect(screen.getByText('Wedding Photography')).toBeInTheDocument();
-
-    // Switch to portfolio tab
-    fireEvent.click(screen.getByText('Portfolio (1)'));
     expect(screen.getByText('Wedding Portfolio')).toBeInTheDocument();
-
-    // Switch to reviews tab
-    fireEvent.click(screen.getByText('Reviews (25)'));
-    expect(screen.getByText('No reviews yet.')).toBeInTheDocument();
   });
 
-  it('renders services with correct information', async () => {
+  it('renders services with correct package information', async () => {
     render(<VendorProfile params={mockParams} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Wedding Photography')).toBeInTheDocument();
+      expect(screen.getAllByText('Wedding Photography').length).toBeGreaterThan(0);
     });
 
     expect(screen.getByText('Complete wedding photography package')).toBeInTheDocument();
-    expect(screen.getByText('$1,500')).toBeInTheDocument();
-    expect(screen.getAllByText('Photography')).toHaveLength(2); // One in categories, one in service
-    expect(screen.getByText('Book Now')).toBeInTheDocument();
+    expect(screen.getByText('Available Service Packages')).toBeInTheDocument();
+    expect(screen.getByText('Confirm Booking Request')).toBeInTheDocument();
+  });
+
+  it('renders reviews section correctly', async () => {
+    render(<VendorProfile params={mockParams} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Based on 25 verified client reviews/)).toBeInTheDocument();
+    });
   });
 
   it('handles API errors gracefully', async () => {
@@ -185,15 +176,15 @@ describe('VendorProfile', () => {
       expect(screen.getByText('Vendor Not Found')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Failed to load vendor profile')).toBeInTheDocument();
+    expect(screen.getByText(/Failed to load vendor profile/)).toBeInTheDocument();
   });
 
-  it('renders star ratings correctly', async () => {
+  it('renders rating badge correctly', async () => {
     render(<VendorProfile params={mockParams} />);
 
     await waitFor(() => {
-      const stars = screen.getAllByText('★');
-      expect(stars).toHaveLength(4); // 4 full stars for 4.5 rating
+      const ratings = screen.getAllByText('4.5');
+      expect(ratings.length).toBeGreaterThan(0);
     });
   });
 

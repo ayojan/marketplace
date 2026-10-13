@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { AppProvider } from '@/lib/contexts/AppContext';
+import { LocationProvider } from '@/lib/contexts/LocationContext';
+import LocationPromptModal from '@/components/LocationPromptModal';
 import { Toaster } from '@/components/ui/sonner';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import '../styles/globals.css';
@@ -32,7 +34,6 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Ayoj',
   },
   formatDetection: {
     telephone: false,
@@ -49,8 +50,11 @@ export default function RootLayout({
       <body className={`${plusJakartaSans.className} antialiased min-h-screen bg-[#FAF7F2] text-[#1C1B19] pb-16 md:pb-0`}>
         <AuthProvider>
           <AppProvider>
-            {children}
-            <MobileBottomNav />
+            <LocationProvider>
+              {children}
+              <MobileBottomNav />
+              <LocationPromptModal />
+            </LocationProvider>
           </AppProvider>
         </AuthProvider>
         <Toaster />

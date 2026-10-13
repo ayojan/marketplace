@@ -198,11 +198,20 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
     setAlternatives([]);
     
     try {
+      const durationHours = 4;
+      let calculatedEndTime: string | undefined;
+      if (startTime) {
+        const [h, m] = startTime.split(':').map(Number);
+        const endH = Math.min(23, (h || 10) + durationHours);
+        calculatedEndTime = `${String(endH).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`;
+      }
+
       const res = await apiService.bookings.checkAvailability({
         service_id: params.serviceId,
         date: bookingDate,
         start_time: startTime,
-        duration: 4
+        end_time: calculatedEndTime,
+        duration: durationHours
       });
       
       setIsAvailable(res.data.available);
@@ -211,7 +220,9 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
         const altRes = await apiService.bookings.suggestAlternatives({
           service_id: params.serviceId,
           date: bookingDate,
-          start_time: startTime
+          start_time: startTime,
+          end_time: calculatedEndTime,
+          duration: durationHours
         });
         setAlternatives(altRes.data.alternative_times || []);
       }

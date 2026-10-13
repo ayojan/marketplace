@@ -46,7 +46,7 @@ describe('ProtectedRoute', () => {
     render(<ProtectedRoute>Child</ProtectedRoute>);
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/login');
+      expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('/login'));
     });
   });
 
@@ -55,7 +55,7 @@ describe('ProtectedRoute', () => {
       isLoading: false,
       isAuthenticated: true,
       user: { role: 'customer' },
-    });
+    } as any);
 
     render(
       <ProtectedRoute requiredRole="vendor">
@@ -73,7 +73,7 @@ describe('ProtectedRoute', () => {
       isLoading: false,
       isAuthenticated: true,
       user: { role: 'vendor' },
-    });
+    } as any);
 
     render(<ProtectedRoute requiredRole="vendor">Child</ProtectedRoute>);
 

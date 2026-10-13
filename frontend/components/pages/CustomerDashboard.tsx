@@ -227,7 +227,7 @@ const CustomerDashboard = () => {
     }
   };
 
-  const totalSpent = bookings.reduce((sum, b) => sum + (b.total_amount || 0), 0);
+  const totalSpent = bookings.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
   const reviewedBookings = bookings.filter(b => b.review);
 
   const stats = [
@@ -435,17 +435,15 @@ const CustomerDashboard = () => {
                     className="p-5 rounded-2xl border border-[#E8E2D9] bg-[#FBF8F4] hover:border-[#9E5338]/40 transition-all flex flex-col sm:flex-row gap-4 justify-between"
                   >
                     <div className="flex items-start gap-4">
-                      {booking.vendor?.image && (
-                        <Link href={`/vendors/${booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden shrink-0 border border-[#E8E2D9] group/vimg cursor-pointer">
-                          <ImageWithFallback
-                            src={booking.vendor.image}
-                            alt={booking.vendor.business_name}
-                            fill
-                            unoptimized
-                            className="object-cover group-hover/vimg:scale-105 transition-transform duration-300"
-                          />
-                        </Link>
-                      )}
+                      <Link href={`/vendors/${booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden shrink-0 border border-[#E8E2D9] group/vimg cursor-pointer">
+                        <ImageWithFallback
+                          src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'}
+                          alt={booking.vendor?.business_name || 'Vendor'}
+                          fill
+                          unoptimized
+                          className="object-cover group-hover/vimg:scale-105 transition-transform duration-300"
+                        />
+                      </Link>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-serif font-bold text-[#221F1C]">{booking.service?.name}</h4>
@@ -726,7 +724,13 @@ const CustomerDashboard = () => {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E2D9]">
                 <div className="flex items-center gap-4">
                   <Link href={`/vendors/${booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden border border-[#E8E2D9] shrink-0 group/vimg cursor-pointer">
-                    <ImageWithFallback src={booking.vendor?.image} alt={booking.vendor?.business_name} fill unoptimized className="object-cover group-hover/vimg:scale-105 transition-transform duration-300" />
+                    <ImageWithFallback 
+                      src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'} 
+                      alt={booking.vendor?.business_name || 'Vendor'} 
+                      fill 
+                      unoptimized 
+                      className="object-cover group-hover/vimg:scale-105 transition-transform duration-300" 
+                    />
                   </Link>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-md">
@@ -749,7 +753,7 @@ const CustomerDashboard = () => {
                 <span className="text-[#6B6560] block font-medium">Event Date</span>
                 <span className="font-bold text-[#221F1C] flex items-center gap-1.5 mt-0.5">
                   <CalendarIcon size={14} className="text-[#9E5338]" />
-                  {new Date(booking.event_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                  {booking.event_date ? new Date(booking.event_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Date TBD'}
                 </span>
               </div>
               <div>
@@ -762,7 +766,7 @@ const CustomerDashboard = () => {
               <div>
                 <span className="text-[#6B6560] block font-medium">Total Package Investment</span>
                 <span className="font-bold text-[#221F1C] text-sm mt-0.5 block">
-                  ₹{booking.total_amount?.toLocaleString()}
+                  ₹{booking.total_amount ? Number(booking.total_amount).toLocaleString() : '0'}
                 </span>
               </div>
             </div>
@@ -921,7 +925,13 @@ const CustomerDashboard = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
                     <div className="relative size-12 rounded-xl overflow-hidden border border-[#E8E2D9]">
-                      <ImageWithFallback src={booking.vendor?.image} alt={booking.vendor?.business_name} fill unoptimized className="object-cover" />
+                      <ImageWithFallback 
+                        src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'} 
+                        alt={booking.vendor?.business_name || 'Vendor'} 
+                        fill 
+                        unoptimized 
+                        className="object-cover" 
+                      />
                     </div>
                     <div>
                       <h4 className="text-sm font-serif font-bold text-[#221F1C]">{booking.vendor?.business_name}</h4>
@@ -1271,7 +1281,9 @@ const CustomerDashboard = () => {
       <footer className="py-5 border-t border-[#E8E2D9] bg-white mt-8 mb-16 md:mb-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <AyojLogo size="sm" showTagline={false} />
+            <Link href="/" className="hover:opacity-90 transition-opacity">
+              <AyojLogo size="sm" showTagline={false} />
+            </Link>
             <p className="text-xs text-[#6B6560]">© 2026 Ayoj Marketplace. Customer Portal.</p>
           </div>
         </div>

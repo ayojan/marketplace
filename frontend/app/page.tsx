@@ -10,6 +10,7 @@ import {
   MapPin, 
   ChevronDown, 
   ChevronRight, 
+  ChevronLeft,
   Sparkles,
   Utensils,
   Music,
@@ -18,11 +19,26 @@ import {
   Brush,
   Building2,
   Check,
+  X,
+  TrendingUp,
+  Clock,
+  ShieldCheck,
+  Lock,
+  BadgeCheck,
+  IndianRupee,
+  CalendarCheck,
+  MessageSquare,
+  Star,
+  Heart,
+  Store,
+  CheckCircle2,
   Instagram,
   Linkedin,
   Facebook,
   Twitter,
-  Youtube
+  Youtube,
+  Navigation,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -31,6 +47,7 @@ import Link from 'next/link';
 import Header, { CITIES } from '@/components/Header';
 import PhotographerCard from '@/components/PhotographerCard';
 import AyojLogo from '@/components/AyojLogo';
+import { useLocation } from '@/lib/contexts/LocationContext';
 
 const SOCIAL_LINKS = [
   { name: 'Instagram', href: 'https://instagram.com/ayoj.official', icon: Instagram },
@@ -40,17 +57,53 @@ const SOCIAL_LINKS = [
   { name: 'Facebook', href: 'https://facebook.com/ayojofficial', icon: Facebook },
 ];
 
+const TRENDING_SEARCHES = [
+  { label: 'Candid Wedding Photographers', category: 'photographer', icon: Camera, tag: 'High Demand' },
+  { label: 'Bridal Makeup & Hair Artists', category: 'makeup-artist', icon: Brush, tag: 'Trending' },
+  { label: 'Luxury Floral & Stage Decor', category: 'decorator', icon: Flower2, tag: 'Popular' },
+  { label: 'Destination Farmhouses & Venues', category: 'venue', icon: Building2, tag: 'Top Rated' },
+  { label: 'Sangeet DJs & Sound Setup', category: 'dj', icon: Music, tag: 'Party' },
+  { label: 'Full Event Planners & Management', category: 'event-planner', icon: Sparkles, tag: 'Full Service' },
+];
+
+const POPULAR_SEARCH_PILLS = [
+  { label: 'Photographers', slug: 'photographer' },
+  { label: 'Bridal Makeup', slug: 'makeup-artist' },
+  { label: 'Wedding Decor', slug: 'decorator' },
+  { label: 'Banquet Venues', slug: 'venue' },
+  { label: 'Sangeet DJs', slug: 'dj' },
+];
+
 export default function Landing() {
   const router = useRouter();
+  const { 
+    selectedCity, 
+    setSelectedCity, 
+    openLocationPrompt, 
+    detectLocation, 
+    isDetecting 
+  } = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCity, setSelectedCity] = useState('Delhi NCR');
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const cityDropdownRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const occasionsScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollOccasions = (direction: 'left' | 'right') => {
+    if (occasionsScrollRef.current) {
+      const offset = direction === 'left' ? -260 : 260;
+      occasionsScrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) {
         setIsCityDropdownOpen(false);
+      }
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsSearchFocused(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -64,6 +117,17 @@ export default function Landing() {
     if (query) params.set('search', query);
     if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
     const qs = params.toString();
+    setIsSearchFocused(false);
+    router.push(qs ? `/marketplace?${qs}` : '/marketplace');
+  };
+
+  const handleDirectSearch = (query?: string, categorySlug?: string) => {
+    const params = new URLSearchParams();
+    if (query) params.set('search', query);
+    if (categorySlug && categorySlug !== 'all') params.set('category', categorySlug);
+    if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
+    const qs = params.toString();
+    setIsSearchFocused(false);
     router.push(qs ? `/marketplace?${qs}` : '/marketplace');
   };
 
@@ -116,6 +180,7 @@ export default function Landing() {
       id: '1',
       name: 'The Wedding Narratives',
       business_name: 'The Wedding Narratives',
+      category: 'photographer',
       location: 'Delhi NCR',
       rating: 4.9,
       total_reviews: 320,
@@ -126,6 +191,7 @@ export default function Landing() {
       id: '2',
       name: 'Meera Makeovers',
       business_name: 'Meera Makeovers',
+      category: 'makeup-artist',
       location: 'Gurgaon',
       rating: 4.8,
       total_reviews: 214,
@@ -136,6 +202,7 @@ export default function Landing() {
       id: '3',
       name: 'Eventica Decor',
       business_name: 'Eventica Decor',
+      category: 'decorator',
       location: 'Delhi NCR',
       rating: 4.9,
       total_reviews: 189,
@@ -146,6 +213,7 @@ export default function Landing() {
       id: '4',
       name: 'Beats & Beyond',
       business_name: 'Beats & Beyond',
+      category: 'dj',
       location: 'Noida',
       rating: 4.7,
       total_reviews: 96,
@@ -156,15 +224,81 @@ export default function Landing() {
       id: '5',
       name: 'The Palm Venue',
       business_name: 'The Palm Venue',
+      category: 'venue',
       location: 'Delhi NCR',
       rating: 4.8,
       total_reviews: 276,
       base_price: 250000,
       image: 'https://images.unsplash.com/photo-1545232979-fbfd430a996c?auto=format&fit=crop&w=800&q=80'
+    },
+    {
+      id: '6',
+      name: 'Shutterbugs Studio',
+      business_name: 'Shutterbugs Studio',
+      category: 'photographer',
+      location: 'Delhi NCR',
+      rating: 4.9,
+      total_reviews: 142,
+      base_price: 40000,
+      image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80'
+    },
+    {
+      id: '7',
+      name: 'Glam & Glow Bridal',
+      business_name: 'Glam & Glow Bridal',
+      category: 'makeup-artist',
+      location: 'Delhi NCR',
+      rating: 4.9,
+      total_reviews: 168,
+      base_price: 22000,
+      image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'
+    },
+    {
+      id: '8',
+      name: 'Floral Symphony',
+      business_name: 'Floral Symphony',
+      category: 'decorator',
+      location: 'Delhi NCR',
+      rating: 4.8,
+      total_reviews: 115,
+      base_price: 75000,
+      image: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80'
+    },
+    {
+      id: '9',
+      name: 'DJ Aryan Live',
+      business_name: 'DJ Aryan Live',
+      category: 'dj',
+      location: 'Delhi NCR',
+      rating: 4.9,
+      total_reviews: 130,
+      base_price: 35000,
+      image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80'
+    },
+    {
+      id: '10',
+      name: 'Royal Heritage Haveli',
+      business_name: 'Royal Heritage Haveli',
+      category: 'venue',
+      location: 'Delhi NCR',
+      rating: 4.9,
+      total_reviews: 310,
+      base_price: 300000,
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
     }
   ];
 
+  const VENDOR_FILTER_TABS = [
+    { id: 'all', label: 'All Verified Pros' },
+    { id: 'photographer', label: 'Photographers' },
+    { id: 'makeup-artist', label: 'Makeup Artists' },
+    { id: 'decorator', label: 'Decorators' },
+    { id: 'dj', label: 'DJs & Music' },
+    { id: 'venue', label: 'Venues' }
+  ];
+
   const [topVendors, setTopVendors] = useState<any[]>(DEFAULT_TOP_VENDORS);
+  const [activeVendorTab, setActiveVendorTab] = useState<string>('all');
 
   useEffect(() => {
     const fetchTopVendors = async () => {
@@ -179,11 +313,47 @@ export default function Landing() {
       }
     };
     fetchTopVendors();
+
+    // Scroll to anchor on load if hash is present (e.g. /#reviews or /#occasions)
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.substring(1);
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 150);
+    }
   }, []);
+
+  const getTabCount = (tabId: string) => {
+    const list = Array.isArray(topVendors) ? topVendors : DEFAULT_TOP_VENDORS;
+    if (tabId === 'all') return list.length;
+    return list.filter((v: any) => {
+      const cat = (v.category || v.service_category || '').toLowerCase();
+      const name = (v.name || v.business_name || '').toLowerCase();
+      if (tabId === 'photographer') return cat.includes('photo') || name.includes('narrative') || name.includes('photo') || name.includes('shutter');
+      if (tabId === 'makeup-artist') return cat.includes('makeup') || name.includes('makeover') || name.includes('glam') || name.includes('glow');
+      if (tabId === 'decorator') return cat.includes('decor') || name.includes('eventica') || name.includes('floral');
+      if (tabId === 'dj') return cat.includes('dj') || cat.includes('music') || name.includes('beat') || name.includes('aryan');
+      if (tabId === 'venue') return cat.includes('venue') || name.includes('palm') || name.includes('haveli') || name.includes('heritage');
+      return true;
+    }).length;
+  };
 
   return (
     <div className="min-h-screen bg-[#FBF8F4] text-[#221F1C] selection:bg-[#F3EADF] selection:text-[#9E5338]">
+      {/* Accessible Skip Link for Keyboard Navigators */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-[100] px-4 py-2 bg-[#9E5338] text-white rounded-xl shadow-lg font-medium text-xs focus:outline-none focus:ring-2 focus:ring-[#9E5338] focus:ring-offset-2"
+      >
+        Skip to main content
+      </a>
+
       <Header />
+
+      <main id="main-content">
 
       {/* Hero Section - Image Gradients into Text and Search Bar */}
       <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center overflow-hidden bg-[#FBF8F4] py-12 lg:py-16">
@@ -226,73 +396,207 @@ export default function Landing() {
             </p>
 
             {/* Main Search Pill Capsule */}
-            <form onSubmit={handleSearchSubmit} className="pt-2">
-              <div className="bg-white border border-[#E8E2D9] rounded-full p-2 shadow-lg shadow-black/5 flex flex-col sm:flex-row items-center gap-2 max-w-xl">
-                
-                {/* Location Selector Inside Search */}
-                <div className="relative w-full sm:w-auto" ref={cityDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-normal text-[#221F1C] border-b sm:border-b-0 sm:border-r border-[#E8E2D9] w-full sm:w-auto shrink-0 cursor-pointer hover:text-[#9E5338] transition-colors"
-                  >
-                    <MapPin className="size-3.5 text-[#9E5338]" />
-                    <span>{selectedCity}</span>
-                    <ChevronDown className="size-3 text-[#6B6560] ml-1" />
-                  </button>
+            <div className="relative max-w-xl pt-2" ref={searchContainerRef}>
+              <form onSubmit={handleSearchSubmit}>
+                <div className="bg-white border border-[#E8E2D9] rounded-2xl sm:rounded-full p-2 shadow-lg shadow-black/5 flex flex-col sm:flex-row items-center gap-2">
+                  
+                  {/* Location Selector Inside Search */}
+                  <div className="relative w-full sm:w-auto" ref={cityDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+                      aria-haspopup="listbox"
+                      aria-expanded={isCityDropdownOpen}
+                      aria-label="Select city"
+                      className="flex items-center gap-1.5 px-4 py-2 min-h-[44px] sm:min-h-0 text-xs font-normal text-[#221F1C] border-b sm:border-b-0 sm:border-r border-[#E8E2D9] w-full sm:w-auto shrink-0 cursor-pointer hover:text-[#9E5338] transition-colors"
+                    >
+                      <MapPin className="size-3.5 text-[#9E5338]" />
+                      <span>{selectedCity}</span>
+                      <ChevronDown className="size-3 text-[#6B6560] ml-1" />
+                    </button>
 
-                  {isCityDropdownOpen && (
-                    <div className="absolute left-0 mt-2 w-44 rounded-2xl bg-white border border-[#E8E2D9] shadow-xl py-1.5 z-50">
-                      <div className="px-3 py-1 text-[10px] font-bold text-[#6B6560] uppercase tracking-wider">
-                        Select City
-                      </div>
-                      {['All Cities', ...CITIES].map((city) => {
-                        const isSelected = selectedCity === city;
-                        return (
+                    {isCityDropdownOpen && (
+                      <div className="absolute left-0 mt-2 w-52 rounded-2xl bg-white border border-[#E8E2D9] shadow-xl py-1.5 z-50 overflow-hidden">
+                        <button
+                          type="button"
+                          disabled={isDetecting}
+                          onClick={async () => {
+                            setIsCityDropdownOpen(false);
+                            await detectLocation();
+                          }}
+                          className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-[#9E5338] hover:bg-[#F3EADF] border-b border-[#E8E2D9] cursor-pointer transition-colors"
+                        >
+                          {isDetecting ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <Navigation className="size-3.5" />
+                          )}
+                          <span>{isDetecting ? 'Detecting Hub...' : 'Detect My Location'}</span>
+                        </button>
+
+                        <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-[#6B6560] uppercase tracking-wider">
+                          Select City
+                        </div>
+                        {['All Cities', ...CITIES].map((city) => {
+                          const isSelected = selectedCity === city;
+                          return (
+                            <button
+                              key={city}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCity(city);
+                                setIsCityDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-left cursor-pointer transition-colors ${
+                                isSelected
+                                  ? 'bg-[#F3EADF] text-[#9E5338] font-semibold'
+                                  : 'text-[#221F1C] hover:bg-[#FAF7F2]'
+                              }`}
+                            >
+                              <span>{city}</span>
+                              {isSelected && <Check className="size-3 text-[#9E5338]" />}
+                            </button>
+                          );
+                        })}
+
+                        <div className="pt-1 mt-1 border-t border-[#E8E2D9]/80">
                           <button
-                            key={city}
                             type="button"
                             onClick={() => {
-                              setSelectedCity(city);
                               setIsCityDropdownOpen(false);
+                              openLocationPrompt();
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-1.5 text-xs text-left cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'bg-[#F3EADF] text-[#9E5338] font-semibold'
-                                : 'text-[#221F1C] hover:bg-[#FAF7F2]'
-                            }`}
+                            className="w-full px-3.5 py-1.5 text-[11px] font-medium text-[#6B6560] hover:text-[#9E5338] hover:bg-[#FAF7F2] text-left cursor-pointer transition-colors"
                           >
-                            <span>{city}</span>
-                            {isSelected && <Check className="size-3 text-[#9E5338]" />}
+                            Change celebration hub...
                           </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input Search with Clear Button & Accessibility Labels */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 flex-1 w-full min-h-[44px] sm:min-h-0">
+                    <label htmlFor="celebration-search" className="sr-only">
+                      Search celebration services or vendors
+                    </label>
+                    <Search className="size-4 text-[#6B6560] shrink-0" />
+                    <input
+                      id="celebration-search"
+                      type="text"
+                      value={searchQuery}
+                      onFocus={() => setIsSearchFocused(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setIsSearchFocused(false);
+                      }}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="What do you need? (e.g. Photographer, Makeup...)"
+                      aria-label="Search celebration services or vendors"
+                      className="w-full bg-transparent text-xs text-[#221F1C] placeholder:text-[#6B6560] focus:outline-none"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="p-1 text-[#6B6560] hover:text-[#221F1C] cursor-pointer"
+                        aria-label="Clear search text"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Solid Terracotta Search Pill Button */}
+                  <Button 
+                    type="submit"
+                    className="w-full sm:w-auto bg-[#9E5338] hover:bg-[#86442B] active:scale-95 text-white rounded-full text-xs font-medium px-7 h-10 min-h-[44px] sm:min-h-[40px] transition-all shrink-0 cursor-pointer"
+                  >
+                    Search
+                  </Button>
+
                 </div>
+              </form>
 
-                {/* Input Search */}
-                <div className="flex items-center gap-2 px-3 py-1.5 flex-1 w-full">
-                  <Search className="size-4 text-[#6B6560] shrink-0" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="What do you need? (e.g. Photographer, Makeup...)"
-                    className="w-full bg-transparent text-xs text-[#221F1C] placeholder:text-[#6B6560] focus:outline-none"
-                  />
+              {/* Instant Search Suggestions Popover */}
+              {isSearchFocused && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-[#E8E2D9] rounded-2xl shadow-xl p-3 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b border-[#E8E2D9]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B6560] flex items-center gap-1.5">
+                      <TrendingUp className="size-3 text-[#9E5338]" />
+                      {searchQuery ? `Matching "${searchQuery}"` : `Popular in ${selectedCity}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSearchFocused(false)}
+                      className="text-[10px] text-[#6B6560] hover:text-[#221F1C]"
+                    >
+                      Close (Esc)
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    {(searchQuery 
+                      ? TRENDING_SEARCHES.filter(t => 
+                          t.label.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          t.category.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                      : TRENDING_SEARCHES
+                    ).slice(0, 5).map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => handleDirectSearch(item.label, item.category)}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs hover:bg-[#F3EADF]/60 text-[#221F1C] transition-colors group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="size-7 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] flex items-center justify-center text-[#9E5338] group-hover:bg-white transition-colors">
+                              <Icon className="size-3.5" />
+                            </div>
+                            <span className="font-medium text-xs text-[#221F1C]">{item.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[#6B6560] border border-[#E8E2D9]">
+                              {item.tag}
+                            </span>
+                            <ArrowRight className="size-3 text-[#6B6560] opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={handleSearchSubmit}
+                        className="w-full flex items-center justify-between px-3 py-2 mt-1 pt-2 border-t border-[#E8E2D9] rounded-xl text-left text-xs font-semibold text-[#9E5338] hover:bg-[#F3EADF]/40 cursor-pointer"
+                      >
+                        <span>Search all results for &ldquo;{searchQuery}&rdquo;</span>
+                        <ArrowRight className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
+              )}
 
-                {/* Solid Terracotta Search Pill Button */}
-                <Button 
-                  type="submit"
-                  className="w-full sm:w-auto bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-7 h-10 transition-colors shrink-0 cursor-pointer"
-                >
-                  Search
-                </Button>
-
+              {/* 1-Tap Quick Trending Search Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-3">
+                <span className="text-[11px] font-bold text-[#6B6560] uppercase tracking-wider flex items-center gap-1 shrink-0">
+                  <TrendingUp className="size-3 text-[#9E5338]" /> Popular:
+                </span>
+                {POPULAR_SEARCH_PILLS.map((pill) => (
+                  <button
+                    key={pill.label}
+                    type="button"
+                    onClick={() => handleDirectSearch('', pill.slug)}
+                    className="px-2.5 py-0.5 rounded-full bg-white/85 hover:bg-white text-[#221F1C] hover:text-[#9E5338] border border-[#E8E2D9] hover:border-[#9E5338]/40 transition-all text-[11px] font-medium shadow-2xs cursor-pointer"
+                  >
+                    {pill.label}
+                  </button>
+                ))}
               </div>
-            </form>
+            </div>
 
             {/* Floating Social Proof Pill Badge */}
             <div className="pt-4 flex items-center">
@@ -310,8 +614,13 @@ export default function Landing() {
                 </div>
 
                 <div className="text-left">
-                  <div className="text-sm font-bold text-[#221F1C] leading-none">2.5M+</div>
-                  <div className="text-[11px] text-[#6B6560] leading-tight mt-0.5">real reviews from <br /> happy customers</div>
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <span className="text-sm font-bold text-[#221F1C]">4.9</span>
+                    <Star className="size-3 fill-amber-400 text-amber-400" />
+                  </div>
+                  <div className="text-[11px] text-[#6B6560] leading-tight mt-1">
+                    verified host rating across <br /> 5,000+ celebrations
+                  </div>
                 </div>
 
                 <div className="size-7 rounded-full bg-[#F3EADF] flex items-center justify-center text-[#221F1C] ml-1">
@@ -334,10 +643,11 @@ export default function Landing() {
                 <button
                   key={cat.name}
                   onClick={() => router.push(`/marketplace?category=${encodeURIComponent(cat.slug || cat.name)}`)}
-                  className="flex flex-col items-center gap-2 group cursor-pointer"
+                  className="flex flex-col items-center gap-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9E5338] rounded-2xl p-1 active:scale-95 transition-transform"
+                  aria-label={`Browse ${cat.name}`}
                 >
-                  <div className="size-14 rounded-full bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-[#221F1C] group-hover:bg-[#9E5338] group-hover:text-white group-hover:border-[#9E5338] transition-all duration-200 shadow-sm">
-                    <Icon className="size-5" />
+                  <div className="size-14 rounded-full bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-[#221F1C] group-hover:bg-[#9E5338] group-hover:text-white group-hover:border-[#9E5338] group-hover:scale-105 group-hover:shadow-md transition-all duration-200 shadow-xs">
+                    <Icon className="size-5 transition-transform duration-200 group-hover:scale-110" />
                   </div>
                   <span className="text-xs font-medium text-[#221F1C] group-hover:text-[#9E5338] transition-colors leading-tight max-w-[85px]">
                     {cat.name}
@@ -349,25 +659,52 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Popular Occasions Section */}
-      <section id="occasions" className="py-14 px-4 sm:px-6 bg-[#FBF8F4]">
+      {/* Popular Occasions Section - Placed right after categories for natural browsing */}
+      <section id="occasions" className="scroll-mt-20 py-12 px-4 sm:px-6 bg-[#FAF7F2] border-b border-[#E8E2D9]">
         <div className="max-w-7xl mx-auto space-y-6">
           
           <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-4">
-            <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#221F1C]">
-              Popular occasions
-            </h2>
-            <Link href="/marketplace" className="text-xs font-normal text-[#9E5338] hover:underline flex items-center gap-1">
-              View all occasions <ArrowRight className="size-3.5" />
-            </Link>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#221F1C]">
+                Popular occasions
+              </h2>
+              <p className="text-xs text-[#6B6560] mt-0.5">
+                Curated talent and services tailored for every celebration milestone.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollOccasions('left')}
+                className="hidden sm:flex size-8 rounded-full border border-[#E8E2D9] bg-white items-center justify-center text-[#6B6560] hover:text-[#9E5338] hover:border-[#9E5338]/40 transition-colors cursor-pointer shadow-2xs active:scale-95"
+                aria-label="Scroll occasions left"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollOccasions('right')}
+                className="hidden sm:flex size-8 rounded-full border border-[#E8E2D9] bg-white items-center justify-center text-[#6B6560] hover:text-[#9E5338] hover:border-[#9E5338]/40 transition-colors cursor-pointer shadow-2xs active:scale-95"
+                aria-label="Scroll occasions right"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+              <Link href="/marketplace" className="text-xs font-semibold text-[#9E5338] hover:underline flex items-center gap-1 sm:ml-2">
+                View all <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 overflow-x-auto no-scrollbar">
+          <div 
+            ref={occasionsScrollRef}
+            className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x snap-mandatory scroll-smooth"
+          >
             {occasions.map((occ) => (
               <div
                 key={occ.name}
                 onClick={() => router.push(`/marketplace?occasion=${encodeURIComponent(occ.name.toLowerCase().replace(/\s+/g, '-'))}`)}
-                className="relative aspect-[3/2] sm:aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer border border-[#E8E2D9]"
+                className="relative aspect-[3/2] sm:aspect-[4/3] w-[180px] sm:w-[200px] md:w-[220px] rounded-2xl overflow-hidden group cursor-pointer border border-[#E8E2D9] shrink-0 snap-start shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
               >
                 <ImageWithFallback
                   src={occ.image}
@@ -376,9 +713,10 @@ export default function Landing() {
                   unoptimized
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-3 left-3 text-white font-medium text-xs sm:text-sm">
-                  {occ.name}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent transition-opacity group-hover:from-black/90" />
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
+                  <span className="font-serif font-bold text-xs sm:text-sm tracking-tight">{occ.name}</span>
+                  <ArrowRight className="size-3 text-white/80 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                 </div>
               </div>
             ))}
@@ -387,35 +725,457 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Top rated vendors in Delhi NCR Section */}
-      <section className="py-14 px-4 sm:px-6 bg-[#FBF8F4] border-t border-[#E8E2D9]">
+      {/* Top rated vendors in Selected City Section - Immediate inventory proof */}
+      <section className="py-14 px-4 sm:px-6 bg-[#FBF8F4]">
         <div className="max-w-7xl mx-auto space-y-6 relative">
           
-          <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-4">
-            <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#221F1C]">
-              Top rated vendors in Delhi NCR
-            </h2>
-            <Link href="/marketplace" className="text-xs font-normal text-[#9E5338] hover:underline flex items-center gap-1">
-              View all vendors <ArrowRight className="size-3.5" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E8E2D9] pb-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F3EADF] text-[#9E5338] text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                <Star className="size-3 fill-[#9E5338]" />
+                Featured Talent in {selectedCity}
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#221F1C]">
+                Top rated vendors in {selectedCity}
+              </h2>
+              <p className="text-xs text-[#6B6560] mt-0.5">
+                Handpicked, verified celebration artists with stellar customer reviews and transparent packages.
+              </p>
+            </div>
+            <Link 
+              href={`/marketplace?location=${encodeURIComponent(selectedCity)}`} 
+              className="text-xs font-semibold text-[#9E5338] hover:underline flex items-center gap-1 self-start sm:self-auto shrink-0"
+            >
+              View all in {selectedCity} <ArrowRight className="size-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
-            {(Array.isArray(topVendors) ? topVendors : DEFAULT_TOP_VENDORS).map((vendor) => (
-              <PhotographerCard key={vendor.id} photographer={vendor} />
-            ))}
+          {/* Category Filter Pills Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {VENDOR_FILTER_TABS.map((tab) => {
+              const isActive = activeVendorTab === tab.id;
+              const count = getTabCount(tab.id);
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveVendorTab(tab.id)}
+                  className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                    isActive
+                      ? 'bg-[#9E5338] text-white shadow-xs'
+                      : 'bg-white border border-[#E8E2D9] text-[#6B6560] hover:text-[#221F1C] hover:bg-[#FAF7F2]'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isActive ? 'bg-white/25 text-white' : 'bg-[#FAF7F2] text-[#6B6560]'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Scroll Right Arrow Button */}
-            <button 
-              onClick={() => router.push('/marketplace')}
-              className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white border border-[#E8E2D9] shadow-lg items-center justify-center text-[#221F1C] hover:bg-[#9E5338] hover:text-white transition-all cursor-pointer z-20"
-            >
-              <ChevronRight className="size-5" />
-            </button>
+          {/* Vendors Grid */}
+          {(() => {
+            const list = Array.isArray(topVendors) ? topVendors : DEFAULT_TOP_VENDORS;
+            const filtered = list.filter((v: any) => {
+              if (activeVendorTab === 'all') return true;
+              const cat = (v.category || v.service_category || '').toLowerCase();
+              const name = (v.name || v.business_name || '').toLowerCase();
+              if (activeVendorTab === 'photographer') return cat.includes('photo') || name.includes('narrative') || name.includes('photo') || name.includes('shutter');
+              if (activeVendorTab === 'makeup-artist') return cat.includes('makeup') || name.includes('makeover') || name.includes('glam') || name.includes('glow');
+              if (activeVendorTab === 'decorator') return cat.includes('decor') || name.includes('decor') || name.includes('eventica') || name.includes('floral');
+              if (activeVendorTab === 'dj') return cat.includes('dj') || cat.includes('music') || name.includes('beat') || name.includes('aryan');
+              if (activeVendorTab === 'venue') return cat.includes('venue') || name.includes('palm') || name.includes('haveli') || name.includes('heritage');
+              return true;
+            });
+
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
+                {filtered.slice(0, 5).map((vendor) => (
+                  <PhotographerCard key={vendor.id} photographer={vendor} />
+                ))}
+
+                {filtered.length === 0 && (
+                  <div className="col-span-full py-12 px-4 text-center border border-dashed border-[#E8E2D9] rounded-2xl bg-white space-y-3">
+                    <div className="size-12 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] flex items-center justify-center mx-auto text-[#9E5338]">
+                      <Search className="size-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[#221F1C]">No vendors found in this category</p>
+                      <p className="text-xs text-[#6B6560] max-w-sm mx-auto">
+                        We are actively onboarding verified celebration artists in {selectedCity}. View all pros or explore the catalog.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveVendorTab('all')}
+                        className="px-4 py-1.5 rounded-full bg-[#F3EADF] text-[#9E5338] text-xs font-semibold hover:bg-[#E8DACB] transition-colors cursor-pointer"
+                      >
+                        Show All Verified Pros
+                      </button>
+                      <Link 
+                        href="/marketplace" 
+                        className="px-4 py-1.5 rounded-full bg-white border border-[#E8E2D9] text-[#221F1C] text-xs font-medium hover:border-[#9E5338] transition-colors"
+                      >
+                        Browse Full Catalog
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Scroll Right Arrow Button */}
+                {filtered.length > 5 && (
+                  <button 
+                    onClick={() => router.push(`/marketplace?category=${activeVendorTab}`)}
+                    className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white border border-[#E8E2D9] shadow-lg items-center justify-center text-[#221F1C] hover:bg-[#9E5338] hover:text-white transition-all cursor-pointer z-20"
+                    aria-label="View more vendors in this category"
+                  >
+                    <ChevronRight className="size-5" />
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
+        </div>
+      </section>
+
+      {/* Unified "How Ayoj Works & Transparent Marketplace" Section */}
+      <section className="py-16 px-4 sm:px-6 bg-[#FAF7F2] border-t border-[#E8E2D9]">
+        <div className="max-w-7xl mx-auto space-y-10">
+          
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#F3EADF] text-[#9E5338] text-[10px] font-bold uppercase tracking-wider border border-[#E8E2D9]">
+              <Sparkles className="size-3 text-[#9E5338]" />
+              Discover · Trust · Celebrate
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#221F1C]">
+              How Ayoj Works
+            </h2>
+            <p className="text-xs sm:text-sm text-[#6B6560] leading-relaxed">
+              A transparent marketplace built for celebration planning. Connect directly with verified pros, check live slots, and book with complete confidence.
+            </p>
+          </div>
+
+          {/* 3 Progressive Journey Cards with Embedded Capabilities */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+            {/* Desktop step connector */}
+            <div className="hidden md:block absolute top-[52px] left-16 right-16 h-[1px] border-t border-dashed border-[#E8E2D9] pointer-events-none z-0" />
+            
+            {[
+              {
+                step: '01',
+                badge: 'Discover & Shortlist',
+                title: 'Curated Portfolios & Verified Reviews',
+                desc: 'Explore authentic high-resolution photo galleries, equipment lists, and real past celebration work directly from creative studios.',
+                icon: Camera,
+                features: ['Real client galleries & albums', 'Verified host reviews & ratings', 'Multi-category creative talent'],
+                highlight: 'Authentic creative portfolios'
+              },
+              {
+                step: '02',
+                badge: 'Connect & Align',
+                title: 'Clear Package Pricing & Direct Chat',
+                desc: 'View published starting rates with zero hidden platform markups. Chat directly with artists to customize deliverables, timings, and quotes.',
+                icon: IndianRupee,
+                features: ['Published upfront package rates', 'Direct artist-to-host chat', '0% hidden platform markups'],
+                highlight: 'Direct host-to-artist messaging'
+              },
+              {
+                step: '03',
+                badge: 'Reserve & Celebrate',
+                title: 'Live Slot Availability & Dashboard Booking',
+                desc: 'Check open dates on vendor profiles. Submit your date reservation request and manage celebration status directly in your host dashboard.',
+                icon: CalendarCheck,
+                features: ['Live calendar slot checking', 'Host dashboard status tracking', 'Direct date reservation coordination'],
+                highlight: 'Direct booking coordination'
+              }
+            ].map((s) => {
+              const Icon = s.icon;
+              return (
+                <div 
+                  key={s.step}
+                  className="bg-white border border-[#E8E2D9] rounded-2xl p-6 shadow-xs relative flex flex-col justify-between hover:border-[#9E5338]/40 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-serif font-bold text-2xl text-[#9E5338]/40 group-hover:text-[#9E5338] transition-colors">
+                          {s.step}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] bg-[#F3EADF] px-2.5 py-0.5 rounded-full">
+                          {s.badge}
+                        </span>
+                      </div>
+                      <div className="size-10 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9] flex items-center justify-center text-[#9E5338] group-hover:bg-[#F3EADF] group-hover:scale-110 transition-all duration-200">
+                        <Icon className="size-5" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-base font-serif font-bold text-[#221F1C] leading-snug">
+                        {s.title}
+                      </h3>
+                      <p className="text-xs text-[#6B6560] leading-relaxed">
+                        {s.desc}
+                      </p>
+                    </div>
+
+                    {/* Grounded Feature Pills */}
+                    <div className="pt-2 space-y-1.5 border-t border-[#E8E2D9]/50">
+                      {s.features.map((feat, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-[11px] text-[#4A4540]">
+                          <Check className="size-3 text-[#9E5338] shrink-0" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-[#E8E2D9]/70 flex items-center justify-between text-[11px] font-semibold text-[#9E5338]">
+                    <span>{s.highlight}</span>
+                    <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Unified Trust Ribbon - 4 Honest Guarantees */}
+          <div className="bg-white border border-[#E8E2D9] rounded-2xl p-6 sm:p-7 shadow-xs">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-1 lg:max-w-xs shrink-0">
+                <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#9E5338]">
+                  <ShieldCheck className="size-3.5 text-[#9E5338]" /> The Ayoj Standard
+                </div>
+                <h4 className="text-base font-serif font-bold text-[#221F1C]">
+                  A Marketplace Built on Transparency
+                </h4>
+                <p className="text-xs text-[#6B6560] leading-relaxed">
+                  Real portfolios, direct conversations, and upfront pricing. No middlemen markups.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 flex-1">
+                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
+                    <IndianRupee className="size-3.5 text-[#9E5338]" />
+                    <span>0% Markups</span>
+                  </div>
+                  <p className="text-[11px] text-[#6B6560] leading-tight">Published direct package pricing</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
+                    <MessageSquare className="size-3.5 text-[#9E5338]" />
+                    <span>Direct Chat</span>
+                  </div>
+                  <p className="text-[11px] text-[#6B6560] leading-tight">Message artists directly anytime</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
+                    <Camera className="size-3.5 text-[#9E5338]" />
+                    <span>Real Portfolios</span>
+                  </div>
+                  <p className="text-[11px] text-[#6B6560] leading-tight">Genuine past celebration photos</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
+                    <CalendarCheck className="size-3.5 text-[#9E5338]" />
+                    <span>Live Slots</span>
+                  </div>
+                  <p className="text-[11px] text-[#6B6560] leading-tight">Real-time date availability</p>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
       </section>
+
+      {/* Real Celebrations, Real Stories Testimonial Section */}
+      <section id="reviews" className="scroll-mt-20 py-16 px-4 sm:px-6 bg-[#FAF7F2] border-t border-[#E8E2D9]">
+        <div className="max-w-7xl mx-auto space-y-10">
+          
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E8E2D9] pb-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F3EADF] text-[#9E5338] text-[10px] font-bold uppercase tracking-wider border border-[#E8E2D9]">
+                <Heart className="size-3 fill-[#9E5338]" />
+                Host Stories & Verified Reviews
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#221F1C]">
+                Real Celebrations, Real Stories
+              </h2>
+              <p className="text-xs sm:text-sm text-[#6B6560] max-w-xl leading-relaxed">
+                Hear from couples and families who brought their milestone moments to life with Ayoj verified professionals.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-amber-500">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
+                ))}
+              </div>
+              <span className="text-xs font-bold text-[#221F1C]">4.9 / 5.0</span>
+              <span className="text-xs text-[#6B6560]">from 2,500+ verified events</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                id: 't1',
+                couple: 'Aanya & Rohan Kapoor',
+                occasion: 'Grand Wedding in Jaipur',
+                image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
+                quote: 'Finding our wedding photographer on Ayoj was effortless. We could browse their full portfolio, check open dates directly, and coordinate every detail in one place.',
+                vendor: 'The Wedding Narratives',
+                category: 'Wedding Photography'
+              },
+              {
+                id: 't2',
+                couple: 'Pooja & Sameer Verma',
+                occasion: 'Bridal Makeover & Sangeet',
+                image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80',
+                quote: 'Meera did my bridal makeover and she was absolutely magical. Seeing transparent packages and reading genuine host reviews gave me full confidence for my big day.',
+                vendor: 'Meera Makeovers',
+                category: 'Bridal Makeup'
+              },
+              {
+                id: 't3',
+                couple: 'Vikram & Sneha Singhal',
+                occasion: '25th Anniversary Celebration',
+                image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80',
+                quote: 'Eventica Decor turned our banquet into a floral paradise. The quote was completely transparent from day one — zero hidden markups. Highly recommended!',
+                vendor: 'Eventica Decor',
+                category: 'Stage & Floral Decor'
+              }
+            ].map((story) => (
+              <div 
+                key={story.id}
+                className="bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-xs flex flex-col justify-between hover:border-[#9E5338]/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+              >
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <ImageWithFallback
+                    src={story.image}
+                    alt={story.occasion}
+                    fill
+                    unoptimized
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3 text-white">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-md text-white border border-white/20">
+                      {story.occasion}
+                    </span>
+                    <p className="text-xs font-bold mt-1 text-white/95">{story.couple}</p>
+                  </div>
+                </div>
+
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-1 text-amber-500">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="size-3.5 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#221F1C] leading-relaxed italic">
+                      &ldquo;{story.quote}&rdquo;
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#E8E2D9] flex items-center justify-between text-xs">
+                    <div>
+                      <p className="text-[10px] text-[#6B6560] uppercase font-bold tracking-wider">Booked Studio</p>
+                      <Link
+                        href={`/marketplace?search=${encodeURIComponent(story.vendor)}`}
+                        className="font-semibold text-[#221F1C] hover:text-[#9E5338] hover:underline flex items-center gap-1 group/studio cursor-pointer transition-colors"
+                      >
+                        <span>{story.vendor}</span>
+                        <ArrowRight className="size-3 text-[#9E5338] opacity-0 group-hover/studio:opacity-100 transition-opacity" />
+                      </Link>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full">
+                      Verified Host
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* Grow Your Business On Ayoj - Compact Vendor Partner Banner */}
+      <section className="py-10 px-4 sm:px-6 bg-[#FBF8F4] border-t border-[#E8E2D9]">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-[#E8E2D9] rounded-2xl p-6 sm:p-8 shadow-xs">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              
+              <div className="space-y-3 max-w-2xl">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F3EADF] text-[#9E5338] text-[10px] font-bold uppercase tracking-wider">
+                  <Store className="size-3.5" />
+                  For Event Pros & Creative Studios
+                </div>
+
+                <h2 className="text-xl sm:text-2xl font-serif font-normal text-[#221F1C]">
+                  Grow your celebration business with India&apos;s trusted event marketplace.
+                </h2>
+
+                <p className="text-xs sm:text-sm text-[#6B6560] leading-relaxed">
+                  Join event photographers, makeup artists, decorators, and venues. Receive direct client inquiries, manage your booking calendar, and list your creative services with zero upfront fees.
+                </p>
+
+                {/* 4 Compact Benefits Badges */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {[
+                    '0% Upfront Listing Fee',
+                    'Direct Host Inquiries',
+                    'Calendar Slot Management',
+                    'Showcase Creative Portfolios'
+                  ].map((benefit) => (
+                    <span 
+                      key={benefit}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF7F2] text-[#221F1C] text-[11px] font-medium border border-[#E8E2D9]"
+                    >
+                      <CheckCircle2 className="size-3 text-[#9E5338]" />
+                      {benefit}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end gap-2.5 shrink-0">
+                <Link href="/register?role=vendor">
+                  <Button 
+                    className="w-full sm:w-auto bg-[#9E5338] hover:bg-[#86442B] active:scale-95 text-white font-semibold text-xs px-6 h-10 min-h-[44px] sm:min-h-[40px] rounded-full shadow-xs cursor-pointer transition-all gap-2"
+                  >
+                    List Your Business on Ayoj
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+                </Link>
+
+                <Link href="/login" className="text-center lg:text-right">
+                  <span className="text-xs text-[#6B6560] hover:text-[#9E5338] font-medium transition-colors">
+                    Already a partner? Sign In
+                  </span>
+                </Link>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+      </main>
 
       {/* Footer with Official Logo & Social Links */}
       <footer className="py-5 border-t border-[#E8E2D9] bg-[#FBF8F4] mb-16 md:mb-0">

@@ -62,6 +62,14 @@ class PortfolioItem < ApplicationRecord
     images.first if images?
   end
 
+  def primary_image_url
+    return nil unless images?
+
+    Rails.application.routes.url_helpers.url_for(primary_image)
+  rescue StandardError
+    nil
+  end
+
   def image_count
     images.count
   end

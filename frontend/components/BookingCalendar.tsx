@@ -23,24 +23,39 @@ const BookingCalendar = ({ bookings: initialBookings }: any) => {
   const [bookings, setBookings] = useState(initialBookings || []);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [availabilitySlots, setAvailabilitySlots] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       
-      const res = await api.get('/availability_slots', {
+      const fetchSlots = api.get('/availability_slots', {
         params: {
           start_date: startDate.toISOString().split('T')[0],
           end_date: endDate.toISOString().split('T')[0]
         }
       });
-      setAvailabilitySlots(res.data.availability_slots || []);
+
+      const fetchBookings = initialBookings === undefined 
+        ? api.get('/bookings') 
+        : Promise.resolve({ data: { bookings: initialBookings } });
+
+      const [slotsRes, bookingsRes] = await Promise.all([fetchSlots, fetchBookings]);
+      setAvailabilitySlots(slotsRes.data?.availability_slots || []);
+      if (bookingsRes.data?.bookings) {
+        setBookings(bookingsRes.data.bookings);
+      }
     } catch (err) {
       console.error('Error loading calendar data:', err);
+      setError('Failed to load calendar data');
+    } finally {
+      setLoading(false);
     }
-  }, [currentDate]);
+  }, [currentDate, initialBookings]);
 
   useEffect(() => {
     loadData();
@@ -99,131 +114,234 @@ const BookingCalendar = ({ bookings: initialBookings }: any) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
-      {/* Calendar Grid */}
-      <div className="lg:col-span-2 space-y-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold text-white uppercase tracking-widest">
-            {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </h2>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)} className="rounded-lg border-white/[0.05] text-slate-400 hover:text-white hover:bg-white/[0.02]">
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => navigateMonth(1)} className="rounded-lg border-white/[0.05] text-slate-400 hover:text-white hover:bg-white/[0.02]">
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1">
+        <div>
+          <h2 className="text-xl font-serif font-bold text-[#221F1C]">Booking Calendar</h2>
+          <p className="text-xs text-[#6B6560]">Manage your availability and view bookings</p>
         </div>
+        {loading && <span className="text-xs font-semibold text-[#9E5338] animate-pulse">Loading...</span>}
+      </div>
 
-        <div className="grid grid-cols-7 gap-px bg-white/[0.03] border border-white/[0.03] rounded-2xl overflow-hidden shadow-2xl">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <div key={d} className="bg-[#16191e] p-3 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              {d}
-            </div>
-          ))}
-          {daysInMonth(currentDate).map((day, i) => {
-            const currentCellDate = day ? new Date(currentDate.getFullYear(), currentDate.getMonth(), day) : null;
-            const dayBookings = getBookingsForDate(currentCellDate);
-            return (
-              <div
-                key={i}
-                onClick={() => day && setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
-                className={`min-h-[100px] p-2 transition-all cursor-pointer relative group ${
-                  !day ? 'bg-[#0f1115]/50' : isDayInPast(day) ? 'bg-[#16191e]/60 opacity-60 hover:bg-white/[0.02]' : 'bg-[#16191e] hover:bg-white/[0.02]'
-                } ${isSelected(day) ? 'ring-2 ring-inset ring-primary z-10' : ''}`}
-              >
-                {day && (
-                  <>
-                    <span className={`text-xs font-bold ${isToday(day) ? 'size-6 bg-primary text-primary-foreground rounded flex items-center justify-center' : isDayInPast(day) ? 'text-slate-600' : 'text-slate-400'}`}>
-                      {day}
-                    </span>
-                    <div className="mt-2 space-y-1">
-                      {dayBookings.slice(0, 2).map((b: any, idx: number) => (
-                        <div key={idx} className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 truncate font-bold uppercase tracking-widest">
-                          {b.service_name}
-                        </div>
-                      ))}
-                      {dayBookings.length > 2 && (
-                        <div className="text-[9px] text-slate-500 font-bold pl-1.5 uppercase tracking-widest">
-                          +{dayBookings.length - 2} more
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
+      {error && (
+        <div className="p-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Calendar Grid */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Month Navigation Header */}
+          <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#E8E2D9] shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="size-9 rounded-full bg-[#F3EADF] text-[#9E5338] flex items-center justify-center">
+                <CalendarIcon className="size-4" />
               </div>
-            );
-          })}
+              <h2 className="text-xl font-serif font-bold text-[#221F1C] tracking-tight">
+                {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </h2>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                aria-label="Previous Month"
+                onClick={() => navigateMonth(-1)} 
+                className="size-8 rounded-full border border-[#E8E2D9] text-[#221F1C] hover:text-[#9E5338] hover:bg-[#F3EADF] transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                aria-label="Next Month"
+                onClick={() => navigateMonth(1)} 
+                className="size-8 rounded-full border border-[#E8E2D9] text-[#221F1C] hover:text-[#9E5338] hover:bg-[#F3EADF] transition-colors cursor-pointer"
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+
+        {/* Days Grid Container */}
+        <div className="bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-xs">
+          {/* Weekday Names Header */}
+          <div className="grid grid-cols-7 border-b border-[#E8E2D9] bg-[#FAF7F2]">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+              <div key={d} className="py-2.5 text-center text-[11px] font-bold uppercase tracking-wider text-[#9E5338]">
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Cells Grid */}
+          <div className="grid grid-cols-7 gap-px bg-[#E8E2D9]">
+            {daysInMonth(currentDate).map((day, i) => {
+              const currentCellDate = day ? new Date(currentDate.getFullYear(), currentDate.getMonth(), day) : null;
+              const dayBookings = getBookingsForDate(currentCellDate);
+              const daySelected = isSelected(day);
+              const dayToday = isToday(day);
+              const dayPast = isDayInPast(day);
+
+              return (
+                <div
+                  key={i}
+                  onClick={() => day && setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
+                  className={`min-h-[100px] p-2 transition-all cursor-pointer relative group flex flex-col justify-between ${
+                    !day
+                      ? 'bg-[#FAF7F2]/60 cursor-default'
+                      : dayPast
+                        ? 'bg-white/80 opacity-70 hover:bg-[#FAF7F2]'
+                        : 'bg-white hover:bg-[#FAF7F2]'
+                  } ${daySelected ? 'ring-2 ring-inset ring-[#9E5338] bg-[#F3EADF]/40 z-10' : ''}`}
+                >
+                  {day && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-xs font-bold ${
+                            dayToday
+                              ? 'size-6 bg-[#9E5338] text-white rounded-full flex items-center justify-center shadow-xs'
+                              : dayPast
+                                ? 'text-[#8C847C]'
+                                : 'text-[#221F1C]'
+                          }`}
+                        >
+                          {day}
+                        </span>
+                        {dayBookings.length > 0 && (
+                          <span className="size-2 rounded-full bg-[#9E5338]" />
+                        )}
+                      </div>
+
+                      <div className="mt-2 space-y-1">
+                        {dayBookings.slice(0, 2).map((b: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#F3EADF] text-[#9E5338] border border-[#E8E2D9] truncate font-semibold"
+                          >
+                            {b.service_name || b.service?.name || 'Booking'}
+                          </div>
+                        ))}
+                        {dayBookings.length > 2 && (
+                          <div className="text-[10px] text-[#6B6560] font-bold pl-1">
+                            +{dayBookings.length - 2} more
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Calendar Status Legend */}
+          <div className="p-3.5 bg-[#FAF7F2] border-t border-[#E8E2D9] flex flex-wrap items-center gap-4 text-xs text-[#6B6560]">
+            <span className="font-bold text-[#221F1C]">Legend</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" /> Available</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-500" /> Pending booking</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#9E5338]" /> Confirmed booking</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-blue-500" /> Completed booking</span>
+          </div>
         </div>
       </div>
 
-      {/* Sidebar Details */}
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold text-white uppercase tracking-widest mb-2">Details</h3>
+      {/* Sidebar Details Panel */}
+      <div className="space-y-4">
         {selectedDate ? (
           <AnimatePresence mode="wait">
             <motion.div
               key={selectedDate.toISOString()}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="space-y-6"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="bg-white border border-[#E8E2D9] rounded-2xl shadow-xs p-6 space-y-5"
             >
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/10 to-[#16191e] border border-white/[0.03]">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">
+              {/* Selected Date Header */}
+              <div className="p-4 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]">
+                <p className="text-[10px] text-[#9E5338] font-bold uppercase tracking-wider mb-0.5">
                   {selectedDate.toLocaleDateString('default', { weekday: 'long' })}
                 </p>
-                <p className="text-2xl font-bold text-white tracking-tight">
-                  {selectedDate.toLocaleDateString('default', { month: 'long', day: 'numeric' })}
+                <p className="text-xl font-serif font-bold text-[#221F1C] tracking-tight">
+                  {selectedDate.toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
 
+              {/* Scheduled Events List */}
               <div className="space-y-3">
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Scheduled Events</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6560]">
+                    Scheduled Bookings
+                  </h4>
+                  <span className="text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full">
+                    {getBookingsForDate(selectedDate).length} Events
+                  </span>
+                </div>
+
                 {getBookingsForDate(selectedDate).length > 0 ? (
                   getBookingsForDate(selectedDate).map((b: any) => (
-                    <Card key={b.id} className="border-white/[0.03] bg-[#16191e] shadow-sm group hover:border-primary/20 transition-colors">
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div className="font-bold text-sm text-white">{b.service_name}</div>
-                          <Badge variant="secondary" className="rounded text-[8px] font-bold uppercase tracking-widest px-1.5 bg-white/[0.05] border-none text-slate-400">{b.status}</Badge>
+                    <div
+                      key={b.id}
+                      className="p-4 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] space-y-2 hover:border-[#9E5338]/40 transition-colors"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="font-serif font-bold text-sm text-[#221F1C]">
+                          {b.service_name || b.service?.name || 'Wedding Session'}
                         </div>
-                        <div className="space-y-1 text-xs text-slate-400 font-medium">
-                          <div className="flex items-center gap-2"><User className="size-3 text-slate-500" /> {b.customer_name}</div>
-                          <div className="flex items-center gap-2"><Clock className="size-3 text-slate-500" /> {b.start_time}</div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {b.status || 'Confirmed'}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-xs text-[#6B6560] font-medium pt-1 border-t border-[#E8E2D9]/60">
+                        <div className="flex items-center gap-1.5">
+                          <User className="size-3.5 text-[#9E5338]" /> 
+                          <span>{b.customer_name || 'Client Host'}</span>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="size-3.5 text-[#9E5338]" /> 
+                          <span>{b.start_time || 'Full Day Session'}</span>
+                        </div>
+                      </div>
+                    </div>
                   ))
                 ) : (
-                  <div className="py-12 text-center border-2 border-dashed border-white/[0.03] rounded-2xl">
-                    <p className="text-xs text-slate-500 font-medium">No events scheduled</p>
+                  <div className="py-10 text-center border border-dashed border-[#E8E2D9] rounded-xl bg-[#FAF7F2] space-y-1">
+                    <CalendarIcon className="size-6 text-[#8C847C] mx-auto mb-1.5" />
+                    <p className="text-xs font-semibold text-[#221F1C]">No bookings on this day</p>
+                    <p className="text-[11px] text-[#6B6560]">Date is open for incoming customer requests</p>
                   </div>
                 )}
               </div>
 
-              <Button 
-                size="sm" 
-                disabled={isPast(selectedDate)}
-                className="w-full rounded-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Plus className="mr-1.5 size-3.5" /> Add Availability
-              </Button>
-              {isPast(selectedDate) && (
-                <p className="text-[10px] text-slate-500 text-center font-medium">
-                  Past dates cannot be modified for availability
-                </p>
-              )}
+              {/* Action Button */}
+              <div className="pt-2">
+                <Button 
+                  size="sm" 
+                  disabled={isPast(selectedDate)}
+                  className="w-full bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-semibold h-10 shadow-xs cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Plus className="mr-1.5 size-3.5" /> Add Slot / Block Date
+                </Button>
+                {isPast(selectedDate) && (
+                  <p className="text-[10px] text-[#6B6560] text-center font-medium mt-2">
+                    Past dates cannot be modified for availability
+                  </p>
+                )}
+              </div>
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="py-20 text-center text-slate-500 text-xs font-medium border border-dashed border-white/[0.03] rounded-2xl">
-            Select a date to view details
+          <div className="py-20 text-center text-[#6B6560] text-xs font-medium border border-dashed border-[#E8E2D9] rounded-2xl bg-white p-6">
+            <CalendarIcon className="size-8 text-[#9E5338] mx-auto mb-2 opacity-60" />
+            <p className="font-bold text-[#221F1C]">Select a Date</p>
+            <p className="text-[11px] text-[#6B6560] mt-1">Click any day on the calendar to view reservations and manage time slots</p>
           </div>
         )}
       </div>
     </div>
+  </div>
   );
 };
 

@@ -71,7 +71,15 @@ class BookingManagement::BookingPresenter
 
   def vendor_hash
     first_featured = vendor_profile.featured_portfolio_items.first
-    primary_image = first_featured&.primary_image_url || (first_featured&.images&.attached? ? Rails.application.routes.url_helpers.url_for(first_featured.images.first) : nil)
+    primary_image = if first_featured&.respond_to?(:primary_image_url)
+                      first_featured.primary_image_url
+                    elsif first_featured&.images&.attached?
+                      begin
+                        Rails.application.routes.url_helpers.url_for(first_featured.images.first)
+                      rescue StandardError
+                        nil
+                      end
+                    end
 
     {
       id: vendor_profile.id,

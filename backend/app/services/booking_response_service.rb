@@ -6,12 +6,14 @@ class BookingResponseService
   RESPONSE_STATUS = {
     'accept' => 'accepted',
     'decline' => 'declined',
+    'complete' => 'completed',
     'counter_offer' => 'counter_offered'
   }.freeze
 
   RESPONSE_NOTIFICATION = {
     'accept' => 'booking_approved',
     'decline' => 'booking_rejected',
+    'complete' => 'booking_completed',
     'counter_offer' => 'booking_changes_requested'
   }.freeze
 
@@ -53,6 +55,8 @@ class BookingResponseService
   end
 
   def booking_modifiable?
+    return true if @response_action == 'complete' && @booking.accepted?
+
     %w[pending counter_offered].include?(@booking.status)
   end
 
