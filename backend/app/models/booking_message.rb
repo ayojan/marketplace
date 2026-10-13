@@ -66,7 +66,7 @@ class BookingMessage < ApplicationRecord
 
     # Update using raw SQL to avoid triggering booking callbacks
     # This ensures the timestamp is recorded without side effects
-    Booking.where(id: booking.id).update_all(vendor_first_response_at: response_time)
+    Booking.where(id: booking.id).update_all(vendor_first_response_at: response_time) # rubocop:disable Rails/SkipsModelValidations
   rescue StandardError => e
     Rails.logger.error("Failed to record vendor first response: #{e.message}")
   end

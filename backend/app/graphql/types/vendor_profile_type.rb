@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable GraphQL/ExtractType
 class Types::VendorProfileType < Types::BaseObject
   description 'Details about a vendor profile, its services, and analytics'
 

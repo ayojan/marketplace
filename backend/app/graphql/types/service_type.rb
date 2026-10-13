@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable GraphQL/ExtractType
 class Types::ServiceType < Types::BaseObject
   description 'A service offering made available by a vendor'
 

@@ -3,6 +3,7 @@
 module Sources
   class RecordLoader < GraphQL::Dataloader::Source
     def initialize(model_class)
+      super()
       @model_class = model_class
     end
 

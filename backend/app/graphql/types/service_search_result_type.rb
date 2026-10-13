@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable GraphQL/ExtractType
 class Types::ServiceSearchResultType < Types::BaseObject
   description 'Paginated service search results with facets'
   field :current_page, Integer, null: false, description: 'Current page number'

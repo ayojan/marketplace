@@ -7,8 +7,8 @@ module Favorites
     option :user, type: Types.Instance(User)
     option :vendor_profile_id, type: Types::Coercible::Integer
 
-    def self.call(**kwargs)
-      new(**kwargs).call
+    def self.call(**)
+      new(**).call
     rescue Dry::Types::ConstraintError, Dry::Types::CoercionError, ArgumentError => e
       { success: false, error: e.message }
     end

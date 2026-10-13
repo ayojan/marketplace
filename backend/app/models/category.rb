@@ -25,7 +25,7 @@ class Category < ApplicationRecord
   has_many :vendor_profiles, through: :services, source: :vendor_profile
 
   # Validations
-  validates :name, presence: true, uniqueness: true, length: { minimum: 2, maximum: 50 }
+  validates :name, presence: true, uniqueness: true, length: { minimum: 2, maximum: 50 } # rubocop:disable Rails/UniqueValidationWithoutIndex
   validates :slug, presence: true, uniqueness: true,
                    format: { with: /\A[a-z0-9\-_]+\z/,
                              message: :invalid_format }

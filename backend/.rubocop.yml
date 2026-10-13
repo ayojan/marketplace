@@ -45,6 +45,7 @@ Metrics/BlockLength:
     - 'config/routes.rb'
     - 'config/routes/**/*'
     - 'lib/tasks/**/*'
+    - 'app/admin/**/*'
 
 Style/ClassAndModuleChildren:
   Enabled: false
@@ -57,6 +58,7 @@ Layout/LineLength:
 RSpec/DescribeClass:
   Exclude:
     - 'spec/integration/**/*'
+    - 'spec/jobs/sidekiq_queue_assignment_spec.rb'
 
 RSpec/MultipleExpectations:
   Max: 10
@@ -73,3 +75,15 @@ RSpec/ExampleLength:
 
 RSpec/MultipleMemoizedHelpers:
   Max: 12
+
+GraphQL/ExtractType:
+  Enabled: false
+
+GraphQL/ExtractInputType:
+  Enabled: false
+
+GraphQL/ObjectDescription:
+  Exclude:
+    - 'app/graphql/sources/**/*'
+    - 'app/graphql/*_schema.rb'
+    - 'app/graphql/**/base_*.rb'

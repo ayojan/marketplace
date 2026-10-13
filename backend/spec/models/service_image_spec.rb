@@ -90,20 +90,16 @@ RSpec.describe ServiceImage do
     # Use separate services for scope tests to avoid interference from validation tests
     let(:scope_service) { create(:service) }
     let(:other_service) { create(:service) }
-    let!(:first_image) do
-      img = create(:service_image, service: scope_service, display_order: 1)
-      img.update(is_primary: false)
-      img
-    end
-    let!(:second_image) do
-      img = create(:service_image, service: other_service, display_order: 0)
-      img.update(is_primary: false)
-      img
-    end
-    let!(:primary_image) do
-      img = create(:service_image, service: scope_service, display_order: 2)
-      img.update(is_primary: true)
-      img
+
+    before do
+      img1 = create(:service_image, service: scope_service, display_order: 1)
+      img1.update(is_primary: false)
+
+      img2 = create(:service_image, service: other_service, display_order: 0)
+      img2.update(is_primary: false)
+
+      img3 = create(:service_image, service: scope_service, display_order: 2)
+      img3.update(is_primary: true)
     end
 
     describe '.ordered' do

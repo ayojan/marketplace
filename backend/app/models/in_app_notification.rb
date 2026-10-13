@@ -32,11 +32,11 @@ class InAppNotification < ApplicationRecord
   belongs_to :user
 
   # == Validations ==
-  validates :user_id, :title, :message, :notification_type, presence: true
+  validates :title, :message, :notification_type, presence: true
   validates :notification_type, inclusion: {
     in: %w[booking_created booking_accepted booking_rejected booking_cancelled booking_reminder
            new_message review_received],
-    message: '%<value>s is not a valid notification type'
+    message: :invalid_type
   }
 
   # == Scopes ==
@@ -55,14 +55,14 @@ class InAppNotification < ApplicationRecord
     update(is_read: false)
   end
 
-  def self.create_notification(user_id:, title:, message:, notification_type:, related_type: nil, related_id: nil)
+  def self.create_notification(user_id:, title:, message:, notification_type:, **options)
     create!(
       user_id: user_id,
       title: title,
       message: message,
       notification_type: notification_type,
-      related_type: related_type.presence,
-      related_id: related_id
+      related_type: options[:related_type].presence,
+      related_id: options[:related_id]
     )
   end
 end

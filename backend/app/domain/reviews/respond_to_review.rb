@@ -26,10 +26,7 @@ module Reviews
       end
 
       { success: true, review: review }
-    rescue AuthorizationService::NotAuthorizedError => e
-      { success: false, error: e.message }
-    rescue ActiveRecord::RecordInvalid => e
-      # Validation error - user-facing
+    rescue AuthorizationService::NotAuthorizedError, ActiveRecord::RecordInvalid => e
       { success: false, error: e.message }
     rescue StandardError => e
       # Unexpected error - log and return generic message

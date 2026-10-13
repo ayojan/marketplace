@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable GraphQL/ExtractType
 class Types::QueryType < Types::BaseObject
   description 'Root entry point for read operations in the GraphQL schema'
   field :node, Types::NodeType, null: true, description: 'Fetches an object given its ID.' do

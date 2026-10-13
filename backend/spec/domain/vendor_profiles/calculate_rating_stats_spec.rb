@@ -37,10 +37,13 @@ RSpec.describe VendorProfiles::CalculateRatingStats do
 
     context 'with published reviews' do
       before do
+        second_booking = create(:booking, vendor_profile: vendor_profile, customer: customer,
+                                          service: service, status: :completed)
         create(:review, booking: booking, customer: customer, rating: 5, quality_rating: 5, communication_rating: 5,
                         value_rating: 5, punctuality_rating: 5, status: :published)
         create(:review,
-               booking: create(:booking, vendor_profile: vendor_profile, customer: customer, service: service, status: :completed), customer: customer, rating: 4, quality_rating: 4, communication_rating: 3, value_rating: 4, punctuality_rating: 5, status: :published)
+               booking: second_booking, customer: customer, rating: 4, quality_rating: 4,
+               communication_rating: 3, value_rating: 4, punctuality_rating: 5, status: :published)
       end
 
       it 'calculates rating distribution' do
@@ -74,9 +77,11 @@ RSpec.describe VendorProfiles::CalculateRatingStats do
 
     context 'with hidden reviews' do
       before do
+        second_booking = create(:booking, vendor_profile: vendor_profile, customer: customer,
+                                          service: service, status: :completed)
         create(:review, booking: booking, customer: customer, rating: 5, status: :hidden)
         create(:review,
-               booking: create(:booking, vendor_profile: vendor_profile, customer: customer, service: service, status: :completed), customer: customer, rating: 4, status: :published)
+               booking: second_booking, customer: customer, rating: 4, status: :published)
       end
 
       it 'only counts published reviews' do

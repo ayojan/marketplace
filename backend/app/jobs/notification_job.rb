@@ -5,26 +5,21 @@ class NotificationJob < ApplicationJob
 
   discard_on ActiveRecord::RecordNotFound
 
+  BOOKING_ACTIONS = {
+    'booking_created' => :send_booking_created,
+    'booking_approved' => :send_booking_approved,
+    'booking_rejected' => :send_booking_rejected,
+    'booking_cancelled' => :send_booking_cancelled,
+    'booking_reminder' => :send_booking_reminder
+  }.freeze
+
   def perform(notification_type, recipient_id, data = {})
     recipient = User.find(recipient_id)
 
-    case notification_type
-    when 'booking_created'
+    if (action = BOOKING_ACTIONS[notification_type])
       booking = Booking.find(data['booking_id'])
-      Notifications::EmailService.send_booking_created(booking, recipient)
-    when 'booking_approved'
-      booking = Booking.find(data['booking_id'])
-      Notifications::EmailService.send_booking_approved(booking, recipient)
-    when 'booking_rejected'
-      booking = Booking.find(data['booking_id'])
-      Notifications::EmailService.send_booking_rejected(booking, recipient)
-    when 'booking_cancelled'
-      booking = Booking.find(data['booking_id'])
-      Notifications::EmailService.send_booking_cancelled(booking, recipient)
-    when 'booking_reminder'
-      booking = Booking.find(data['booking_id'])
-      Notifications::EmailService.send_booking_reminder(booking, recipient)
-    when 'new_message'
+      Notifications::EmailService.public_send(action, booking, recipient)
+    elsif notification_type == 'new_message'
       message = BookingMessage.find(data['message_id'])
       Notifications::EmailService.send_new_message(message, recipient)
     else

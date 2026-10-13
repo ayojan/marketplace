@@ -12,8 +12,6 @@ RSpec.describe Types::ServiceType, type: :graphql do
   let(:service) do
     create(:service, name: 'Wedding Photography', vendor_profile: vendor, service_category: category, base_price: 1500)
   end
-  let!(:vendor_service) { create(:vendor_service, service: service, vendor_profile: vendor) }
-
   let(:query) do
     <<~GQL
       query GetService($id: ID!) {
@@ -50,6 +48,10 @@ RSpec.describe Types::ServiceType, type: :graphql do
         }
       }
     GQL
+  end
+
+  before do
+    create(:vendor_service, service: service, vendor_profile: vendor)
   end
 
   it 'returns service data correctly' do

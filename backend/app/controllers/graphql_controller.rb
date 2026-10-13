@@ -14,17 +14,13 @@ class GraphqlController < ApplicationController
     query = params[:query]
     operation_name = params[:operationName]
 
-    if query.blank?
-      return render json: { errors: [{ message: 'No query string was present' }] }
-    end
+    return render json: { errors: [{ message: 'No query string was present' }] } if query.blank?
 
     context = {
       current_user: @current_user
     }
     result = MarketplaceSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
     render json: result
-  rescue GraphQL::ExecutionError => e
-    render json: { errors: [{ message: e.message }] }
   rescue StandardError => e
     render json: { errors: [{ message: e.message }] }
   end
@@ -32,7 +28,7 @@ class GraphqlController < ApplicationController
   private
 
   def set_current_user_optional
-    return unless request.headers['Authorization'].present?
+    return if request.headers['Authorization'].blank?
 
     @current_user = AuthorizeApiRequest.new(request.headers).call[:user]
   rescue StandardError

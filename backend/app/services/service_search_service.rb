@@ -114,7 +114,8 @@ class ServiceSearchService
 
   def paginated_services
     sorted_services
-      .includes(:categories, service_images: { image_attachment: :blob }, vendor_profile: { portfolio_items: { images_attachments: :blob } })
+      .includes(:categories, service_images: { image_attachment: :blob },
+                             vendor_profile: { portfolio_items: { images_attachments: :blob } })
       .limit(per_page)
       .offset((page - 1) * per_page)
   end

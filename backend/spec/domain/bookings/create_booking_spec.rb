@@ -89,7 +89,7 @@ RSpec.describe Bookings::CreateBooking do
       end
     end
 
-    context 'explicit orchestration (side effects)' do
+    context 'with explicit orchestration (side effects)' do
       it 'sends confirmation notification when booking is created' do
         allow(Notifications::SendBookingConfirmation).to receive(:call)
 

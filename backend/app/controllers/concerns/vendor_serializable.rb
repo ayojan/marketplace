@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# rubocop:disable Metrics/ModuleLength
 module VendorSerializable
   extend ActiveSupport::Concern
 
@@ -7,8 +8,7 @@ module VendorSerializable
 
   def vendor_summary_json(vendor)
     featured_items = vendor.featured_portfolio_items
-    first_featured = featured_items.first
-    primary_image = first_featured&.images&.attached? ? image_summary_json(first_featured.images.first)&.dig(:url) : nil
+    primary_image = extract_primary_image(featured_items.first)
 
     {
       id: vendor.id,
@@ -26,9 +26,14 @@ module VendorSerializable
   end
 
   def vendor_detail_json(vendor)
-    first_featured = vendor.featured_portfolio_items.first
-    primary_image = first_featured&.images&.attached? ? image_summary_json(first_featured.images.first)&.dig(:url) : nil
+    primary_image = extract_primary_image(vendor.featured_portfolio_items.first)
 
+    vendor_core_attributes(vendor, primary_image)
+      .merge(vendor_operational_attributes(vendor))
+      .merge(vendor_meta_attributes(vendor, primary_image))
+  end
+
+  def vendor_core_attributes(vendor, primary_image)
     {
       id: vendor.id,
       business_name: vendor.business_name,
@@ -38,6 +43,13 @@ module VendorSerializable
       website: vendor.website,
       instagram_handle: vendor.instagram_handle,
       facebook_url: vendor.facebook_url,
+      profile_image_url: primary_image,
+      image: primary_image
+    }
+  end
+
+  def vendor_operational_attributes(vendor)
+    {
       cancellation_policy: vendor.cancellation_policy,
       response_time_hours: vendor.response_time_hours,
       completion_rate: vendor.completion_rate,
@@ -47,16 +59,25 @@ module VendorSerializable
       average_rating: vendor.average_rating,
       total_reviews: vendor.total_reviews,
       is_verified: vendor.verified?,
-      service_categories: vendor.service_categories_list,
+      service_categories: vendor.service_categories_list
+    }
+  end
+
+  def vendor_meta_attributes(vendor, _primary_image)
+    {
       coordinates: vendor.coordinates,
       portfolio_items_count: vendor.portfolio_items.count,
-      profile_image_url: primary_image,
-      image: primary_image,
       featured_portfolio: vendor.featured_portfolio_items.map { |item| portfolio_item_json(item) },
       user: vendor_user_json(vendor.user),
       created_at: vendor.created_at,
       updated_at: vendor.updated_at
     }
+  end
+
+  def extract_primary_image(first_featured)
+    return unless first_featured&.images&.attached?
+
+    image_summary_json(first_featured.images.first)&.dig(:url)
   end
 
   def vendor_user_json(user)
@@ -121,3 +142,4 @@ module VendorSerializable
     { id: image.id, url: nil }
   end
 end
+# rubocop:enable Metrics/ModuleLength

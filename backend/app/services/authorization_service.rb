@@ -11,7 +11,7 @@ class AuthorizationService
     @action = action
   end
 
-  def authorize!
+  def authorize! # rubocop:disable Naming/PredicateMethod
     raise NotAuthenticatedError, 'User not authenticated' if @user.blank?
 
     policy = policy_class.new(@user, @record)

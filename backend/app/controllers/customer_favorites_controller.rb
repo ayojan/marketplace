@@ -17,33 +17,13 @@ class CustomerFavoritesController < ApiController
 
   # POST /customer_favorites
   def create
-    vendor_profile_id = params[:vendor_profile_id]
-    vendor_profile = VendorProfile.find_by(id: vendor_profile_id)
+    vendor_profile = VendorProfile.find_by(id: params[:vendor_profile_id])
+    return render json: { error: 'Vendor profile not found' }, status: :not_found unless vendor_profile
 
-    unless vendor_profile
-      return render json: { error: 'Vendor profile not found' }, status: :not_found
-    end
-
-    begin
-      AuthorizationService.authorize!(current_user, vendor_profile, :toggle_favorite)
-    rescue AuthorizationService::NotAuthorizedError => e
-      return render json: { error: e.message }, status: :forbidden
-    end
-
-    favorite = CustomerFavorite.find_or_initialize_by(
-      user_id: current_user.id,
-      vendor_profile_id: vendor_profile.id
-    )
-
-    if favorite.save
-      render json: {
-        message: 'Vendor added to favorites',
-        favorite: favorite_json(favorite)
-      }, status: :created
-    else
-      render json: { error: 'Failed to add favorite', details: favorite.errors.full_messages },
-             status: :unprocessable_content
-    end
+    authorize_favorite!(vendor_profile)
+    save_and_render_favorite(vendor_profile)
+  rescue AuthorizationService::NotAuthorizedError => e
+    render json: { error: e.message }, status: :forbidden
   end
 
   # DELETE /customer_favorites/:id
@@ -75,6 +55,25 @@ class CustomerFavoritesController < ApiController
   end
 
   private
+
+  def authorize_favorite!(vendor_profile)
+    AuthorizationService.authorize!(current_user, vendor_profile, :toggle_favorite)
+  end
+
+  def save_and_render_favorite(vendor_profile)
+    favorite = CustomerFavorite.find_or_initialize_by(
+      user_id: current_user.id,
+      vendor_profile_id: vendor_profile.id
+    )
+
+    if favorite.save
+      render json: { message: 'Vendor added to favorites', favorite: favorite_json(favorite) },
+             status: :created
+    else
+      render json: { error: 'Failed to add favorite', details: favorite.errors.full_messages },
+             status: :unprocessable_content
+    end
+  end
 
   def set_favorite
     @favorite = CustomerFavorite.find_by(id: params[:id], user_id: current_user.id)

@@ -2,12 +2,14 @@
 
 module Resolvers
   class NotificationsResolver < GraphQL::Schema::Resolver
+    description 'Resolver for fetching in-app notifications for the current user'
+
     type [Types::InAppNotificationType], null: false
 
     argument :filter, String, required: false, description: 'Filter by: unread, read, or all (default)'
     argument :notification_type, String, required: false, description: 'Filter by notification type'
-    argument :page, Int, required: false, default_value: 1
-    argument :per_page, Int, required: false, default_value: 20
+    argument :page, Int, required: false, default_value: 1, description: 'Page number for pagination'
+    argument :per_page, Int, required: false, default_value: 20, description: 'Items per page'
 
     def resolve(filter: 'unread', notification_type: nil, page: 1, per_page: 20)
       user = context[:current_user]

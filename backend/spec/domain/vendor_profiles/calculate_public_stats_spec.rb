@@ -21,17 +21,17 @@ RSpec.describe VendorProfiles::CalculatePublicStats do
     end
 
     context 'with bookings' do
-      let!(:booking1) do
+      let!(:first_booking) do
         create(:booking, vendor_profile: vendor_profile, customer: customer, service: service, status: :completed)
       end
-      let!(:booking2) do
+      let!(:second_booking) do
         create(:booking, vendor_profile: vendor_profile, customer: customer, service: service, status: :completed,
                          created_at: 3.days.ago)
       end
 
       it 'calculates response rate' do
-        booking1.update_column(:vendor_first_response_at, booking1.created_at + 24.hours)
-        booking2.update_column(:vendor_first_response_at, booking2.created_at + 72.hours)
+        first_booking.update(vendor_first_response_at: first_booking.created_at + 24.hours)
+        second_booking.update(vendor_first_response_at: second_booking.created_at + 72.hours)
 
         result = described_class.call(vendor_profile: vendor_profile)
 

@@ -2,10 +2,12 @@
 
 module Mutations
   class MarkNotificationAsRead < Mutations::BaseMutation
-    argument :notification_id, ID, required: true
+    description 'Marks an in-app notification as read for the current user'
 
-    field :errors, [String], null: false
-    field :notification, Types::InAppNotificationType, null: true
+    argument :notification_id, ID, required: true, description: 'ID of the notification to mark as read'
+
+    field :errors, [String], null: false, description: 'List of error messages if the operation failed'
+    field :notification, Types::InAppNotificationType, null: true, description: 'The updated notification'
 
     def resolve(notification_id:)
       notification = InAppNotification.find_by(id: notification_id)

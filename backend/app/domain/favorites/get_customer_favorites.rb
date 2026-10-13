@@ -37,8 +37,6 @@ module Favorites
       query = user.customer_favorites.includes(:vendor_profile)
 
       case sort
-      when 'recent'
-        query.recent_first
       when 'rating'
         query.joins(:vendor_profile).order('vendor_profiles.average_rating DESC')
       when 'reviews'

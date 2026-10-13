@@ -197,11 +197,11 @@ class ServiceImagesController < ApiController
   end
 
   def service_image_params
-    params.require(:service_image).permit(:image, :title, :description, :alt_text, :display_order, :is_primary)
+    params.expect(service_image: %i[image title description alt_text display_order is_primary])
   end
 
   def service_image_update_params
-    params.require(:service_image).permit(:title, :description, :alt_text, :display_order, :is_primary)
+    params.expect(service_image: %i[title description alt_text display_order is_primary])
   end
 
   def service_image_response(service_image)

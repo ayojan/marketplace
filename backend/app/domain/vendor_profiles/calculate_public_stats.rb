@@ -40,9 +40,17 @@ module VendorProfiles
       stats ? build_stats_hash(stats) : empty_stats
     end
 
+    PublicStats = Struct.new(
+      :total_bookings, :total_completed, :total_terminal,
+      :responded_48h, :avg_response_seconds, :unique_customers,
+      keyword_init: true
+    )
+    private_constant :PublicStats
+
     def build_stats_hash(stats_array)
-      # stats_array is [total_bookings, total_completed, total_terminal, responded_48h, avg_response_seconds, unique_customers]
-      OpenStruct.new(
+      # stats_array: [total_bookings, total_completed, total_terminal,
+      #               responded_48h, avg_response_seconds, unique_customers]
+      PublicStats.new(
         total_bookings: stats_array[0].to_i,
         total_completed: stats_array[1].to_i,
         total_terminal: stats_array[2].to_i,
@@ -53,7 +61,7 @@ module VendorProfiles
     end
 
     def empty_stats
-      OpenStruct.new(
+      PublicStats.new(
         total_bookings: 0,
         total_completed: 0,
         total_terminal: 0,

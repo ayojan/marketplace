@@ -19,16 +19,7 @@ class AvailabilityCheckerService
 
   def initialize(attributes = {})
     super
-    if end_time.blank? && start_time.present? && date.present?
-      dur = (attributes[:duration] || attributes[:duration_hours] || 4).to_i
-      dur = 4 if dur <= 0
-      begin
-        parsed = Time.zone.parse("#{date} #{start_time}")
-        self.end_time = (parsed + dur.hours).strftime('%H:%M') if parsed
-      rescue StandardError
-        nil
-      end
-    end
+    calculate_default_end_time(attributes) if end_time.blank?
     @errors = ActiveModel::Errors.new(self)
   end
 
@@ -121,5 +112,20 @@ class AvailabilityCheckerService
     Time.zone.parse("#{date} #{time_string}")
   rescue ArgumentError, TypeError
     nil
+  end
+
+  def calculate_default_end_time(attributes)
+    return unless start_time.present? && date.present?
+
+    dur = extract_duration(attributes)
+    parsed = Time.zone.parse("#{date} #{start_time}")
+    self.end_time = (parsed + dur.hours).strftime('%H:%M') if parsed
+  rescue StandardError
+    nil
+  end
+
+  def extract_duration(attributes)
+    dur = (attributes[:duration] || attributes[:duration_hours] || 4).to_i
+    dur <= 0 ? 4 : dur
   end
 end

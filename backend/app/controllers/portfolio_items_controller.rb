@@ -26,9 +26,7 @@ class PortfolioItemsController < ApiController
       ensure_vendor_role
       return if performed?
 
-      unless current_user&.vendor_profile
-        return render json: { portfolio_items: [], categories: [] }
-      end
+      return render json: { portfolio_items: [], categories: [] } unless current_user&.vendor_profile
 
       @portfolio_items = current_user.vendor_profile.portfolio_items.ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
@@ -48,9 +46,7 @@ class PortfolioItemsController < ApiController
 
   # POST /portfolio_items
   def create
-    unless current_user&.vendor_profile
-      return render json: { errors: ['Vendor profile not found'] }, status: :not_found
-    end
+    return render json: { errors: ['Vendor profile not found'] }, status: :not_found unless current_user&.vendor_profile
 
     result = CreatePortfolioItem.call(current_user.vendor_profile, portfolio_item_params)
 
@@ -198,9 +194,7 @@ class PortfolioItemsController < ApiController
     if vendor_id == 'me'
       authenticate_user!
       @vendor_profile = current_user&.vendor_profile
-      unless @vendor_profile
-        render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found
-      end
+      render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found unless @vendor_profile
     else
       @vendor_profile = VendorProfile.find(vendor_id)
     end
@@ -227,7 +221,7 @@ class PortfolioItemsController < ApiController
   end
 
   def portfolio_item_params
-    params.require(:portfolio_item).permit(:title, :description, :category, :display_order, :is_featured, images: [])
+    params.expect(portfolio_item: [:title, :description, :category, :display_order, :is_featured, { images: [] }])
   end
 
   def portfolio_item_json(item)
@@ -240,7 +234,7 @@ class PortfolioItemsController < ApiController
       is_featured: item.is_featured,
       created_at: item.created_at,
       updated_at: item.updated_at,
-      primary_image_url: item.images.attached? ? (url_for(item.images.first) rescue nil) : nil,
+      primary_image_url: primary_image_url(item),
       images: item.images.attached? ? item.images.map { |image| image_json(image) } : [],
       image_count: item.image_count,
       vendor_profile: {
@@ -250,31 +244,38 @@ class PortfolioItemsController < ApiController
     }
   end
 
+  def primary_image_url(item)
+    return unless item.images.attached?
+
+    url_for(item.images.first)
+  rescue StandardError
+    nil
+  end
+
   def image_json(image)
-    image_url = begin
-      url_for(image)
-    rescue StandardError
-      nil
-    end
-
-    thumb_url = begin
-      if image.respond_to?(:representable?) && image.representable?
-        url_for(image.variant(resize_to_limit: [300, 300]))
-      else
-        image_url
-      end
-    rescue StandardError
-      image_url
-    end
-
+    img_url = safe_image_url(image)
     {
       id: image.id,
       filename: image.filename.to_s,
       content_type: image.content_type,
       byte_size: image.byte_size,
-      url: image_url,
-      thumbnail_url: thumb_url || image_url
+      url: img_url,
+      thumbnail_url: image_thumb_url(image, img_url)
     }
+  end
+
+  def safe_image_url(image)
+    url_for(image)
+  rescue StandardError
+    nil
+  end
+
+  def image_thumb_url(image, default_url)
+    return default_url unless image.respond_to?(:representable?) && image.representable?
+
+    url_for(image.variant(resize_to_limit: [300, 300]))
+  rescue StandardError
+    default_url
   end
 end
 # rubocop:enable Metrics/ClassLength

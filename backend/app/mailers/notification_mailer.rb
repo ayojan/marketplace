@@ -4,7 +4,7 @@ class NotificationMailer < ApplicationMailer
   def booking_created_email(user, related_id)
     @user = user
     @booking = Booking.find_by(id: related_id)
-    mail(to: @user.email, subject: 'Booking Request Received') do |format|
+    mail(to: @user.email) do |format|
       format.text { render plain: "Hello #{@user.first_name}, your booking request has been received." }
     end
   end
@@ -12,7 +12,7 @@ class NotificationMailer < ApplicationMailer
   def booking_accepted_email(user, related_id)
     @user = user
     @booking = Booking.find_by(id: related_id)
-    mail(to: @user.email, subject: 'Booking Confirmed') do |format|
+    mail(to: @user.email) do |format|
       format.text { render plain: "Hello #{@user.first_name}, your booking has been confirmed." }
     end
   end
@@ -20,7 +20,7 @@ class NotificationMailer < ApplicationMailer
   def booking_rejected_email(user, related_id)
     @user = user
     @booking = Booking.find_by(id: related_id)
-    mail(to: @user.email, subject: 'Booking Update') do |format|
+    mail(to: @user.email) do |format|
       format.text { render plain: "Hello #{@user.first_name}, your booking request has been declined." }
     end
   end
@@ -28,7 +28,7 @@ class NotificationMailer < ApplicationMailer
   def booking_cancelled_email(user, related_id)
     @user = user
     @booking = Booking.find_by(id: related_id)
-    mail(to: @user.email, subject: 'Booking Cancelled') do |format|
+    mail(to: @user.email) do |format|
       format.text { render plain: "Hello #{@user.first_name}, your booking has been cancelled." }
     end
   end
@@ -36,7 +36,7 @@ class NotificationMailer < ApplicationMailer
   def booking_reminder_email(user, related_id)
     @user = user
     @booking = Booking.find_by(id: related_id)
-    mail(to: @user.email, subject: 'Upcoming Booking Reminder') do |format|
+    mail(to: @user.email) do |format|
       format.text { render plain: "Hello #{@user.first_name}, you have an upcoming event." }
     end
   end
@@ -44,7 +44,7 @@ class NotificationMailer < ApplicationMailer
   def new_message_email(user, related_id)
     @user = user
     @message = BookingMessage.find_by(id: related_id)
-    mail(to: @user.email, subject: 'New Message Received') do |format|
+    mail(to: @user.email) do |format|
       format.text { render plain: "Hello #{@user.first_name}, you have received a new message." }
     end
   end
@@ -52,7 +52,7 @@ class NotificationMailer < ApplicationMailer
   def review_received_email(user, related_id)
     @user = user
     @review = Review.find_by(id: related_id)
-    mail(to: @user.email, subject: 'New Review Received') do |format|
+    mail(to: @user.email) do |format|
       format.text { render plain: "Hello #{@user.first_name}, a new review has been posted." }
     end
   end

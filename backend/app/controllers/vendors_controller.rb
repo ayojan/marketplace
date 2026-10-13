@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# rubocop:disable Metrics/ClassLength
 class VendorsController < ApiController
   include VendorSerializable
 
@@ -132,3 +133,4 @@ class VendorsController < ApiController
     render json: { error: 'Vendor not found' }, status: :not_found
   end
 end
+# rubocop:enable Metrics/ClassLength

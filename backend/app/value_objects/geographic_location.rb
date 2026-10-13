@@ -46,20 +46,19 @@ class GeographicLocation
   end
 
   def haversine_distance(other_location)
-    rad_per_deg = Math::PI / 180
+    dlat = to_rad(other_location.latitude - latitude)
+    dlon = to_rad(other_location.longitude - longitude)
+    lat1 = to_rad(latitude)
+    lat2 = to_rad(other_location.latitude)
 
-    dlat_rad = (other_location.latitude - latitude) * rad_per_deg
-    dlon_rad = (other_location.longitude - longitude) * rad_per_deg
-    lat1_rad = latitude * rad_per_deg
-    lat2_rad = other_location.latitude * rad_per_deg
-
-    sin_dlat = Math.sin(dlat_rad / 2)**2
-    sin_dlon = Math.sin(dlon_rad / 2)**2
-
-    a = sin_dlat + (Math.cos(lat1_rad) * Math.cos(lat2_rad) * sin_dlon)
+    a = (Math.sin(dlat / 2)**2) + (Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dlon / 2)**2))
     c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
     EARTH_RADIUS_KM * c
+  end
+
+  def to_rad(deg)
+    deg * Math::PI / 180
   end
 
   def format_distance(distance_km, unit)

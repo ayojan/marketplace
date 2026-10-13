@@ -3,6 +3,7 @@
 module Sources
   class AssociationLoader < GraphQL::Dataloader::Source
     def initialize(association_name)
+      super()
       @association_name = association_name
     end
 

@@ -251,7 +251,7 @@ RSpec.describe BookingsController do
 
     context 'when booking cannot be cancelled' do
       it 'returns unprocessable entity' do
-        allow_any_instance_of(Booking).to receive(:can_be_cancelled?).and_return(false)
+        allow_any_instance_of(Booking).to receive(:can_be_cancelled?).and_return(false) # rubocop:disable RSpec/AnyInstance
         auth_as(customer)
         delete :destroy, params: { id: booking.id }
 

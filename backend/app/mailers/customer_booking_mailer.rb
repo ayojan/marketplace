@@ -8,7 +8,10 @@ class CustomerBookingMailer < ApplicationMailer
     @service = booking.service
 
     mail(to: @customer.user.email, subject: "Booking Confirmed - #{@service.name}") do |format|
-      format.text { render plain: "Hello #{@customer.user.name},\n\nYour booking with #{@vendor.business_name} for #{@service.name} has been confirmed." }
+      format.text do
+        render plain: "Hello #{@customer.user.name},\n\n" \
+                      "Your booking with #{@vendor.business_name} for #{@service.name} has been confirmed."
+      end
       format.html { render 'booking_approved_notification' }
     end
   end
@@ -19,9 +22,12 @@ class CustomerBookingMailer < ApplicationMailer
     @vendor = booking.vendor_profile
     @service = booking.service
 
+    body = "Hello #{@customer.user.name},\n\n" \
+           "Your booking with #{@vendor.business_name} for #{@service.name} has been declined."
+
     mail(to: @customer.user.email, subject: "Booking Declined - #{@service.name}") do |format|
-      format.text { render plain: "Hello #{@customer.user.name},\n\nYour booking with #{@vendor.business_name} for #{@service.name} has been declined." }
-      format.html { render plain: "Hello #{@customer.user.name},\n\nYour booking with #{@vendor.business_name} for #{@service.name} has been declined." }
+      format.text { render plain: body }
+      format.html { render plain: body }
     end
   end
 
@@ -31,9 +37,12 @@ class CustomerBookingMailer < ApplicationMailer
     @vendor = booking.vendor_profile
     @service = booking.service
 
+    body = "Hello #{@customer.user.name},\n\n" \
+           "Your booking with #{@vendor.business_name} for #{@service.name} has been cancelled."
+
     mail(to: @customer.user.email, subject: "Booking Cancelled - #{@service.name}") do |format|
-      format.text { render plain: "Hello #{@customer.user.name},\n\nYour booking with #{@vendor.business_name} for #{@service.name} has been cancelled." }
-      format.html { render plain: "Hello #{@customer.user.name},\n\nYour booking with #{@vendor.business_name} for #{@service.name} has been cancelled." }
+      format.text { render plain: body }
+      format.html { render plain: body }
     end
   end
 
@@ -43,9 +52,12 @@ class CustomerBookingMailer < ApplicationMailer
     @vendor = booking.vendor_profile
     @service = booking.service
 
+    body = "Hello #{@customer.user.name},\n\n" \
+           "Reminder: Your booking with #{@vendor.business_name} for #{@service.name} is scheduled for tomorrow."
+
     mail(to: @customer.user.email, subject: "Booking Reminder - #{@service.name} Tomorrow") do |format|
-      format.text { render plain: "Hello #{@customer.user.name},\n\nReminder: Your booking with #{@vendor.business_name} for #{@service.name} is scheduled for tomorrow." }
-      format.html { render plain: "Hello #{@customer.user.name},\n\nReminder: Your booking with #{@vendor.business_name} for #{@service.name} is scheduled for tomorrow." }
+      format.text { render plain: body }
+      format.html { render plain: body }
     end
   end
 
@@ -55,9 +67,12 @@ class CustomerBookingMailer < ApplicationMailer
     @vendor = booking.vendor_profile
     @service = booking.service
 
+    body = "Hello #{@customer.user.name},\n\n" \
+           "Your booking with #{@vendor.business_name} for #{@service.name} is confirmed."
+
     mail(to: @customer.user.email, subject: "Booking Confirmation - #{@service.name}") do |format|
-      format.text { render plain: "Hello #{@customer.user.name},\n\nYour booking with #{@vendor.business_name} for #{@service.name} is confirmed." }
-      format.html { render plain: "Hello #{@customer.user.name},\n\nYour booking with #{@vendor.business_name} for #{@service.name} is confirmed." }
+      format.text { render plain: body }
+      format.html { render plain: body }
     end
   end
 end

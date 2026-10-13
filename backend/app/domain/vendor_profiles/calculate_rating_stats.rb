@@ -58,7 +58,8 @@ module VendorProfiles
     def rating_display
       return 'No ratings yet' if vendor_profile.total_reviews.zero?
 
-      "#{vendor_profile.average_rating.round(1)} (#{vendor_profile.total_reviews} #{'review'.pluralize(vendor_profile.total_reviews)})"
+      reviews_label = 'review'.pluralize(vendor_profile.total_reviews)
+      "#{vendor_profile.average_rating.round(1)} (#{vendor_profile.total_reviews} #{reviews_label})"
     end
   end
 end

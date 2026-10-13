@@ -31,7 +31,7 @@ RSpec.describe Bookings::UpdateBookingStatus do
       end
     end
 
-    context 'status change notifications' do
+    context 'with status change notifications' do
       it 'sends notification when status changes to accepted' do
         allow(Notifications::SendBookingStatusChange).to receive(:call)
 
@@ -70,7 +70,7 @@ RSpec.describe Bookings::UpdateBookingStatus do
       end
     end
 
-    context 'trust stats recalculation (inline, not async)' do
+    context 'with trust stats recalculation (inline, not async)' do
       it 'calculates trust stats inline when status changes to completed' do
         allow(VendorProfiles::CalculatePublicStats).to receive(:call)
 
@@ -146,7 +146,7 @@ RSpec.describe Bookings::UpdateBookingStatus do
       end
     end
 
-    context 'orchestration flow' do
+    context 'with orchestration flow' do
       it 'completes all steps in sequence for terminal status with notification' do
         # Track order of operations
         operations = []
