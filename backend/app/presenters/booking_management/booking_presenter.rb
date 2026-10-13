@@ -71,7 +71,7 @@ class BookingManagement::BookingPresenter
 
   def vendor_hash
     first_featured = vendor_profile.featured_portfolio_items.first
-    primary_image = if first_featured&.respond_to?(:primary_image_url)
+    primary_image = if first_featured.respond_to?(:primary_image_url)
                       first_featured.primary_image_url
                     elsif first_featured&.images&.attached?
                       begin

@@ -41,7 +41,7 @@ module BookingManagement::BookingActionHelpers
   def build_availability_checker
     Rails.logger.warn 'build_availability_checker is deprecated, use domain services instead'
     service = Service.find(params[:service_id])
-    
+
     start_time = params[:start_time]
     end_time = params[:end_time]
 
