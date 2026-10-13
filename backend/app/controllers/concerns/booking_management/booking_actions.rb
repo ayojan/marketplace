@@ -41,11 +41,26 @@ module BookingManagement::BookingActionHelpers
   def build_availability_checker
     Rails.logger.warn 'build_availability_checker is deprecated, use domain services instead'
     service = Service.find(params[:service_id])
+
+    start_time = params[:start_time]
+    end_time = params[:end_time]
+
+    if end_time.blank? && start_time.present?
+      duration = (params[:duration] || 4).to_i
+      duration = 4 if duration <= 0
+      begin
+        parsed_start = Time.zone.parse("#{params[:date]} #{start_time}")
+        end_time = (parsed_start + duration.hours).strftime('%H:%M') if parsed_start
+      rescue StandardError => e
+        Rails.logger.warn("Could not calculate end_time: #{e.message}")
+      end
+    end
+
     AvailabilityCheckerService.new(
       vendor_profile: service.vendor_profile,
       date: Date.parse(params[:date]),
-      start_time: params[:start_time],
-      end_time: params[:end_time]
+      start_time: start_time,
+      end_time: end_time
     )
   end
 
@@ -57,11 +72,23 @@ module BookingManagement::BookingActionHelpers
                        VendorProfile.find(params[:vendor_profile_id])
                      elsif params[:vendor_id]
                        User.find(params[:vendor_id]).vendor_profile
+                     elsif params[:service_id]
+                       Service.find(params[:service_id]).vendor_profile
                      end
+
+    start_dt = DateTime.parse("#{params[:date]} #{params[:start_time]}")
+    duration = (params[:duration] || 4).to_i
+    duration = 4 if duration <= 0
+    end_dt = if params[:end_time].present?
+               DateTime.parse("#{params[:date]} #{params[:end_time]}")
+             else
+               start_dt + duration.hours
+             end
+
     ConflictResolutionService.new(
       vendor_profile: vendor_profile,
-      event_date: DateTime.parse("#{params[:date]} #{params[:start_time]}"),
-      event_end_date: DateTime.parse("#{params[:date]} #{params[:end_time]}")
+      event_date: start_dt,
+      event_end_date: end_dt
     )
   end
 
@@ -177,6 +204,8 @@ module BookingManagement::ModificationActions
                   'Booking accepted successfully'
                 when 'decline'
                   'Booking declined'
+                when 'complete'
+                  'Booking marked as completed'
                 when 'counter_offer'
                   'Counter offer sent'
                 else

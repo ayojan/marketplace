@@ -191,9 +191,9 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           </div>
 
           <Link href={`/vendors/${id}`}>
-            <button className="px-3.5 py-1.5 rounded-full border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:bg-[#9E5338] hover:text-white hover:border-[#9E5338] transition-all cursor-pointer">
+            <span className="px-3.5 py-1.5 rounded-full border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:bg-[#9E5338] hover:text-white hover:border-[#9E5338] transition-all inline-block cursor-pointer">
               View Profile
-            </button>
+            </span>
           </Link>
         </div>
 

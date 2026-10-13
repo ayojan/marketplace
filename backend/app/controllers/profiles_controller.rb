@@ -103,7 +103,8 @@ class ProfilesController < ApiController
 
   def profile_params
     params.expect(vendor_profile: [:business_name, :description, :location, :phone, :website,
-                                   :years_experience, { service_categories_list: [] }])
+                                   :years_experience, :cancellation_policy, :instagram_handle,
+                                   :business_license, { service_categories_list: [] }])
   end
 
   def profile_response(profile)
@@ -115,6 +116,10 @@ class ProfilesController < ApiController
       location: profile.location,
       phone: profile.phone,
       website: profile.website,
+      instagram_handle: profile.instagram_handle,
+      cancellation_policy: profile.cancellation_policy,
+      business_license: profile.business_license,
+      verification_status: profile.verification_status,
       years_experience: profile.years_experience,
       service_categories: profile.service_categories_list || [],
       created_at: profile.created_at,

@@ -7,6 +7,9 @@ import ServiceManagement from '../ServiceManagement';
 import PortfolioManager from '../PortfolioManager';
 import BookingCalendar from '../BookingCalendar';
 import AyojLogo from '@/components/AyojLogo';
+import Link from 'next/link';
+import VendorSettings from '../VendorSettings';
+import VendorBookings from '../VendorBookings';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
 import { MOCK_VENDORS } from '@/lib/mockVendorData';
 import { Button } from '@/components/ui/button';
@@ -15,6 +18,7 @@ import {
   Briefcase, 
   Image as ImageIcon, 
   Calendar as CalendarIcon, 
+  CalendarCheck,
   TrendingUp, 
   CheckCircle2, 
   IndianRupee,
@@ -107,6 +111,7 @@ const VendorDashboard = () => {
 
   const navItems = [
     { id: 'overview', name: 'Overview', icon: LayoutDashboard },
+    { id: 'bookings', name: 'Bookings', icon: CalendarCheck },
     { id: 'services', name: 'Services', icon: Briefcase },
     { id: 'portfolio', name: 'Portfolio', icon: ImageIcon },
     { id: 'calendar', name: 'Calendar', icon: CalendarIcon },
@@ -187,14 +192,18 @@ const VendorDashboard = () => {
 
                <div className="p-5 rounded-2xl border border-[#E8E2D9] bg-white space-y-4">
                   <h3 className="text-xs font-bold text-[#221F1C] uppercase tracking-wider">Quick Actions</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                     <button onClick={() => setActiveTab('services')} className="p-3.5 rounded-xl bg-[#F3EADF] border border-[#E8E2D9] flex flex-col items-center gap-1.5 hover:bg-[#9E5338] hover:text-white transition-all group cursor-pointer">
-                        <Plus size={18} className="text-[#9E5338] group-hover:text-white" />
-                        <span className="text-[10px] font-bold uppercase">New Service</span>
+                  <div className="grid grid-cols-3 gap-2.5">
+                     <button onClick={() => setActiveTab('bookings')} className="p-3 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9] flex flex-col items-center gap-1.5 hover:bg-[#9E5338] hover:text-white transition-all group cursor-pointer text-center">
+                        <CalendarCheck size={16} className="text-[#9E5338] group-hover:text-white" />
+                        <span className="text-[10px] font-bold uppercase">Bookings</span>
                      </button>
-                     <button onClick={() => setActiveTab('portfolio')} className="p-3.5 rounded-xl bg-[#F5ECE2] border border-[#E8E2D9] flex flex-col items-center gap-1.5 hover:bg-[#9E5338] hover:text-white transition-all group cursor-pointer">
-                        <Plus size={18} className="text-[#9E5338] group-hover:text-white" />
-                        <span className="text-[10px] font-bold uppercase">Add Media</span>
+                     <button onClick={() => setActiveTab('services')} className="p-3 rounded-xl bg-[#F3EADF] border border-[#E8E2D9] flex flex-col items-center gap-1.5 hover:bg-[#9E5338] hover:text-white transition-all group cursor-pointer text-center">
+                        <Plus size={16} className="text-[#9E5338] group-hover:text-white" />
+                        <span className="text-[10px] font-bold uppercase">Service</span>
+                     </button>
+                     <button onClick={() => setActiveTab('portfolio')} className="p-3 rounded-xl bg-[#F5ECE2] border border-[#E8E2D9] flex flex-col items-center gap-1.5 hover:bg-[#9E5338] hover:text-white transition-all group cursor-pointer text-center">
+                        <Plus size={16} className="text-[#9E5338] group-hover:text-white" />
+                        <span className="text-[10px] font-bold uppercase">Media</span>
                      </button>
                   </div>
                </div>
@@ -234,9 +243,9 @@ const VendorDashboard = () => {
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-[#E8E2D9] transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full p-6">
-          <div className="flex items-center gap-2 mb-10">
+          <Link href="/" className="flex items-center gap-2 mb-10 hover:opacity-90 transition-opacity">
             <AyojLogo size="md" showTagline={false} />
-          </div>
+          </Link>
 
           <nav className="flex-1 space-y-1">
             {navItems.map((item) => (
@@ -263,11 +272,15 @@ const VendorDashboard = () => {
           <div className="mt-auto space-y-3 pt-4 border-t border-[#E8E2D9]">
             <div className="flex items-center gap-3 px-2">
                <div className="size-8 rounded-full bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-xs font-bold text-[#9E5338]">
-                  {currentVendor.owner_name[0]}
+                  {(user?.business_name || user?.first_name || currentVendor.owner_name)[0].toUpperCase()}
                </div>
                <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#221F1C] truncate">{currentVendor.business_name}</p>
-                  <p className="text-[10px] text-[#6B6560]">{currentVendor.owner_name}</p>
+                  <p className="text-xs font-bold text-[#221F1C] truncate">
+                    {user?.business_name || currentVendor.business_name}
+                  </p>
+                  <p className="text-[10px] text-[#6B6560]">
+                    {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : currentVendor.owner_name}
+                  </p>
                </div>
             </div>
             <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#6B6560] hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer">
@@ -294,7 +307,7 @@ const VendorDashboard = () => {
               {/* Vendor Business Badge */}
               <div className="flex items-center gap-2 bg-[#F3EADF] border border-[#E8E2D9] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#221F1C]">
                 <Store size={14} className="text-[#9E5338]" />
-                <span>{currentVendor?.business_name || 'Vendor Portal'}</span>
+                <span>{user?.business_name || currentVendor?.business_name || 'Vendor Portal'}</span>
               </div>
 
               <NotificationDropdown />
@@ -319,15 +332,11 @@ const VendorDashboard = () => {
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'bookings' && <VendorBookings />}
                 {activeTab === 'services' && <ServiceManagement services={dashboardData.services} onServiceUpdate={loadDashboardData} />}
                 {activeTab === 'portfolio' && <PortfolioManager />}
                 {activeTab === 'calendar' && <BookingCalendar bookings={[]} />}
-                {activeTab === 'settings' && (
-                   <div className="p-12 text-center border border-dashed border-[#E8E2D9] rounded-2xl bg-white">
-                      <Settings className="size-10 mx-auto mb-3 text-[#6B6560]" strokeWidth={1.5} />
-                      <p className="font-semibold text-xs text-[#6B6560]">Account settings coming soon</p>
-                   </div>
-                )}
+                {activeTab === 'settings' && <VendorSettings initialVendor={currentVendor} />}
               </motion.div>
             )}
           </AnimatePresence>

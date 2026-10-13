@@ -19,6 +19,16 @@ class AvailabilityCheckerService
 
   def initialize(attributes = {})
     super
+    if end_time.blank? && start_time.present? && date.present?
+      dur = (attributes[:duration] || attributes[:duration_hours] || 4).to_i
+      dur = 4 if dur <= 0
+      begin
+        parsed = Time.zone.parse("#{date} #{start_time}")
+        self.end_time = (parsed + dur.hours).strftime('%H:%M') if parsed
+      rescue StandardError
+        nil
+      end
+    end
     @errors = ActiveModel::Errors.new(self)
   end
 
@@ -94,7 +104,7 @@ class AvailabilityCheckerService
   end
 
   def date_and_time_in_future
-    return unless date.present?
+    return if date.blank?
 
     if date < Date.current
       errors.add(:date, 'cannot be in the past')

@@ -12,11 +12,14 @@ export function ImageWithFallback(props: ImageWithFallbackProps) {
   const [didError, setDidError] = useState(false)
   const { src, alt, fallbackSrc = ERROR_IMG_SRC, ...rest } = props
 
+  // Ensure effectiveSrc is never null, undefined, or empty to prevent Next.js Image crashes
+  const effectiveSrc = (didError || !src) ? fallbackSrc : src
+
   return (
     <Image
       {...rest}
-      src={didError ? fallbackSrc : src}
-      alt={alt}
+      src={effectiveSrc}
+      alt={alt || ''}
       onError={() => setDidError(true)}
     />
   )

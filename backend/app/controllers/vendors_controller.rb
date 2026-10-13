@@ -68,7 +68,21 @@ class VendorsController < ApiController
   def vendor_reviews
     reviews = Review.published.where(vendor_profile_id: @vendor_profile.id).recent.includes(:customer, :service)
     render json: {
-      reviews: reviews.map { |r| { id: r.id, rating: r.rating, comment: r.comment, created_at: r.created_at } },
+      reviews: reviews.map do |r|
+        {
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          customer: {
+            name: r.customer&.full_name || 'Verified Client',
+            first_name: r.customer&.first_name || 'Client'
+          },
+          service_name: r.service&.name,
+          vendor_response: r.vendor_response,
+          vendor_responded_at: r.vendor_responded_at,
+          created_at: r.created_at
+        }
+      end,
       average_rating: @vendor_profile.average_rating,
       total_reviews: @vendor_profile.total_reviews
     }

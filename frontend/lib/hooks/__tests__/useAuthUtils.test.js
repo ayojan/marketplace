@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+const vi = jest;
 import { renderHook } from '@testing-library/react';
 import { useAuthUtils } from '../useAuthUtils.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { tokenService } from '../../tokenService';
 
 // Mock dependencies
-vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: vi.fn(),
+jest.mock('../../contexts/AuthContext', () => ({
+  useAuth: jest.fn(),
 }));
 
-vi.mock('../../tokenService', () => ({
+jest.mock('../../tokenService', () => ({
   tokenService: {
-    getTokenPayload: vi.fn(),
+    getTokenPayload: jest.fn(),
   },
 }));
 

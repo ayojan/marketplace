@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+const vi = jest;
 import { tokenService } from '../tokenService';
 
 // Mock localStorage

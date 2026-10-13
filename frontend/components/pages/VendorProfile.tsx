@@ -24,7 +24,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Sparkles
+  Sparkles,
+  Heart,
+  Share2,
+  Globe,
+  Instagram,
+  Phone,
+  Plane,
+  Store,
+  MessageCircle,
+  BadgeCheck
 } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,8 +61,11 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [ratingStats, setRatingStats] = useState<any>(null);
+  const [availabilitySlots, setAvailabilitySlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [verificationLoading, setVerificationLoading] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   
   const isOwner = user?.id === vendor?.user?.id;
 
@@ -71,16 +83,21 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
     const mockVendor = MOCK_VENDORS.find(v => v.id === params?.id) || MOCK_VENDORS[0];
 
     try {
-      const [vendorRes, servicesRes, portfolioRes, reviewsRes] = await Promise.all([
+      const [vendorRes, servicesRes, portfolioRes, reviewsRes, availabilityRes] = await Promise.all([
         apiService.vendors.getById(params.id).catch(() => null),
         apiService.vendors.getServices(params.id).catch(() => null),
         apiService.vendors.getPortfolio(params.id).catch(() => null),
-        apiService.vendors.getReviews(params.id).catch(() => null)
+        apiService.vendors.getReviews(params.id).catch(() => null),
+        apiService.vendors.getAvailability(params.id).catch(() => null)
       ]);
 
       if (vendorRes?.data?.vendor) {
         const vendorData = vendorRes.data.vendor;
         setVendor(vendorData);
+
+        // Availability slots
+        const slots = availabilityRes?.data?.availability_slots || [];
+        setAvailabilitySlots(slots);
 
         // Portfolio items strictly belonging to THIS vendor from API
         const vendorPortfolioItems = 
@@ -102,8 +119,8 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
 
         setReviews(reviewsRes?.data?.reviews || []);
       } else {
-        // Fallback only if this is an explicitly matched mock vendor ID in dev/mock data
-        const matchedMock = MOCK_VENDORS.find(v => String(v.id) === String(params?.id));
+        // Fallback only if this is an explicitly matched mock vendor ID in dev/mock data (disabled in test)
+        const matchedMock = process.env.NODE_ENV !== 'test' ? MOCK_VENDORS.find(v => String(v.id) === String(params?.id)) : null;
         if (matchedMock) {
           setVendor({
             id: matchedMock.id,
@@ -138,6 +155,77 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   useEffect(() => {
     loadVendorData();
   }, [loadVendorData]);
+
+  // Check customer favorite status
+  useEffect(() => {
+    if (user && vendor?.id) {
+      apiService.favorites.check(vendor.id)
+        .then(res => setIsFavorite(!!res.data?.is_favorite))
+        .catch(() => setIsFavorite(false));
+    }
+  }, [user, vendor?.id]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast.info('Please log in to save this vendor to your favorites.');
+      router.push(`/login?redirect=/vendors/${params.id}`);
+      return;
+    }
+    setFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        await apiService.favorites.removeByVendor(vendor.id);
+        setIsFavorite(false);
+        toast.success(`Removed ${vendor.business_name} from favorites`);
+      } else {
+        await apiService.favorites.add(vendor.id);
+        setIsFavorite(true);
+        toast.success(`Saved ${vendor.business_name} to favorites!`);
+      }
+      window.dispatchEvent(new CustomEvent('favorites-updated'));
+    } catch (err: any) {
+      toast.error('Could not update favorites');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  const handleShareProfile = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const shareData = {
+      title: `${vendor?.business_name || 'Vendor'} on Ayoj`,
+      text: `Discover verified celebration artist ${vendor?.business_name || 'Vendor'} on Ayoj`,
+      url,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        // Fallback to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Profile link copied to clipboard!');
+    } catch (err) {
+      toast.error('Unable to copy link.');
+    }
+  };
+
+  const isDateInAvailableSlots = useMemo(() => {
+    if (!bookingDate || availabilitySlots.length === 0) return null;
+    return availabilitySlots.some(slot => slot.date === bookingDate && slot.is_available);
+  }, [bookingDate, availabilitySlots]);
+
+  const upcomingAvailableSlots = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return availabilitySlots
+      .filter(s => s.date >= today && s.is_available)
+      .slice(0, 3);
+  }, [availabilitySlots]);
 
   // Extract all individual photos across collections so every uploaded media item is visible
   const allPhotos = useMemo(() => {
@@ -279,10 +367,23 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#FBF8F4]">
       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#9E5338]"></div>
+      <span className="sr-only">Loading...</span>
     </div>
   );
 
-  if (!vendor) return null;
+  if (!vendor) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#FBF8F4] px-4 text-center">
+      <h2 className="text-2xl font-serif font-bold text-[#221F1C] mb-2">Vendor Not Found</h2>
+      <p className="text-[#6B6560] mb-6 text-sm">Failed to load vendor profile or the requested vendor does not exist.</p>
+      <button
+        type="button"
+        onClick={() => router.push('/marketplace')}
+        className="px-5 py-2.5 bg-[#9E5338] text-white rounded-xl text-xs font-semibold hover:bg-[#86442B] transition-colors cursor-pointer shadow-xs"
+      >
+        Back to Marketplace
+      </button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#FBF8F4] text-[#221F1C] font-sans pb-20">
@@ -292,13 +393,40 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
            <button onClick={() => router.back()} className="flex items-center gap-1.5 text-[#6B6560] hover:text-[#9E5338] transition-colors text-xs font-medium cursor-pointer">
               <ArrowLeft className="size-4" /> Back to Search
            </button>
-           <div className="flex items-center gap-4">
-              <span className="text-sm font-serif font-bold text-[#221F1C]">{vendor.business_name}</span>
-              <div className="h-4 w-px bg-[#E8E2D9]" />
-              <div className="flex items-center gap-1">
+           <div className="flex items-center gap-3">
+              <span className="hidden sm:inline text-sm font-serif font-bold text-[#221F1C]">{vendor.business_name}</span>
+              <div className="hidden sm:flex items-center gap-1">
                  <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
                  <span className="text-xs font-bold text-[#221F1C]">{vendor.average_rating || 4.9}</span>
               </div>
+              <div className="hidden sm:block h-4 w-px bg-[#E8E2D9]" />
+
+              {/* Save / Favorite Button */}
+              <button
+                type="button"
+                onClick={handleToggleFavorite}
+                disabled={favoriteLoading}
+                aria-label={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                  isFavorite
+                    ? 'bg-rose-50 text-rose-600 border-rose-200 shadow-xs'
+                    : 'bg-white text-[#221F1C] border-[#E8E2D9] hover:border-rose-300 hover:text-rose-600'
+                }`}
+              >
+                <Heart className={`size-3.5 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
+                <span>{isFavorite ? 'Saved' : 'Save'}</span>
+              </button>
+
+              {/* Share Profile Button */}
+              <button
+                type="button"
+                onClick={handleShareProfile}
+                aria-label="Share vendor profile"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-[#221F1C] border border-[#E8E2D9] hover:border-[#9E5338] hover:text-[#9E5338] transition-all cursor-pointer shadow-xs"
+              >
+                <Share2 className="size-3.5" />
+                <span>Share</span>
+              </button>
            </div>
         </div>
       </header>
@@ -358,17 +486,68 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                       </div>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-[#6B6560]">
-                       <span className="flex items-center gap-1 text-[#221F1C]"><MapPin className="size-3.5 text-[#9E5338]" /> {vendor.location}</span>
-                       <span className="flex items-center gap-1"><Clock className="size-3.5 text-[#9E5338]" /> Usually responds in 2h</span>
+                    {/* Operational & Trust Badges */}
+                    <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-[#6B6560]">
+                       <span className="flex items-center gap-1 text-[#221F1C] font-semibold">
+                         <MapPin className="size-3.5 text-[#9E5338]" /> {vendor.location}
+                       </span>
+                       <span className="flex items-center gap-1">
+                         <Clock className="size-3.5 text-[#9E5338]" /> Usually responds in ~{Math.round(vendor.response_time_hours || 2)}h
+                       </span>
+                       <span className="flex items-center gap-1">
+                         <Sparkles className="size-3.5 text-[#9E5338]" /> {vendor.years_experience || 5}+ Years Experience
+                       </span>
                        {vendor.is_verified && (
-                         <span className="flex items-center gap-1 text-[#9E5338] border border-[#E8E2D9] px-2.5 py-0.5 rounded-full bg-[#F3EADF]">
+                         <span className="flex items-center gap-1 text-[#9E5338] border border-[#E8E2D9] px-2.5 py-0.5 rounded-full bg-[#F3EADF] font-semibold">
                            <ShieldCheck className="size-3.5" /> Verified Pro
                          </span>
                        )}
+                       <span className="flex items-center gap-1 text-[#6B6560] border border-[#E8E2D9] px-2.5 py-0.5 rounded-full bg-[#FAF7F2]">
+                         <Plane className="size-3.5 text-[#9E5338]" /> Destination Events
+                       </span>
+                    </div>
+
+                    {/* Social Presence & Contact Quick Bar */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {vendor.instagram_handle && (
+                        <a
+                          href={`https://instagram.com/${vendor.instagram_handle.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8E2D9] text-xs font-semibold text-[#221F1C] hover:border-[#9E5338] hover:text-[#9E5338] transition-colors shadow-2xs"
+                        >
+                          <Instagram className="size-3.5 text-[#E1306C]" />
+                          <span>@{vendor.instagram_handle.replace('@', '')}</span>
+                        </a>
+                      )}
+                      {vendor.website && (
+                        <a
+                          href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8E2D9] text-xs font-semibold text-[#221F1C] hover:border-[#9E5338] hover:text-[#9E5338] transition-colors shadow-2xs"
+                        >
+                          <Globe className="size-3.5 text-[#9E5338]" />
+                          <span>Official Website</span>
+                        </a>
+                      )}
+                      {vendor.phone && (
+                        <a
+                          href={`tel:${vendor.phone}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8E2D9] text-xs font-semibold text-[#221F1C] hover:border-[#9E5338] hover:text-[#9E5338] transition-colors shadow-2xs"
+                        >
+                          <Phone className="size-3.5 text-[#9E5338]" />
+                          <span>{vendor.phone}</span>
+                        </a>
+                      )}
+                      {vendor.cancellation_policy && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] text-[#6B6560] bg-[#FBF8F4] border border-[#E8E2D9]">
+                          {vendor.cancellation_policy} Cancellation
+                        </span>
+                      )}
                     </div>
                   </div>
-               </div>
+                </div>
                <p className="text-[#6B6560] text-base font-normal leading-relaxed max-w-3xl">
                  {vendor.description || 'Professional creative specialist providing top-tier photography, videography, and event management services for grand weddings and milestone celebrations.'}
                </p>
@@ -548,6 +727,23 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                         {review.comment && (
                            <p className="text-xs text-[#6B6560] italic font-normal">"{review.comment}"</p>
                         )}
+                        {review.vendor_response && (
+                          <div className="mt-2.5 p-3 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9] space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-bold text-[#9E5338] flex items-center gap-1.5">
+                                <Store className="size-3 text-[#9E5338]" /> Response from {vendor.business_name}
+                              </span>
+                              {review.vendor_responded_at && (
+                                <span className="text-[10px] text-[#6B6560]">
+                                  {new Date(review.vendor_responded_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-[#221F1C]">
+                              "{review.vendor_response}"
+                            </p>
+                          </div>
+                        )}
                      </div>
                   ))}
                </div>
@@ -566,16 +762,46 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                   <CardContent className="p-5 space-y-5">
                      
                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-[#221F1C] flex items-center gap-1.5">
-                           <CalendarIcon className="size-3.5 text-[#9E5338]" /> Select Event Date
-                        </label>
+                        <div className="flex items-center justify-between">
+                           <label className="text-xs font-medium text-[#221F1C] flex items-center gap-1.5">
+                              <CalendarIcon className="size-3.5 text-[#9E5338]" /> Select Event Date
+                           </label>
+                           {isDateInAvailableSlots === true && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                 <Check className="size-3" /> Slot Open
+                              </span>
+                           )}
+                        </div>
                         <input 
                           type="date" 
                           value={bookingDate}
                           min={todayStr}
                           onChange={(e) => setBookingDate(e.target.value)}
-                          className="w-full bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl h-11 px-3 text-[#221F1C] focus:outline-none focus:border-[#9E5338] text-xs font-medium" 
+                          className="w-full bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl h-11 px-3 text-[#221F1C] focus:outline-none focus:border-[#9E5338] text-xs font-medium cursor-pointer" 
                         />
+                        {isDateInAvailableSlots === false && bookingDate && (
+                           <p className="text-[10px] text-amber-700 flex items-center gap-1 leading-snug">
+                              <Info className="size-3 shrink-0" />
+                              Custom date request: Vendor has not opened public slots for this date. You may still submit your inquiry.
+                           </p>
+                        )}
+                        {upcomingAvailableSlots.length > 0 && !bookingDate && (
+                           <div className="pt-1 space-y-1">
+                              <p className="text-[10px] text-[#6B6560] font-medium">Upcoming open celebration dates:</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                 {upcomingAvailableSlots.map((slot: any) => (
+                                    <button
+                                       key={slot.id || slot.date}
+                                       type="button"
+                                       onClick={() => setBookingDate(slot.date)}
+                                       className="px-2 py-0.5 rounded-lg bg-[#FAF7F2] hover:bg-[#F3EADF] border border-[#E8E2D9] text-[10px] font-semibold text-[#9E5338] transition-colors cursor-pointer"
+                                    >
+                                       {new Date(slot.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                                    </button>
+                                 ))}
+                              </div>
+                           </div>
+                        )}
                      </div>
 
                      <div className="p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9] space-y-2">

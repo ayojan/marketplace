@@ -5,13 +5,18 @@ import BookingCalendar from '../BookingCalendar';
 import { api } from '../../lib/api';
 
 // Mock the API
-jest.mock('../../lib/api', () => ({
-  api: {
+jest.mock('../../lib/api', () => {
+  const mockInstance = {
     get: jest.fn(),
     post: jest.fn(),
     delete: jest.fn()
-  }
-}));
+  };
+  return {
+    __esModule: true,
+    default: mockInstance,
+    api: mockInstance
+  };
+});
 
 describe('BookingCalendar', () => {
   const mockBookings = [
@@ -51,9 +56,10 @@ describe('BookingCalendar', () => {
   ];
 
   beforeEach(() => {
-    api.get.mockClear();
-    api.post.mockClear();
-    api.delete.mockClear();
+    api.get.mockReset();
+    api.post.mockReset();
+    api.delete.mockReset();
+    api.get.mockResolvedValue({ data: {} });
   });
 
   it('renders calendar header correctly', () => {
@@ -111,14 +117,8 @@ describe('BookingCalendar', () => {
     const nextButton = screen.getByRole('button', { name: /next month/i });
     const prevButton = screen.getByRole('button', { name: /previous month/i });
     
-    // These buttons might not have explicit names, so we'll find them by their SVG icons
-    const buttons = screen.getAllByRole('button');
-    const navigationButtons = buttons.filter(button => 
-      button.querySelector('svg path[d*="M15 19l-7-7 7-7"]') || 
-      button.querySelector('svg path[d*="M9 5l7 7-7 7"]')
-    );
-    
-    expect(navigationButtons).toHaveLength(2);
+    expect(nextButton).toBeInTheDocument();
+    expect(prevButton).toBeInTheDocument();
   });
 
   it('opens availability modal when clicking add availability', async () => {

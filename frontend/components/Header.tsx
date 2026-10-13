@@ -18,7 +18,11 @@ import {
   ChevronRight,
   LayoutDashboard,
   User,
-  CalendarDays
+  CalendarDays,
+  Briefcase,
+  Settings,
+  Navigation,
+  Loader2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -33,13 +37,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useLocation, CITIES } from '@/lib/contexts/LocationContext';
 
-export const CITIES = ['Delhi NCR', 'Mumbai', 'Bengaluru', 'Jaipur', 'Goa', 'Chandigarh'];
+export { CITIES };
 
 export default function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [selectedCity, setSelectedCity] = useState<string>('Delhi NCR');
+  const { 
+    selectedCity, 
+    setSelectedCity, 
+    openLocationPrompt, 
+    detectLocation, 
+    isDetecting 
+  } = useLocation();
   const [isLocationOpen, setIsLocationOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
@@ -83,8 +94,16 @@ export default function Header() {
     setSelectedCity(city);
     setIsLocationOpen(false);
     setIsMobileMenuOpen(false);
-    toast.success(`Showing verified vendors in ${city}`);
     router.push(`/marketplace?location=${encodeURIComponent(city)}`);
+  };
+
+  const handleDetectLocation = async () => {
+    setIsLocationOpen(false);
+    setIsMobileMenuOpen(false);
+    const res = await detectLocation();
+    if (res.success && res.city) {
+      router.push(`/marketplace?location=${encodeURIComponent(res.city)}`);
+    }
   };
 
   const handleLogout = () => {
@@ -144,8 +163,22 @@ export default function Header() {
             </button>
 
             {isLocationOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-2xl bg-white border border-[#E8E2D9] shadow-lg py-1.5 z-50">
-                <div className="px-3 py-1 text-[10px] font-bold text-[#6B6560] uppercase tracking-wider">
+              <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white border border-[#E8E2D9] shadow-xl py-1.5 z-50 overflow-hidden">
+                <button
+                  type="button"
+                  disabled={isDetecting}
+                  onClick={handleDetectLocation}
+                  className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-[#9E5338] hover:bg-[#F3EADF] border-b border-[#E8E2D9] cursor-pointer transition-colors"
+                >
+                  {isDetecting ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Navigation className="size-3.5" />
+                  )}
+                  <span>{isDetecting ? 'Detecting Hub...' : 'Detect My Location'}</span>
+                </button>
+
+                <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-[#6B6560] uppercase tracking-wider">
                   Select City
                 </div>
                 {CITIES.map((city) => {
@@ -155,7 +188,7 @@ export default function Header() {
                       key={city}
                       type="button"
                       onClick={() => handleSelectCity(city)}
-                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs text-left cursor-pointer transition-colors ${
+                      className={`w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-left cursor-pointer transition-colors ${
                         isSelected
                           ? 'bg-[#F3EADF] text-[#9E5338] font-semibold'
                           : 'text-[#221F1C] hover:bg-[#FAF7F2]'
@@ -166,6 +199,19 @@ export default function Header() {
                     </button>
                   );
                 })}
+
+                <div className="pt-1 mt-1 border-t border-[#E8E2D9]/80">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLocationOpen(false);
+                      openLocationPrompt();
+                    }}
+                    className="w-full px-3.5 py-1.5 text-[11px] font-medium text-[#6B6560] hover:text-[#9E5338] hover:bg-[#FAF7F2] text-left cursor-pointer transition-colors"
+                  >
+                    Change celebration hub...
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -207,34 +253,45 @@ export default function Header() {
                 </div>
 
                 {/* Dashboard (Linked directly to profile logo) */}
+                {/* Main Dashboard / Overview */}
                 <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
                   <Link href={dashboardLink} className="flex items-center gap-2.5 w-full">
                     <LayoutDashboard className="size-4 text-[#9E5338]" />
-                    <span>Main Dashboard</span>
+                    <span>{user.role === 'vendor' ? 'Vendor Portal (Overview)' : 'Main Dashboard'}</span>
                   </Link>
                 </DropdownMenuItem>
 
-                {/* Profile & Settings */}
+                {/* Profile & Settings / Business Settings */}
                 <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
                   <Link 
-                    href={user.role === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard?tab=profile'} 
+                    href={user.role === 'vendor' ? '/vendor/dashboard?tab=settings' : '/customer/dashboard?tab=profile'} 
                     className="flex items-center gap-2.5 w-full"
                   >
-                    <User className="size-4 text-[#9E5338]" />
-                    <span>Profile & Settings</span>
+                    <Settings className="size-4 text-[#9E5338]" />
+                    <span>{user.role === 'vendor' ? 'Business Settings' : 'Profile & Settings'}</span>
                   </Link>
                 </DropdownMenuItem>
 
-                {/* My Bookings */}
+                {/* Calendar / Bookings */}
                 <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
                   <Link 
-                    href={user.role === 'vendor' ? '/vendor/dashboard' : '/customer/dashboard?tab=bookings'} 
+                    href={user.role === 'vendor' ? '/vendor/dashboard?tab=calendar' : '/customer/dashboard?tab=bookings'} 
                     className="flex items-center gap-2.5 w-full"
                   >
                     <CalendarDays className="size-4 text-[#9E5338]" />
-                    <span>{user.role === 'vendor' ? 'Booking Requests' : 'My Bookings'}</span>
+                    <span>{user.role === 'vendor' ? 'Booking Calendar' : 'My Bookings'}</span>
                   </Link>
                 </DropdownMenuItem>
+
+                {/* Manage Services (if vendor) */}
+                {user.role === 'vendor' && (
+                  <DropdownMenuItem asChild className="rounded-xl px-3 py-2 text-xs font-medium text-[#221F1C] hover:bg-[#F3EADF] hover:text-[#9E5338] cursor-pointer">
+                    <Link href="/vendor/dashboard?tab=services" className="flex items-center gap-2.5 w-full">
+                      <Briefcase className="size-4 text-[#9E5338]" />
+                      <span>Manage Services</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
 
                 {/* Saved Favorites (if customer) */}
                 {user.role !== 'vendor' && (
@@ -346,10 +403,38 @@ export default function Header() {
 
             {/* Mobile City Selector */}
             <div className="pt-4 border-t border-[#E8E2D9]">
-              <div className="flex items-center gap-1.5 px-1 mb-2.5 text-xs font-semibold uppercase tracking-wider text-[#6B6560]">
-                <MapPin className="size-3.5 text-[#9E5338]" />
-                <span>Select City</span>
+              <div className="flex items-center justify-between px-1 mb-2.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#6B6560]">
+                  <MapPin className="size-3.5 text-[#9E5338]" />
+                  <span>Select City</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openLocationPrompt();
+                  }}
+                  className="text-[11px] font-medium text-[#9E5338] hover:underline"
+                >
+                  More Hubs
+                </button>
               </div>
+
+              {/* Mobile Auto-detect GPS button */}
+              <button
+                type="button"
+                disabled={isDetecting}
+                onClick={handleDetectLocation}
+                className="w-full mb-2.5 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#9E5338] bg-[#F3EADF] border border-[#9E5338]/30 cursor-pointer hover:bg-[#9E5338] hover:text-white transition-colors"
+              >
+                {isDetecting ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Navigation className="size-3.5" />
+                )}
+                <span>{isDetecting ? 'Detecting Nearest Hub...' : 'Detect Current Location'}</span>
+              </button>
+
               <div className="grid grid-cols-2 gap-2">
                 {CITIES.map((city) => {
                   const isSelected = selectedCity === city;
