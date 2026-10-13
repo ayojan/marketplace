@@ -175,119 +175,6 @@ export default function Landing() {
     },
   ];
 
-  const DEFAULT_TOP_VENDORS = [
-    {
-      id: '1',
-      name: 'The Wedding Narratives',
-      business_name: 'The Wedding Narratives',
-      category: 'photographer',
-      location: 'Delhi NCR',
-      rating: 4.9,
-      total_reviews: 320,
-      base_price: 50000,
-      image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '2',
-      name: 'Meera Makeovers',
-      business_name: 'Meera Makeovers',
-      category: 'makeup-artist',
-      location: 'Gurgaon',
-      rating: 4.8,
-      total_reviews: 214,
-      base_price: 15000,
-      image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '3',
-      name: 'Eventica Decor',
-      business_name: 'Eventica Decor',
-      category: 'decorator',
-      location: 'Delhi NCR',
-      rating: 4.9,
-      total_reviews: 189,
-      base_price: 100000,
-      image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '4',
-      name: 'Beats & Beyond',
-      business_name: 'Beats & Beyond',
-      category: 'dj',
-      location: 'Noida',
-      rating: 4.7,
-      total_reviews: 96,
-      base_price: 25000,
-      image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '5',
-      name: 'The Palm Venue',
-      business_name: 'The Palm Venue',
-      category: 'venue',
-      location: 'Delhi NCR',
-      rating: 4.8,
-      total_reviews: 276,
-      base_price: 250000,
-      image: 'https://images.unsplash.com/photo-1545232979-fbfd430a996c?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '6',
-      name: 'Shutterbugs Studio',
-      business_name: 'Shutterbugs Studio',
-      category: 'photographer',
-      location: 'Delhi NCR',
-      rating: 4.9,
-      total_reviews: 142,
-      base_price: 40000,
-      image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '7',
-      name: 'Glam & Glow Bridal',
-      business_name: 'Glam & Glow Bridal',
-      category: 'makeup-artist',
-      location: 'Delhi NCR',
-      rating: 4.9,
-      total_reviews: 168,
-      base_price: 22000,
-      image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '8',
-      name: 'Floral Symphony',
-      business_name: 'Floral Symphony',
-      category: 'decorator',
-      location: 'Delhi NCR',
-      rating: 4.8,
-      total_reviews: 115,
-      base_price: 75000,
-      image: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '9',
-      name: 'DJ Aryan Live',
-      business_name: 'DJ Aryan Live',
-      category: 'dj',
-      location: 'Delhi NCR',
-      rating: 4.9,
-      total_reviews: 130,
-      base_price: 35000,
-      image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: '10',
-      name: 'Royal Heritage Haveli',
-      business_name: 'Royal Heritage Haveli',
-      category: 'venue',
-      location: 'Delhi NCR',
-      rating: 4.9,
-      total_reviews: 310,
-      base_price: 300000,
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
-    }
-  ];
-
   const VENDOR_FILTER_TABS = [
     { id: 'all', label: 'All Verified Pros' },
     { id: 'photographer', label: 'Photographers' },
@@ -297,19 +184,21 @@ export default function Landing() {
     { id: 'venue', label: 'Venues' }
   ];
 
-  const [topVendors, setTopVendors] = useState<any[]>(DEFAULT_TOP_VENDORS);
+  const [topVendors, setTopVendors] = useState<any[]>([]);
+  const [loadingVendors, setLoadingVendors] = useState<boolean>(true);
   const [activeVendorTab, setActiveVendorTab] = useState<string>('all');
 
   useEffect(() => {
     const fetchTopVendors = async () => {
       try {
+        setLoadingVendors(true);
         const res = await apiService.vendors.getAll();
-        const rawData = res.data?.vendors || (Array.isArray(res.data) ? res.data : null);
-        if (Array.isArray(rawData) && rawData.length > 0) {
-          setTopVendors(rawData);
-        }
+        const rawData = res.data?.vendors || (Array.isArray(res.data) ? res.data : []);
+        setTopVendors(Array.isArray(rawData) ? rawData : []);
       } catch (err) {
-        // Keep DEFAULT_TOP_VENDORS on error/offline
+        setTopVendors([]);
+      } finally {
+        setLoadingVendors(false);
       }
     };
     fetchTopVendors();
@@ -327,7 +216,7 @@ export default function Landing() {
   }, []);
 
   const getTabCount = (tabId: string) => {
-    const list = Array.isArray(topVendors) ? topVendors : DEFAULT_TOP_VENDORS;
+    const list = Array.isArray(topVendors) ? topVendors : [];
     if (tabId === 'all') return list.length;
     return list.filter((v: any) => {
       const cat = (v.category || v.service_category || '').toLowerCase();
@@ -778,8 +667,19 @@ export default function Landing() {
           </div>
 
           {/* Vendors Grid */}
-          {(() => {
-            const list = Array.isArray(topVendors) ? topVendors : DEFAULT_TOP_VENDORS;
+          {loadingVendors ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="rounded-2xl border border-[#E8E2D9] bg-white p-4 animate-pulse space-y-3">
+                  <div className="h-44 bg-[#F3EADF]/60 rounded-xl" />
+                  <div className="h-4 bg-[#F3EADF]/60 rounded w-3/4" />
+                  <div className="h-3 bg-[#F3EADF]/40 rounded w-1/2" />
+                  <div className="h-4 bg-[#F3EADF]/50 rounded w-1/3" />
+                </div>
+              ))}
+            </div>
+          ) : (() => {
+            const list = Array.isArray(topVendors) ? topVendors : [];
             const filtered = list.filter((v: any) => {
               if (activeVendorTab === 'all') return true;
               const cat = (v.category || v.service_category || '').toLowerCase();

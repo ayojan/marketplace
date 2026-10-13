@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { apiService } from '../../lib/api';
-import { MOCK_VENDORS } from '@/lib/mockVendorData';
 import AyojLogo from '@/components/AyojLogo';
 import { 
   ShieldCheck, 
@@ -80,7 +79,6 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
 
   const loadVendorData = useCallback(async () => {
     setLoading(true);
-    const mockVendor = MOCK_VENDORS.find(v => v.id === params?.id) || MOCK_VENDORS[0];
 
     try {
       const [vendorRes, servicesRes, portfolioRes, reviewsRes, availabilityRes] = await Promise.all([
@@ -119,34 +117,18 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
 
         setReviews(reviewsRes?.data?.reviews || []);
       } else {
-        // Fallback only if this is an explicitly matched mock vendor ID in dev/mock data (disabled in test)
-        const matchedMock = process.env.NODE_ENV !== 'test' ? MOCK_VENDORS.find(v => String(v.id) === String(params?.id)) : null;
-        if (matchedMock) {
-          setVendor({
-            id: matchedMock.id,
-            business_name: matchedMock.business_name,
-            location: matchedMock.location,
-            average_rating: matchedMock.rating,
-            total_reviews: matchedMock.total_reviews,
-            is_verified: matchedMock.verified,
-            description: `Premier ${matchedMock.category} specialist based in ${matchedMock.location}. Providing top-tier services for grand weddings and celebrations.`,
-          });
-          setServices((matchedMock.services as any) || []);
-          setPortfolio(matchedMock.portfolio || []);
-          setReviews(matchedMock.recent_activity || []);
-          setSelectedService((matchedMock.services?.[0] as any) || null);
-        } else {
-          setVendor(null);
-          setPortfolio([]);
-          setServices([]);
-          setSelectedService(null);
-        }
+        setVendor(null);
+        setPortfolio([]);
+        setServices([]);
+        setSelectedService(null);
+        setReviews([]);
       }
     } catch (err) {
       setVendor(null);
       setPortfolio([]);
       setServices([]);
       setSelectedService(null);
+      setReviews([]);
     } finally {
       setLoading(false);
     }

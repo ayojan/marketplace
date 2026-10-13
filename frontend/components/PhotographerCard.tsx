@@ -33,12 +33,16 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   const [isLiked, setIsLiked] = useState(photographer.is_favorite || false);
   const [isLiking, setIsLiking] = useState(false);
   const id = photographer.id;
-  const name = photographer.name || photographer.business_name || 'The Wedding Narratives';
+  const name = photographer.name || photographer.business_name || 'Creative Partner';
   const image = photographer.image || photographer.profile_image_url || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=1000&auto=format&fit=crop';
-  const rating = photographer.rating || photographer.average_rating || 4.9;
-  const totalReviews = photographer.total_reviews || 320;
-  const location = photographer.location || 'Delhi NCR';
-  const priceRange = photographer.base_price ? `₹${photographer.base_price.toLocaleString()}` : '₹50,000';
+  const rawRating = photographer.rating ?? photographer.average_rating;
+  const rating = rawRating ? Number(rawRating) : null;
+  const totalReviews = photographer.total_reviews ?? 0;
+  const location = photographer.location || '';
+  const hasBasePrice = typeof photographer.base_price === 'number' && Number(photographer.base_price) > 0;
+  const priceRange = hasBasePrice
+    ? `₹${Number(photographer.base_price).toLocaleString('en-IN')}`
+    : 'Price on request';
 
   useEffect(() => {
     let isMounted = true;
@@ -158,35 +162,48 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
 
         {/* Rating Line & Response Metric */}
         <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5 text-[#221F1C]">
-            <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
-            <span className="font-semibold">{Number(rating).toFixed(1)}</span>
-            <span className="text-[#6B6560]">({totalReviews})</span>
-          </div>
+          {rating && rating > 0 ? (
+            <div className="flex items-center gap-1.5 text-[#221F1C]">
+              <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
+              <span className="font-semibold">{rating.toFixed(1)}</span>
+              <span className="text-[#6B6560]">({totalReviews})</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-[#6B6560]">
+              <Star className="size-3.5 text-[#D97706]" />
+              <span className="font-medium text-[11px]">New Partner</span>
+            </div>
+          )}
 
           <span className="inline-flex items-center gap-1 text-[11px] text-[#6B6560] bg-[#FAF7F2] px-2 py-0.5 rounded-md border border-[#E5DED6]">
             <Clock className="size-3 text-[#9E5338]" />
-            <span>~2h response</span>
+            <span>Fast Response</span>
           </span>
         </div>
 
         {/* Location Line */}
-        <div className="flex items-center gap-1.5 text-xs text-[#6B6560]">
-          <MapPin className="size-3.5 text-[#6B6560] shrink-0" />
-          <span className="truncate">{location}</span>
-        </div>
+        {location && (
+          <div className="flex items-center gap-1.5 text-xs text-[#6B6560]">
+            <MapPin className="size-3.5 text-[#6B6560] shrink-0" />
+            <span className="truncate">{location}</span>
+          </div>
+        )}
 
         {/* Transparent Pricing & View Profile CTA */}
         <div className="pt-2.5 border-t border-[#E8E2D9] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-1">
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-[#6B6560]">Starting From</span>
-              <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                Transparent
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-[#6B6560]">
+                {hasBasePrice ? 'Starting From' : 'Pricing'}
               </span>
+              {hasBasePrice && (
+                <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                  Transparent
+                </span>
+              )}
             </div>
             <div className="text-sm font-bold text-[#221F1C]">
-              {priceRange} <span className="text-[11px] text-[#6B6560] font-normal">/ event</span>
+              {priceRange} {hasBasePrice && <span className="text-[11px] text-[#6B6560] font-normal">/ event</span>}
             </div>
           </div>
 

@@ -74,191 +74,6 @@ const SORT_OPTIONS = [
   { id: 'price-high', label: 'Price: High to Low' },
 ];
 
-// Fallback high-quality curated catalog covering all categories & key cities
-const FALLBACK_VENDORS = [
-  {
-    id: '1',
-    name: 'The Wedding Narratives',
-    business_name: 'The Wedding Narratives',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    total_reviews: 320,
-    base_price: 50000,
-    image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
-    trade: 'photographer',
-    service_categories: ['Photography', 'Pre-Wedding', 'Wedding'],
-    occasions: ['wedding', 'pre-wedding'],
-    description: 'Premier wedding and candid photography studio capturing authentic celebrations.'
-  },
-  {
-    id: '2',
-    name: 'Meera Makeovers',
-    business_name: 'Meera Makeovers',
-    location: 'Gurgaon',
-    rating: 4.8,
-    total_reviews: 214,
-    base_price: 15000,
-    image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
-    trade: 'makeup-artist',
-    service_categories: ['Makeup Artist', 'Bridal Beauty'],
-    occasions: ['wedding', 'pre-wedding', 'birthday'],
-    description: 'Certified bridal makeup artist specializing in HD, Airbrush, and cocktail party makeovers.'
-  },
-  {
-    id: '3',
-    name: 'Eventica Decor',
-    business_name: 'Eventica Decor',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    total_reviews: 189,
-    base_price: 100000,
-    image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80',
-    trade: 'decorator',
-    service_categories: ['Decorator', 'Event Staging', 'Floral Styling'],
-    occasions: ['wedding', 'birthday', 'corporate'],
-    description: 'Grand floral mandap designs, royal reception stages, and ambient wedding themes.'
-  },
-  {
-    id: '4',
-    name: 'Beats & Beyond',
-    business_name: 'Beats & Beyond',
-    location: 'Noida',
-    rating: 4.7,
-    total_reviews: 96,
-    base_price: 25000,
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80',
-    trade: 'dj',
-    service_categories: ['DJs & Entertainment', 'Sangeet Production'],
-    occasions: ['wedding', 'birthday', 'corporate'],
-    description: 'High-energy DJ sound setups, intelligent lighting, and Bollywood sangeet entertainment.'
-  },
-  {
-    id: '5',
-    name: 'The Palm Venue',
-    business_name: 'The Palm Venue',
-    location: 'Delhi NCR',
-    rating: 4.8,
-    total_reviews: 276,
-    base_price: 250000,
-    image: 'https://images.unsplash.com/photo-1545232979-fbfd430a996c?auto=format&fit=crop&w=800&q=80',
-    trade: 'venue',
-    service_categories: ['Venues', 'Banquet Halls', 'Lawn'],
-    occasions: ['wedding', 'corporate', 'birthday'],
-    description: 'Sprawling banquet lawns and luxury air-conditioned indoor banquet halls.'
-  },
-  {
-    id: '6',
-    name: 'Bombay Shutterbugs',
-    business_name: 'Bombay Shutterbugs',
-    location: 'Mumbai',
-    rating: 4.9,
-    total_reviews: 142,
-    base_price: 65000,
-    image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
-    trade: 'photographer',
-    service_categories: ['Photography', 'Candid Wedding'],
-    occasions: ['wedding', 'engagement', 'pre-wedding'],
-    description: 'Bespoke destination wedding photography capturing timeless moments across Mumbai & Goa.'
-  },
-  {
-    id: '7',
-    name: 'Bengaluru Flora & Lights',
-    business_name: 'Bengaluru Flora & Lights',
-    location: 'Bengaluru',
-    rating: 4.8,
-    total_reviews: 118,
-    base_price: 80000,
-    image: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80',
-    trade: 'decorator',
-    service_categories: ['Decorator', 'Floral Design'],
-    occasions: ['wedding', 'corporate', 'birthday'],
-    description: 'Eco-luxe wedding backdrops and contemporary floral setups in Bengaluru.'
-  },
-  {
-    id: '8',
-    name: 'Royal Heritage Haveli',
-    business_name: 'Royal Heritage Haveli',
-    location: 'Jaipur',
-    rating: 4.9,
-    total_reviews: 310,
-    base_price: 300000,
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-    trade: 'venue',
-    service_categories: ['Venues', 'Heritage Palaces'],
-    occasions: ['wedding', 'anniversary'],
-    description: 'Iconic royal palace venue offering heritage architecture, sprawling courtyards, and luxury dining.'
-  },
-  {
-    id: '9',
-    name: 'DJ Aryan Live',
-    business_name: 'DJ Aryan Live',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    total_reviews: 130,
-    base_price: 35000,
-    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
-    trade: 'dj',
-    service_categories: ['DJs & Entertainment', 'Sangeet Nights'],
-    occasions: ['wedding', 'birthday', 'anniversary'],
-    description: 'Celebrity DJ and live percussionist sets for high-octane celebration parties.'
-  },
-  {
-    id: '10',
-    name: 'Glam & Glow Bridal',
-    business_name: 'Glam & Glow Bridal',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    total_reviews: 168,
-    base_price: 22000,
-    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-    trade: 'makeup-artist',
-    service_categories: ['Makeup Artist', 'Bridal Glam'],
-    occasions: ['wedding', 'pre-wedding', 'engagement'],
-    description: 'Luxury bridal hair, draping, and airbrush makeup with personalized beauty consultations.'
-  },
-  {
-    id: '11',
-    name: 'Shutterbugs Studio',
-    business_name: 'Shutterbugs Studio',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    total_reviews: 142,
-    base_price: 40000,
-    image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80',
-    trade: 'photographer',
-    service_categories: ['Photography', 'Cinematography'],
-    occasions: ['wedding', 'pre-wedding', 'birthday'],
-    description: 'Cinematic 4K wedding films, drone cinematography, and candid couple portraits.'
-  },
-  {
-    id: '12',
-    name: 'Saffron & Spice Caterers',
-    business_name: 'Saffron & Spice Caterers',
-    location: 'Delhi NCR',
-    rating: 4.8,
-    total_reviews: 154,
-    base_price: 35000,
-    image: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80',
-    trade: 'caterer',
-    service_categories: ['Caterers', 'Gourmet Buffets'],
-    occasions: ['wedding', 'corporate', 'birthday'],
-    description: 'Authentic regional Indian delicacies, royal Mughlai buffets, and global live counters.'
-  },
-  {
-    id: '13',
-    name: 'Signature Celebrations',
-    business_name: 'Signature Celebrations',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    total_reviews: 210,
-    base_price: 75000,
-    image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80',
-    trade: 'event-planner',
-    service_categories: ['Event Planners', 'Turnkey Production'],
-    occasions: ['wedding', 'corporate', 'anniversary'],
-    description: 'End-to-end luxury celebration planning, hospitality, vendor coordination, and show running.'
-  }
-];
 
 function MarketplaceContent() {
   const router = useRouter();
@@ -404,10 +219,9 @@ function MarketplaceContent() {
     };
   }, [searchQuery, minPrice, maxPrice, selectedPricingType]);
 
-  // Master vendor list: combines API results with fallback catalog
+  // Master vendor list: strictly from API results
   const allVendors = useMemo(() => {
-    if (apiVendors.length > 0) return apiVendors;
-    return FALLBACK_VENDORS;
+    return apiVendors;
   }, [apiVendors]);
 
   // Helper to count vendors per category in master list
@@ -1427,28 +1241,30 @@ function MarketplaceContent() {
                 </div>
 
                 {/* Recommended Top Verified Partners Section */}
-                <div className="space-y-4 pt-2">
-                  <div className="border-b border-[#E8E2D9] pb-2">
-                    <h4 className="text-sm font-serif font-bold text-[#221F1C]">
-                      Recommended Creative Partners You Might Like
-                    </h4>
-                    <p className="text-xs text-[#6B6560]">
-                      Explore these top-rated verified partners across popular categories
-                    </p>
+                {allVendors.length > 0 && (
+                  <div className="space-y-4 pt-2">
+                    <div className="border-b border-[#E8E2D9] pb-2">
+                      <h4 className="text-sm font-serif font-bold text-[#221F1C]">
+                        Recommended Creative Partners You Might Like
+                      </h4>
+                      <p className="text-xs text-[#6B6560]">
+                        Explore these top-rated verified partners across popular categories
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {allVendors.slice(0, 3).map((vendor, index) => (
+                        <motion.div
+                          key={`rec-${vendor.id}-${index}`}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.25, delay: index * 0.05 }}
+                        >
+                          <PhotographerCard photographer={vendor} />
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {FALLBACK_VENDORS.slice(0, 3).map((vendor, index) => (
-                      <motion.div
-                        key={`rec-${vendor.id}-${index}`}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25, delay: index * 0.05 }}
-                      >
-                        <PhotographerCard photographer={vendor} />
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">

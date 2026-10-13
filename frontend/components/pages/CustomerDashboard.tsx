@@ -44,29 +44,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
-const RECOMMENDED_PROS = [
-  {
-    id: '4',
-    name: 'The Wedding Narratives',
-    category: 'Photographer',
-    location: 'Delhi NCR',
-    rating: 4.9,
-    reviewsCount: 320,
-    price: '₹50,000',
-    image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: '5',
-    name: 'Meera Makeovers',
-    category: 'Makeup Artist',
-    location: 'Gurgaon',
-    rating: 4.8,
-    reviewsCount: 214,
-    price: '₹15,000',
-    image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80'
-  }
-];
-
 const CustomerDashboard = () => {
   const { user, updateUser } = useAuth();
   const searchParams = useSearchParams();
@@ -92,6 +69,7 @@ const CustomerDashboard = () => {
   const [bookingFilter, setBookingFilter] = useState('all');
   const [bookings, setBookings] = useState<any[]>([]);
   const [savedVendors, setSavedVendors] = useState<any[]>([]);
+  const [recommendedPros, setRecommendedPros] = useState<any[]>([]);
   const [checklist, setChecklist] = useState<any[]>([]);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<any>(null);
@@ -239,11 +217,32 @@ const CustomerDashboard = () => {
 
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
 
+  const fetchRecommendedPros = async () => {
+    try {
+      const response = await apiService.vendors.getAll({ per_page: 4, min_rating: 4.5 }).catch(() => null);
+      const rawData = response?.data?.vendors || (Array.isArray(response?.data) ? response.data : []);
+      const mapped = rawData.map((v: any) => ({
+        id: String(v.id),
+        name: v.business_name || v.name || 'Creative Partner',
+        category: Array.isArray(v.service_categories) ? v.service_categories[0] : (v.category || v.trade || 'Verified Pro'),
+        location: v.location || 'Delhi NCR',
+        rating: v.average_rating || v.rating || 5.0,
+        reviewsCount: v.total_reviews || 0,
+        price: v.base_price ? `₹${Number(v.base_price).toLocaleString('en-IN')}` : 'Price on request',
+        image: v.image || v.profile_image_url || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
+      }));
+      setRecommendedPros(mapped);
+    } catch (err) {
+      setRecommendedPros([]);
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
     fetchSavedVendors();
     fetchChecklist();
     fetchCustomerProfile();
+    fetchRecommendedPros();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -497,46 +496,48 @@ const CustomerDashboard = () => {
           </div>
 
           {/* Quick Recommendations Bar */}
-          <div className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-serif font-bold text-[#221F1C]">Top Verified Pros For You</h3>
-              <Link href="/vendors" className="text-xs font-bold text-[#9E5338] hover:underline flex items-center gap-1">
-                View All <ChevronRight size={14} />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {RECOMMENDED_PROS.map((vendor) => (
-                <Link
-                  key={vendor.id}
-                  href={`/vendors/${vendor.id}`}
-                  className="p-4 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] flex gap-3.5 items-center hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
-                >
-                  <div className="relative size-14 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
-                    <ImageWithFallback 
-                      src={vendor.image} 
-                      alt={vendor.name} 
-                      fill 
-                      unoptimized 
-                      className="object-cover group-hover:scale-105 transition-transform duration-300" 
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-xs font-bold text-[#221F1C] truncate group-hover:text-[#9E5338] transition-colors">
-                      {vendor.name}
-                    </h4>
-                    <p className="text-[10px] text-[#6B6560] truncate">{vendor.category} • {vendor.location}</p>
-                    <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-[#221F1C]">
-                      <Star size={12} className="fill-[#D97706] text-[#D97706]" />
-                      <span>{vendor.rating}</span>
-                      <span className="text-[#6B6560] font-normal">({vendor.reviewsCount})</span>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-[#9E5338] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+          {recommendedPros.length > 0 && (
+            <div className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-serif font-bold text-[#221F1C]">Top Verified Pros For You</h3>
+                <Link href="/marketplace" className="text-xs font-bold text-[#9E5338] hover:underline flex items-center gap-1">
+                  View All <ChevronRight size={14} />
                 </Link>
-              ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {recommendedPros.map((vendor) => (
+                  <Link
+                    key={vendor.id}
+                    href={`/vendors/${vendor.id}`}
+                    className="p-4 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] flex gap-3.5 items-center hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
+                  >
+                    <div className="relative size-14 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
+                      <ImageWithFallback 
+                        src={vendor.image} 
+                        alt={vendor.name} 
+                        fill 
+                        unoptimized 
+                        className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-bold text-[#221F1C] truncate group-hover:text-[#9E5338] transition-colors">
+                        {vendor.name}
+                      </h4>
+                      <p className="text-[10px] text-[#6B6560] truncate">{vendor.category} • {vendor.location}</p>
+                      <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-[#221F1C]">
+                        <Star size={12} className="fill-[#D97706] text-[#D97706]" />
+                        <span>{vendor.rating}</span>
+                        <span className="text-[#6B6560] font-normal">({vendor.reviewsCount})</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-[#9E5338] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
 

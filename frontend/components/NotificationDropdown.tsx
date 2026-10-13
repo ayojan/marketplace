@@ -28,26 +28,8 @@ export const NotificationDropdown: React.FC = () => {
       setNotifications(res.data?.notifications || []);
       setUnreadCount(res.data?.unread_count || 0);
     } catch (err) {
-      // Fallback demo notifications if offline
-      setNotifications([
-        {
-          id: 1,
-          title: 'Booking Confirmed!',
-          message: 'The Wedding Narratives confirmed your session for Feb 14.',
-          notification_type: 'booking_accepted',
-          is_read: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 2,
-          title: 'New Review Received',
-          message: 'Priya Sharma left a 5.0★ rating for your photography service.',
-          notification_type: 'review_received',
-          is_read: true,
-          created_at: new Date(Date.now() - 86400000).toISOString()
-        }
-      ]);
-      setUnreadCount(1);
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setLoading(false);
     }

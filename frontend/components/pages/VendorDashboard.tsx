@@ -11,7 +11,6 @@ import Link from 'next/link';
 import VendorSettings from '../VendorSettings';
 import VendorBookings from '../VendorBookings';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
-import { MOCK_VENDORS } from '@/lib/mockVendorData';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
@@ -53,15 +52,12 @@ const VendorDashboard = () => {
       setActiveTab('overview');
     }
   }, [tabFromUrl]);
-  const currentVendor = MOCK_VENDORS[0];
-
-  const [dashboardData, setDashboardData] = useState<any>({
-    services: currentVendor.services,
-    analytics: {
-      revenue_stats: currentVendor.revenue_stats,
-      overview: currentVendor.overview,
-      recent_activity: currentVendor.recent_activity
-    }
+  const [dashboardData, setDashboardData] = useState<{
+    services: any[];
+    analytics: any | null;
+  }>({
+    services: [],
+    analytics: null
   });
 
   const [loading, setLoading] = useState(false);
@@ -76,34 +72,19 @@ const VendorDashboard = () => {
       const fetchedServices = servicesResponse?.data?.services || [];
       const fetchedAnalytics = analyticsResponse?.data || null;
 
-      if (fetchedServices.length > 0 && fetchedAnalytics) {
-        setDashboardData({
-          services: fetchedServices,
-          analytics: fetchedAnalytics
-        });
-      } else {
-        setDashboardData({
-          services: currentVendor.services,
-          analytics: {
-            revenue_stats: currentVendor.revenue_stats,
-            overview: currentVendor.overview,
-            recent_activity: currentVendor.recent_activity
-          }
-        });
-      }
+      setDashboardData({
+        services: fetchedServices,
+        analytics: fetchedAnalytics
+      });
     } catch (err) {
       setDashboardData({
-        services: currentVendor.services,
-        analytics: {
-          revenue_stats: currentVendor.revenue_stats,
-          overview: currentVendor.overview,
-          recent_activity: currentVendor.recent_activity
-        }
+        services: [],
+        analytics: null
       });
     } finally {
       setLoading(false);
     }
-  }, [currentVendor]);
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
@@ -125,17 +106,21 @@ const VendorDashboard = () => {
 
   const renderOverview = () => {
     const analytics = dashboardData.analytics;
-    if (!analytics) return null;
+    const revenue = analytics?.revenue_stats?.total_revenue ?? 0;
+    const totalBookings = analytics?.overview?.total_bookings ?? 0;
+    const activeServices = analytics?.overview?.active_services ?? dashboardData.services.length;
+    const avgRating = analytics?.overview?.average_rating ? `${Number(analytics.overview.average_rating).toFixed(1)}` : 'New';
+    const recentActivity = analytics?.recent_activity ?? [];
 
     return (
       <div className="space-y-6">
         {/* Compact Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Revenue', value: `₹${analytics.revenue_stats.total_revenue.toLocaleString()}`, icon: IndianRupee, trend: '+12.5%' },
-            { label: 'Bookings', value: analytics.overview.total_bookings, icon: CalendarIcon, trend: '+3 today' },
-            { label: 'Active', value: analytics.overview.active_services, icon: Briefcase, trend: 'Running' },
-            { label: 'Rating', value: analytics.overview.average_rating || '4.9', icon: Star, trend: 'Top 5%' },
+            { label: 'Revenue', value: `₹${revenue.toLocaleString('en-IN')}`, icon: IndianRupee, trend: 'All-time' },
+            { label: 'Bookings', value: totalBookings, icon: CalendarIcon, trend: totalBookings > 0 ? 'Active' : 'No bookings' },
+            { label: 'Active Services', value: activeServices, icon: Briefcase, trend: activeServices > 0 ? 'Live' : 'Pending' },
+            { label: 'Rating', value: avgRating, icon: Star, trend: analytics?.overview?.average_rating ? 'Verified' : 'New partner' },
           ].map((stat, i) => (
             <div key={i} className="p-4 rounded-xl border border-[#E8E2D9] bg-white shadow-sm hover:border-[#9E5338]/40 transition-all group">
               <div className="flex items-center justify-between mb-2">
@@ -173,20 +158,26 @@ const VendorDashboard = () => {
                <div className="p-5 rounded-2xl border border-[#E8E2D9] bg-white space-y-4">
                   <h3 className="text-xs font-bold text-[#221F1C] uppercase tracking-wider">Active Services</h3>
                   <div className="space-y-3">
-                     {dashboardData.services.slice(0, 3).map((s: any) => (
-                        <div key={s.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9]">
-                           <div className="flex items-center gap-2.5">
-                              <div className="size-8 rounded-lg bg-[#F3EADF] flex items-center justify-center text-[#9E5338]">
-                                 <Briefcase size={16} />
-                              </div>
-                              <div>
-                                 <p className="text-xs font-bold text-[#221F1C]">{s.name}</p>
-                                 <p className="text-[10px] text-[#6B6560]">{s.formatted_price}</p>
-                              </div>
-                           </div>
-                           <ChevronRight size={14} className="text-[#6B6560]" />
-                        </div>
-                     ))}
+                     {dashboardData.services.length > 0 ? (
+                       dashboardData.services.slice(0, 3).map((s: any) => (
+                          <div key={s.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9]">
+                             <div className="flex items-center gap-2.5">
+                                <div className="size-8 rounded-lg bg-[#F3EADF] flex items-center justify-center text-[#9E5338]">
+                                   <Briefcase size={16} />
+                                </div>
+                                <div>
+                                   <p className="text-xs font-bold text-[#221F1C]">{s.name}</p>
+                                   <p className="text-[10px] text-[#6B6560]">
+                                     {s.formatted_price || (s.base_price ? `₹${Number(s.base_price).toLocaleString('en-IN')}` : 'Price on request')}
+                                   </p>
+                                </div>
+                             </div>
+                             <ChevronRight size={14} className="text-[#6B6560]" />
+                          </div>
+                       ))
+                     ) : (
+                       <p className="text-xs text-[#6B6560] py-4 text-center">No active services listed yet.</p>
+                     )}
                   </div>
                </div>
 
@@ -215,21 +206,25 @@ const VendorDashboard = () => {
              <div className="p-5 rounded-2xl border border-[#E8E2D9] bg-white space-y-4">
                 <h3 className="text-xs font-bold text-[#221F1C] uppercase tracking-wider">Recent Activity</h3>
                 <div className="space-y-4">
-                   {analytics.recent_activity.map((activity: any, idx: number) => (
-                      <div key={idx} className="flex gap-3">
-                         <div className={`size-7 rounded-full flex items-center justify-center shrink-0 ${
-                            activity.type === 'booking' ? 'bg-amber-100 text-amber-700' : 'bg-[#F3EADF] text-[#9E5338]'
-                         }`}>
-                            {activity.type === 'booking' ? <CalendarIcon size={12} /> : <Star size={12} />}
-                         </div>
-                         <div className="space-y-0.5">
-                            <p className="text-xs font-semibold text-[#221F1C]">{activity.customer}</p>
-                            <p className="text-[11px] text-[#6B6560]">
-                               {activity.type === 'booking' ? 'Requested booking session' : 'Left a review'}
-                            </p>
-                         </div>
-                      </div>
-                   ))}
+                   {recentActivity.length > 0 ? (
+                     recentActivity.map((activity: any, idx: number) => (
+                        <div key={idx} className="flex gap-3">
+                           <div className={`size-7 rounded-full flex items-center justify-center shrink-0 ${
+                              activity.type === 'booking' ? 'bg-amber-100 text-amber-700' : 'bg-[#F3EADF] text-[#9E5338]'
+                           }`}>
+                              {activity.type === 'booking' ? <CalendarIcon size={12} /> : <Star size={12} />}
+                           </div>
+                           <div className="space-y-0.5">
+                              <p className="text-xs font-semibold text-[#221F1C]">{activity.customer}</p>
+                              <p className="text-[11px] text-[#6B6560]">
+                                 {activity.type === 'booking' ? 'Requested booking session' : 'Left a review'}
+                              </p>
+                           </div>
+                        </div>
+                     ))
+                   ) : (
+                     <p className="text-xs text-[#6B6560] py-4 text-center">No recent activity yet.</p>
+                   )}
                 </div>
              </div>
           </div>
@@ -272,14 +267,14 @@ const VendorDashboard = () => {
           <div className="mt-auto space-y-3 pt-4 border-t border-[#E8E2D9]">
             <div className="flex items-center gap-3 px-2">
                <div className="size-8 rounded-full bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-xs font-bold text-[#9E5338]">
-                  {(user?.business_name || user?.first_name || currentVendor.owner_name)[0].toUpperCase()}
+                  {(user?.business_name || user?.first_name || 'V')[0].toUpperCase()}
                </div>
                <div className="min-w-0">
                   <p className="text-xs font-bold text-[#221F1C] truncate">
-                    {user?.business_name || currentVendor.business_name}
+                    {user?.business_name || 'My Studio'}
                   </p>
                   <p className="text-[10px] text-[#6B6560]">
-                    {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : currentVendor.owner_name}
+                    {user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Vendor Partner'}
                   </p>
                </div>
             </div>
@@ -307,7 +302,7 @@ const VendorDashboard = () => {
               {/* Vendor Business Badge */}
               <div className="flex items-center gap-2 bg-[#F3EADF] border border-[#E8E2D9] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#221F1C]">
                 <Store size={14} className="text-[#9E5338]" />
-                <span>{user?.business_name || currentVendor?.business_name || 'Vendor Portal'}</span>
+                <span>{user?.business_name || 'Vendor Portal'}</span>
               </div>
 
               <NotificationDropdown />
@@ -336,7 +331,7 @@ const VendorDashboard = () => {
                 {activeTab === 'services' && <ServiceManagement services={dashboardData.services} onServiceUpdate={loadDashboardData} />}
                 {activeTab === 'portfolio' && <PortfolioManager />}
                 {activeTab === 'calendar' && <BookingCalendar bookings={[]} />}
-                {activeTab === 'settings' && <VendorSettings initialVendor={currentVendor} />}
+                {activeTab === 'settings' && <VendorSettings />}
               </motion.div>
             )}
           </AnimatePresence>
