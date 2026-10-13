@@ -41,55 +41,59 @@ module BookingManagement::BookingActionHelpers
   def build_availability_checker
     Rails.logger.warn 'build_availability_checker is deprecated, use domain services instead'
     service = Service.find(params[:service_id])
-
-    start_time = params[:start_time]
-    end_time = params[:end_time]
-
-    if end_time.blank? && start_time.present?
-      duration = (params[:duration] || 4).to_i
-      duration = 4 if duration <= 0
-      begin
-        parsed_start = Time.zone.parse("#{params[:date]} #{start_time}")
-        end_time = (parsed_start + duration.hours).strftime('%H:%M') if parsed_start
-      rescue StandardError => e
-        Rails.logger.warn("Could not calculate end_time: #{e.message}")
-      end
-    end
+    end_time = calculate_checker_end_time(params[:date], params[:start_time], params[:end_time], params[:duration])
 
     AvailabilityCheckerService.new(
       vendor_profile: service.vendor_profile,
       date: Date.parse(params[:date]),
-      start_time: start_time,
+      start_time: params[:start_time],
       end_time: end_time
     )
   end
 
+  def calculate_checker_end_time(date, start_time, end_time, duration_param)
+    return end_time if end_time.present? || start_time.blank?
+
+    duration = (duration_param || 4).to_i
+    duration = 4 if duration <= 0
+    parsed_start = Time.zone.parse("#{date} #{start_time}")
+    (parsed_start + duration.hours).strftime('%H:%M') if parsed_start
+  rescue StandardError => e
+    Rails.logger.warn("Could not calculate end_time: #{e.message}")
+    nil
+  end
+
   def build_conflict_resolver
     Rails.logger.warn 'build_conflict_resolver is deprecated, use domain services instead'
-    # Validate date format explicitly since DateTime.parse is very lenient
     Date.parse(params[:date])
-    vendor_profile = if params[:vendor_profile_id]
-                       VendorProfile.find(params[:vendor_profile_id])
-                     elsif params[:vendor_id]
-                       User.find(params[:vendor_id]).vendor_profile
-                     elsif params[:service_id]
-                       Service.find(params[:service_id]).vendor_profile
-                     end
-
     start_dt = DateTime.parse("#{params[:date]} #{params[:start_time]}")
-    duration = (params[:duration] || 4).to_i
-    duration = 4 if duration <= 0
-    end_dt = if params[:end_time].present?
-               DateTime.parse("#{params[:date]} #{params[:end_time]}")
-             else
-               start_dt + duration.hours
-             end
+    end_dt = calculate_resolver_end_datetime(start_dt, params[:duration])
 
     ConflictResolutionService.new(
-      vendor_profile: vendor_profile,
+      vendor_profile: find_resolver_vendor_profile,
       event_date: start_dt,
       event_end_date: end_dt
     )
+  end
+
+  def find_resolver_vendor_profile
+    if params[:vendor_profile_id]
+      VendorProfile.find(params[:vendor_profile_id])
+    elsif params[:vendor_id]
+      User.find(params[:vendor_id]).vendor_profile
+    elsif params[:service_id]
+      Service.find(params[:service_id]).vendor_profile
+    end
+  end
+
+  def calculate_resolver_end_datetime(start_dt, duration_param)
+    if params[:end_time].present?
+      DateTime.parse("#{params[:date]} #{params[:end_time]}")
+    else
+      duration = (duration_param || 4).to_i
+      duration = 4 if duration <= 0
+      start_dt + duration.hours
+    end
   end
 
   def invalid_datetime_response
@@ -184,6 +188,13 @@ module BookingManagement::ModificationActions
     end
   end
 
+  RESPOND_MESSAGES = {
+    'accept' => 'Booking accepted successfully',
+    'decline' => 'Booking declined',
+    'complete' => 'Booking marked as completed',
+    'counter_offer' => 'Counter offer sent'
+  }.freeze
+
   def respond
     return unless vendor_response_authorized?
 
@@ -192,25 +203,20 @@ module BookingManagement::ModificationActions
       return render json: { error: 'Invalid response action' }, status: :bad_request
     end
 
-    options = {
+    result = BookingResponseService.call(@booking, current_user, response_action, response_options)
+    render_respond_result(result, response_action)
+  end
+
+  def response_options
+    {
       counter_amount: params[:counter_amount],
       counter_message: params[:counter_message]
     }
-    result = BookingResponseService.call(@booking, current_user, response_action, options)
+  end
 
+  def render_respond_result(result, response_action)
     if result[:success]
-      message = case response_action
-                when 'accept'
-                  'Booking accepted successfully'
-                when 'decline'
-                  'Booking declined'
-                when 'complete'
-                  'Booking marked as completed'
-                when 'counter_offer'
-                  'Counter offer sent'
-                else
-                  "Booking #{response_action}ed successfully"
-                end
+      message = RESPOND_MESSAGES.fetch(response_action, "Booking #{response_action}ed successfully")
       render json: {
         booking: BookingManagement::BookingPresenter.new(result[:booking]).as_json,
         message: message
@@ -263,6 +269,16 @@ end
 module BookingManagement::AvailabilityActions
   def check_availability
     parsed_date = Date.parse(params[:date])
+    past_error = past_booking_error_response(parsed_date)
+    return past_error if past_error
+
+    availability_checker = build_availability_checker
+    render_availability_response(availability_checker)
+  rescue ArgumentError
+    invalid_datetime_response
+  end
+
+  def past_booking_error_response(parsed_date)
     if parsed_date < Date.current
       return render json: {
         available: false,
@@ -271,35 +287,34 @@ module BookingManagement::AvailabilityActions
       }
     end
 
-    if parsed_date == Date.current && params[:start_time].present?
-      requested_time = begin
-        Time.zone.parse("#{parsed_date} #{params[:start_time]}")
-      rescue StandardError
-        nil
-      end
-      if requested_time && requested_time <= Time.current
-        return render json: {
-          available: false,
-          message: 'Cannot book a time slot in the past',
-          errors: ['Booking time slot has already passed']
-        }
-      end
-    end
+    return unless past_time_today?(parsed_date)
 
-    availability_checker = build_availability_checker
-    is_available = availability_checker.available?
+    render json: {
+      available: false,
+      message: 'Cannot book a time slot in the past',
+      errors: ['Booking time slot has already passed']
+    }
+  end
 
-    if is_available
+  def past_time_today?(parsed_date)
+    return false unless parsed_date == Date.current && params[:start_time].present?
+
+    requested_time = Time.zone.parse("#{parsed_date} #{params[:start_time]}")
+    requested_time && requested_time <= Time.current
+  rescue StandardError
+    false
+  end
+
+  def render_availability_response(checker)
+    if checker.available?
       render json: { available: true, message: 'Time slot is available' }
     else
       render json: {
         available: false,
         message: 'Time slot is not available',
-        suggested_times: availability_checker.suggested_times
+        suggested_times: checker.suggested_times
       }
     end
-  rescue ArgumentError
-    invalid_datetime_response
   end
 
   def suggest_alternatives

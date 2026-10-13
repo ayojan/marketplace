@@ -7,7 +7,7 @@ class AvailabilitySlotsController < ApiController
 
   before_action :authenticate_user!
   before_action :ensure_vendor!
-  before_action :set_availability_slot, only: %i[show update destroy]
+  before_action :set_availability_slot, only: %i[show update destroy] # rubocop:disable Rails/LexicallyScopedActionFilter
 
   private
 

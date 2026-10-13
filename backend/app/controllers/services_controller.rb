@@ -58,25 +58,14 @@ class ServicesController < ApiController
   end
 
   def create
-    unless current_user.vendor_profile
-      current_user.create_vendor_profile!(
-        business_name: "#{current_user.first_name.presence || 'Vendor'}'s Services",
-        location: 'Mumbai, India'
-      )
-    end
+    ensure_current_vendor_profile
 
     @service = Service.new(service_params)
     @service.vendor_profile = current_user.vendor_profile
 
     if @service.save
       VendorService.find_or_create_by!(vendor_profile: current_user.vendor_profile, service: @service)
-
-      cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
-      if cat_id.present?
-        category = Category.find_by(id: cat_id)
-        @service.categories << category if category && @service.categories.exclude?(category)
-      end
-
+      attach_service_category(@service)
       @service.reload
       render json: {
         message: 'Service created successfully',
@@ -141,19 +130,14 @@ class ServicesController < ApiController
     params.expect(service: %i[name description base_price pricing_type status])
   end
 
-  # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
   def service_response(service, include_details: false)
-    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
-    vendor = service.vendor_profile
-    featured_item = vendor&.featured_portfolio_items&.first
-    featured_img = featured_item&.images&.first if featured_item&.images&.attached?
-    vendor_img_url = featured_img ? (url_for(featured_img) rescue nil) : nil
+    response = build_base_service_response(service)
+    append_service_details(response, service) if include_details
+    response
+  end
 
-    category_info = if (cat = service.service_category)
-                      { id: cat.id, name: cat.name }
-                    end
-
-    response = {
+  def build_base_service_response(service)
+    {
       id: service.id,
       name: service.name,
       description: service.description,
@@ -161,36 +145,77 @@ class ServicesController < ApiController
       pricing_type: service.pricing_type,
       formatted_price: service.formatted_base_price,
       status: service.status,
-      vendor: {
-        id: vendor&.id,
-        business_name: vendor&.business_name,
-        location: vendor&.location,
-        average_rating: vendor&.average_rating,
-        total_reviews: vendor&.total_reviews,
-        image: vendor_img_url,
-        profile_image_url: vendor_img_url
-      },
-      category: category_info,
-      images: service.service_images.map do |img|
-        {
-          id: img.id,
-          url: img.image.attached? ? url_for(img.image) : nil,
-          is_primary: img.is_primary
-        }
-      end,
+      vendor: service_vendor_json(service.vendor_profile),
+      category: service_category_json(service),
+      images: service_images_json(service),
       created_at: service.created_at,
       updated_at: service.updated_at
     }
+  end
 
-    if include_details
-      response[:vendor][:description] = service.vendor_profile.description
-      response[:vendor][:years_experience] = service.vendor_profile.years_experience
-      response[:vendor][:website] = service.vendor_profile.website
-      response[:bookings_count] = service.bookings_count
-      response[:can_be_booked] = service.can_be_booked?
+  def append_service_details(response, service)
+    vendor = service.vendor_profile
+    response[:vendor][:description] = vendor&.description
+    response[:vendor][:years_experience] = vendor&.years_experience
+    response[:vendor][:website] = vendor&.website
+    response[:bookings_count] = service.bookings_count
+    response[:can_be_booked] = service.can_be_booked?
+  end
+
+  def service_images_json(service)
+    service.service_images.map do |img|
+      {
+        id: img.id,
+        url: img.image.attached? ? url_for(img.image) : nil,
+        is_primary: img.is_primary
+      }
     end
+  end
 
-    response
+  def service_category_json(service)
+    cat = service.service_category
+    return unless cat
+
+    { id: cat.id, name: cat.name }
+  end
+
+  def service_vendor_json(vendor)
+    img_url = vendor_image_url(vendor)
+    {
+      id: vendor&.id,
+      business_name: vendor&.business_name,
+      location: vendor&.location,
+      average_rating: vendor&.average_rating,
+      total_reviews: vendor&.total_reviews,
+      image: img_url,
+      profile_image_url: img_url
+    }
+  end
+
+  def vendor_image_url(vendor)
+    item = vendor&.featured_portfolio_items&.first
+    return unless item&.images&.attached?
+
+    url_for(item.images.first)
+  rescue StandardError
+    nil
+  end
+
+  def ensure_current_vendor_profile
+    return if current_user.vendor_profile
+
+    current_user.create_vendor_profile!(
+      business_name: "#{current_user.first_name.presence || 'Vendor'}'s Services",
+      location: 'Mumbai, India'
+    )
+  end
+
+  def attach_service_category(service)
+    cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
+    return if cat_id.blank?
+
+    category = Category.find_by(id: cat_id)
+    service.categories << category if category && service.categories.exclude?(category)
   end
 end
 # rubocop:enable Metrics/ClassLength

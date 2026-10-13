@@ -56,7 +56,7 @@ module Reviews
 
     def increment_helpful_votes_atomically
       # Use atomic SQL increment to avoid race conditions
-      Review.where(id: review.id).update_all('helpful_votes = helpful_votes + 1')
+      Review.where(id: review.id).update_all('helpful_votes = helpful_votes + 1') # rubocop:disable Rails/SkipsModelValidations
     end
   end
 end

@@ -4,37 +4,38 @@ require 'rails_helper'
 
 describe Sources::AssociationLoader do
   describe '#fetch' do
-    let!(:vendor1) { create(:vendor_profile) }
-    let!(:vendor2) { create(:vendor_profile) }
-    let!(:service1) { create(:service, vendor_profile: vendor1) }
-    let!(:service2) { create(:service, vendor_profile: vendor2) }
+    let!(:first_vendor) { create(:vendor_profile) }
+    let!(:second_vendor) { create(:vendor_profile) }
+    let!(:first_service) { create(:service, vendor_profile: first_vendor) }
+    let!(:second_service) { create(:service, vendor_profile: second_vendor) }
 
     it 'loads associations with a single preloader call' do
-      services = [service1, service2]
+      services = [first_service, second_service]
 
-      expect(ActiveRecord::Associations::Preloader).to receive(:new).once.and_call_original
+      allow(ActiveRecord::Associations::Preloader).to receive(:new).and_call_original
 
       result = described_class.new(:vendor_profile).fetch(services)
 
-      expect(result).to eq([vendor1, vendor2])
+      expect(ActiveRecord::Associations::Preloader).to have_received(:new).once
+      expect(result).to eq([first_vendor, second_vendor])
     end
 
     it 'returns associations in the same order as input records' do
-      services = [service1, service2]
+      services = [first_service, second_service]
       result = described_class.new(:vendor_profile).fetch(services)
 
-      expect(result.map(&:id)).to eq([vendor1.id, vendor2.id])
+      expect(result.map(&:id)).to eq([first_vendor.id, second_vendor.id])
     end
 
     it 'works with has_many associations' do
-      reviews1 = create_list(:review, 2, vendor_profile: vendor1)
-      reviews2 = create_list(:review, 2, vendor_profile: vendor2)
+      first_reviews = create_list(:review, 2, vendor_profile: first_vendor)
+      second_reviews = create_list(:review, 2, vendor_profile: second_vendor)
 
-      vendors = [vendor1, vendor2]
+      vendors = [first_vendor, second_vendor]
       result = described_class.new(:reviews).fetch(vendors)
 
-      expect(result[0]).to match_array(reviews1)
-      expect(result[1]).to match_array(reviews2)
+      expect(result[0]).to match_array(first_reviews)
+      expect(result[1]).to match_array(second_reviews)
     end
   end
 end

@@ -8,8 +8,8 @@ module Notifications
     option :title, type: Types::String
     option :message, type: Types::String
     option :notification_type, type: Types::String
-    option :related_type, type: Types::String.optional, default: proc { nil }
-    option :related_id, type: Types::Integer.optional, default: proc { nil }
+    option :related_type, type: Types::String.optional, default: proc {}
+    option :related_id, type: Types::Integer.optional, default: proc {}
     option :skip_email, type: Types::Bool, default: proc { false }
 
     def self.call(**)
@@ -47,26 +47,10 @@ module Notifications
       return false unless user_has_preferences?
 
       pref = @user.email_notification_preference
-      return false if pref.nil? || pref.destroyed?
+      method_name = "#{@notification_type}?"
+      return pref.public_send(method_name) if pref.respond_to?(method_name)
 
-      case @notification_type
-      when 'booking_created'
-        pref.booking_created?
-      when 'booking_accepted'
-        pref.booking_accepted?
-      when 'booking_rejected'
-        pref.booking_rejected?
-      when 'booking_cancelled'
-        pref.booking_cancelled?
-      when 'booking_reminder'
-        pref.booking_reminder?
-      when 'new_message'
-        pref.new_message?
-      when 'review_received'
-        pref.review_received?
-      else
-        true
-      end
+      true
     end
 
     def user_has_preferences?
@@ -75,22 +59,10 @@ module Notifications
     end
 
     def send_email_notification
-      case @notification_type
-      when 'booking_created'
-        NotificationMailer.booking_created_email(@user, @related_id).deliver_later
-      when 'booking_accepted'
-        NotificationMailer.booking_accepted_email(@user, @related_id).deliver_later
-      when 'booking_rejected'
-        NotificationMailer.booking_rejected_email(@user, @related_id).deliver_later
-      when 'booking_cancelled'
-        NotificationMailer.booking_cancelled_email(@user, @related_id).deliver_later
-      when 'booking_reminder'
-        NotificationMailer.booking_reminder_email(@user, @related_id).deliver_later
-      when 'new_message'
-        NotificationMailer.new_message_email(@user, @related_id).deliver_later
-      when 'review_received'
-        NotificationMailer.review_received_email(@user, @related_id).deliver_later
-      end
+      mailer_method = "#{@notification_type}_email"
+      return unless NotificationMailer.respond_to?(mailer_method)
+
+      NotificationMailer.public_send(mailer_method, @user, @related_id).deliver_later
     end
   end
 end

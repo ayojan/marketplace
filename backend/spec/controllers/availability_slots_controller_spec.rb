@@ -164,7 +164,7 @@ RSpec.describe AvailabilitySlotsController do
     context 'when slot has booking conflicts' do
       it 'returns unprocessable entity' do
         slot_to_delete = create_slot(vendor_user)
-        allow_any_instance_of(AvailabilitySlot).to receive(:booking_conflict?).and_return(true)
+        allow_any_instance_of(AvailabilitySlot).to receive(:booking_conflict?).and_return(true) # rubocop:disable RSpec/AnyInstance
 
         auth_as(vendor_user)
         expect { delete_slot(slot_to_delete) }.not_to(change(AvailabilitySlot, :count))

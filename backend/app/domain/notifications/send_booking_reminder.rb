@@ -11,42 +11,39 @@ module Notifications
     end
 
     def call
-      # Reload booking to check fresh state (idempotency guard)
       booking.reload
 
-      # Return early if already sent (idempotent)
       if booking_reminder_already_sent?
+        # rubocop:disable Rails/EagerEvaluationLogMessage
         Rails.logger.debug("Booking reminder already sent for booking #{booking.id}")
+        # rubocop:enable Rails/EagerEvaluationLogMessage
         return { success: true, already_sent: true }
       end
 
-      # Mark as sent immediately (before sending notifications) to prevent race conditions
-      # If this fails, the notifications won't be sent, which is correct behavior
-      unless booking.update(booking_reminder_sent_at: Time.current)
-        return { success: false, error: 'Failed to mark reminder as sent' }
-      end
+      return { success: false, error: 'Failed to mark reminder as sent' } unless mark_reminder_sent
 
-      errors = []
-      # Send reminders to customer
-      begin
-        send_customer_reminder
-      rescue StandardError => e
-        errors << e
-      end
-
-      # Send reminders to vendor
-      begin
-        send_vendor_reminder
-      rescue StandardError => e
-        errors << e
-      end
-
-      raise errors.first if errors.any?
-
+      dispatch_reminders
       { success: true, already_sent: false }
     end
 
     private
+
+    def mark_reminder_sent
+      booking.update(booking_reminder_sent_at: Time.current)
+    end
+
+    def dispatch_reminders
+      errors = []
+      safe_dispatch(errors) { send_customer_reminder }
+      safe_dispatch(errors) { send_vendor_reminder }
+      raise errors.first if errors.any?
+    end
+
+    def safe_dispatch(errors)
+      yield
+    rescue StandardError => e
+      errors << e
+    end
 
     def booking_reminder_already_sent?
       booking.booking_reminder_sent_at.present?
@@ -81,11 +78,13 @@ module Notifications
     end
 
     def customer_reminder_message
-      "Your booking with #{booking.vendor_profile.display_name} is coming up on #{booking.event_date.strftime('%B %d, %Y at %l:%M %p')}."
+      date_str = booking.event_date.strftime('%B %d, %Y at %l:%M %p')
+      "Your booking with #{booking.vendor_profile.display_name} is coming up on #{date_str}."
     end
 
     def vendor_reminder_message
-      "You have a booking with #{booking.customer.full_name} on #{booking.event_date.strftime('%B %d, %Y at %l:%M %p')}."
+      date_str = booking.event_date.strftime('%B %d, %Y at %l:%M %p')
+      "You have a booking with #{booking.customer.full_name} on #{date_str}."
     end
   end
 end

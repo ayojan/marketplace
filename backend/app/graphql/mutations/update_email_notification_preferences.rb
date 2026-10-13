@@ -2,16 +2,19 @@
 
 module Mutations
   class UpdateEmailNotificationPreferences < Mutations::BaseMutation
-    argument :booking_accepted, Boolean, required: false
-    argument :booking_cancelled, Boolean, required: false
-    argument :booking_created, Boolean, required: false
-    argument :booking_rejected, Boolean, required: false
-    argument :booking_reminder, Boolean, required: false
-    argument :new_message, Boolean, required: false
-    argument :review_received, Boolean, required: false
+    description 'Update user email notification preferences'
 
-    field :errors, [String], null: false
-    field :preference, Types::EmailNotificationPreferenceType, null: true
+    argument :booking_accepted, Boolean, required: false, description: 'Email on booking accepted'
+    argument :booking_cancelled, Boolean, required: false, description: 'Email on booking cancelled'
+    argument :booking_created, Boolean, required: false, description: 'Email on booking created'
+    argument :booking_rejected, Boolean, required: false, description: 'Email on booking rejected'
+    argument :booking_reminder, Boolean, required: false, description: 'Email reminder before booking'
+    argument :new_message, Boolean, required: false, description: 'Email for new messages'
+    argument :review_received, Boolean, required: false, description: 'Email on review received'
+
+    field :errors, [String], null: false, description: 'List of error messages if the operation failed'
+    field :preference, Types::EmailNotificationPreferenceType, null: true,
+                                                               description: 'The updated email notification preference'
 
     def resolve(**args)
       preference = context[:current_user]&.email_notification_preference

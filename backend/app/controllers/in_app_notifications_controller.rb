@@ -26,7 +26,7 @@ class InAppNotificationsController < ApiController
 
   # POST /in_app_notifications/read_all
   def mark_all_read
-    InAppNotification.for_user(current_user.id).unread.update_all(is_read: true)
+    InAppNotification.for_user(current_user.id).unread.update_all(is_read: true) # rubocop:disable Rails/SkipsModelValidations
     render json: { message: 'All notifications marked as read' }
   end
 

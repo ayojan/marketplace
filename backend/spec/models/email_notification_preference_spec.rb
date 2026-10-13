@@ -32,10 +32,10 @@ RSpec.describe EmailNotificationPreference do
   end
 
   describe 'validations' do
-    it 'validates user_id presence' do
+    it 'validates user presence' do
       preference = described_class.new(user_id: nil)
       expect(preference).not_to be_valid
-      expect(preference.errors[:user_id]).to be_present
+      expect(preference.errors[:user]).to be_present
     end
 
     it 'validates user_id uniqueness' do

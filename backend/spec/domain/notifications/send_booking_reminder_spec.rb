@@ -61,7 +61,7 @@ RSpec.describe Notifications::SendBookingReminder do
       end
     end
 
-    context 'idempotency: reminder already sent' do
+    context 'when reminder has already been sent' do
       before { booking.update(booking_reminder_sent_at: 1.hour.ago) }
 
       it 'returns success without sending notifications' do
@@ -79,7 +79,7 @@ RSpec.describe Notifications::SendBookingReminder do
       end
     end
 
-    context 'idempotency: called twice' do
+    context 'when called twice' do
       it 'does not send duplicate notifications on second call' do
         # First call
         expect do

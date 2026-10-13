@@ -14,7 +14,7 @@ class ApplicationMailer < ActionMailer::Base
     return 'Duration not specified' unless start_time && end_time
 
     duration = ((end_time - start_time) / 1.hour).round(1)
-    if duration == 1.0
+    if (duration - 1.0).abs < Float::EPSILON
       '1 hour'
     elsif duration < 1.0
       minutes = ((end_time - start_time) / 1.minute).round

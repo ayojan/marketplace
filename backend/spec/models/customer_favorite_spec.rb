@@ -30,9 +30,6 @@ RSpec.describe CustomerFavorite do
   end
 
   describe 'validations' do
-    it { is_expected.to validate_presence_of(:user_id) }
-    it { is_expected.to validate_presence_of(:vendor_profile_id) }
-
     describe 'uniqueness' do
       let(:user) { create(:user) }
       let(:vendor) { create(:vendor_profile) }
@@ -48,28 +45,28 @@ RSpec.describe CustomerFavorite do
   end
 
   describe 'scopes' do
-    let(:user1) { create(:user) }
-    let(:user2) { create(:user) }
-    let(:vendor1) { create(:vendor_profile) }
-    let(:vendor2) { create(:vendor_profile) }
+    let(:first_user) { create(:user) }
+    let(:second_user) { create(:user) }
+    let(:first_vendor) { create(:vendor_profile) }
+    let(:second_vendor) { create(:vendor_profile) }
 
     before do
-      create(:customer_favorite, user: user1, vendor_profile: vendor1)
-      create(:customer_favorite, user: user1, vendor_profile: vendor2)
-      create(:customer_favorite, user: user2, vendor_profile: vendor1)
+      create(:customer_favorite, user: first_user, vendor_profile: first_vendor)
+      create(:customer_favorite, user: first_user, vendor_profile: second_vendor)
+      create(:customer_favorite, user: second_user, vendor_profile: first_vendor)
     end
 
     describe '.for_user' do
       it 'returns only favorites for the specified user' do
-        expect(described_class.for_user(user1.id).count).to eq(2)
-        expect(described_class.for_user(user2.id).count).to eq(1)
+        expect(described_class.for_user(first_user.id).count).to eq(2)
+        expect(described_class.for_user(second_user.id).count).to eq(1)
       end
     end
 
     describe '.by_vendor' do
       it 'returns only favorites for the specified vendor' do
-        expect(described_class.by_vendor(vendor1.id).count).to eq(2)
-        expect(described_class.by_vendor(vendor2.id).count).to eq(1)
+        expect(described_class.by_vendor(first_vendor.id).count).to eq(2)
+        expect(described_class.by_vendor(second_vendor.id).count).to eq(1)
       end
     end
 

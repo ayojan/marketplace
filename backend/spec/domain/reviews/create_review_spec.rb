@@ -46,17 +46,19 @@ RSpec.describe Reviews::CreateReview do
         result = described_class.call(**valid_params)
         review = result[:review]
 
-        expect(review.customer_id).to eq(customer.id)
-        expect(review.booking_id).to eq(booking.id)
-        expect(review.service_id).to eq(service.id)
-        expect(review.vendor_profile_id).to eq(vendor_profile.id)
-        expect(review.rating).to eq(4)
-        expect(review.quality_rating).to eq(4)
-        expect(review.communication_rating).to eq(5)
-        expect(review.value_rating).to eq(3)
-        expect(review.punctuality_rating).to eq(5)
-        expect(review.comment).to eq('Great service!')
-        expect(review.status).to eq('published')
+        expect(review).to have_attributes(
+          customer_id: customer.id,
+          booking_id: booking.id,
+          service_id: service.id,
+          vendor_profile_id: vendor_profile.id,
+          rating: 4,
+          quality_rating: 4,
+          communication_rating: 5,
+          value_rating: 3,
+          punctuality_rating: 5,
+          comment: 'Great service!',
+          status: 'published'
+        )
       end
     end
 
@@ -78,7 +80,7 @@ RSpec.describe Reviews::CreateReview do
       end
     end
 
-    context 'explicit orchestration (side effects)' do
+    context 'with explicit orchestration (side effects)' do
       it 'updates vendor profile rating stats' do
         allow(vendor_profile).to receive(:update_rating_stats!)
 
@@ -142,7 +144,7 @@ RSpec.describe Reviews::CreateReview do
       end
 
       it 'continues if photo attachment fails' do
-        allow_any_instance_of(ActiveStorage::Attached::Many).to receive(:attach).and_raise(StandardError, 'Photo error')
+        allow_any_instance_of(ActiveStorage::Attached::Many).to receive(:attach).and_raise(StandardError, 'Photo error') # rubocop:disable RSpec/AnyInstance
 
         expect do
           photo = fixture_file_upload('test_image.jpg', 'image/jpeg')

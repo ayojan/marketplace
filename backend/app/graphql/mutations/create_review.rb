@@ -14,16 +14,20 @@ class Mutations::CreateReview < Mutations::BaseMutation
   def resolve(review_input:)
     user = context[:current_user]
     return { review: nil, errors: ['Authentication required'] } unless user
-
     return { review: nil, errors: ['Only customers can submit reviews'] } unless user.customer?
 
     booking = Booking.find_by(id: review_input.booking_id)
     return { review: nil, errors: ['Booking not found'] } unless booking
-
     return { review: nil, errors: ['You can only review your own bookings'] } unless booking.customer == user
 
-    # Use explicit orchestration service to create review with all side effects
-    result = Reviews::CreateReview.call(
+    result = Reviews::CreateReview.call(**build_create_params(user, booking, review_input))
+    format_result(result)
+  end
+
+  private
+
+  def build_create_params(user, booking, review_input)
+    {
       customer: user,
       booking: booking,
       service: booking.service,
@@ -35,8 +39,10 @@ class Mutations::CreateReview < Mutations::BaseMutation
       punctuality_rating: review_input.punctuality_rating,
       comment: review_input.comment,
       status: review_input.status || 'published'
-    )
+    }
+  end
 
+  def format_result(result)
     if result[:success]
       { review: result[:review], errors: [] }
     else

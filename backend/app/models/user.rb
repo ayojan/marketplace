@@ -116,7 +116,7 @@ class User < ApplicationRecord
   def full_name
     @full_name ||= "#{first_name} #{last_name}".strip
   end
-  alias_method :name, :full_name
+  alias name full_name
 
   # Returns a display name for UI or logs
   def display_name

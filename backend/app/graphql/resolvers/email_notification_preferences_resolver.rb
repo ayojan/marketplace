@@ -2,6 +2,8 @@
 
 module Resolvers
   class EmailNotificationPreferencesResolver < GraphQL::Schema::Resolver
+    description 'Resolver for the current user email notification preferences'
+
     type Types::EmailNotificationPreferenceType, null: true
 
     def resolve

@@ -6,10 +6,37 @@ en:
           attributes:
             booking_id:
               already_reviewed: 'has already been reviewed'
+        customer_favorite:
+          attributes:
+            user_id:
+              already_favorited: 'can only favorite a vendor once'
+        in_app_notification:
+          attributes:
+            notification_type:
+              invalid_type: '%{value} is not a valid notification type'
+        review_vote:
+          attributes:
+            review_id:
+              already_voted: 'You have already voted on this review'
         service_category:
           attributes:
             slug:
               invalid_format: 'only allows lowercase letters, numbers, hyphens, and underscores'
+  notification_mailer:
+    booking_created_email:
+      subject: 'Booking Request Received'
+    booking_accepted_email:
+      subject: 'Booking Confirmed'
+    booking_rejected_email:
+      subject: 'Booking Update'
+    booking_cancelled_email:
+      subject: 'Booking Cancelled'
+    booking_reminder_email:
+      subject: 'Upcoming Booking Reminder'
+    new_message_email:
+      subject: 'New Message Received'
+    review_received_email:
+      subject: 'New Review Received'
   admin:
     users:
       confirmed: 'User confirmed successfully!'

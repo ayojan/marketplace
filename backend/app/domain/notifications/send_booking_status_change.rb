@@ -26,10 +26,11 @@ module Notifications
 
     def send_confirmation_notification
       # Notify customer that vendor accepted their booking
+      date_str = booking.event_date.strftime('%B %d, %Y')
       SendNotification.call(
         user: booking.customer,
         title: 'Booking Accepted',
-        message: "#{booking.vendor_profile.display_name} has accepted your booking request for #{booking.event_date.strftime('%B %d, %Y')}.",
+        message: "#{booking.vendor_profile.display_name} has accepted your booking request for #{date_str}.",
         notification_type: 'booking_accepted',
         related_type: 'Booking',
         related_id: booking.id
@@ -41,28 +42,35 @@ module Notifications
     end
 
     def send_cancellation_notification
-      # Notify both parties about cancellation
-      SendNotification.call(
-        user: booking.customer,
-        title: 'Booking Cancelled',
-        message: "Your booking with #{booking.vendor_profile.display_name} for #{booking.event_date.strftime('%B %d, %Y')} has been cancelled.",
-        notification_type: 'booking_cancelled',
-        related_type: 'Booking',
-        related_id: booking.id
-      )
-
-      SendNotification.call(
-        user: booking.vendor_profile.user,
-        title: 'Booking Cancelled',
-        message: "The booking from #{booking.customer.full_name} for #{booking.event_date.strftime('%B %d, %Y')} has been cancelled.",
-        notification_type: 'booking_cancelled',
-        related_type: 'Booking',
-        related_id: booking.id
-      )
+      date_str = booking.event_date.strftime('%B %d, %Y')
+      notify_cancellation_customer(date_str)
+      notify_cancellation_vendor(date_str)
       { success: true }
     rescue StandardError => e
       Rails.logger.error("Failed to send cancellation notification: #{e.message}")
       { success: false, error: e.message }
+    end
+
+    def notify_cancellation_customer(date_str)
+      SendNotification.call(
+        user: booking.customer,
+        title: 'Booking Cancelled',
+        message: "Your booking with #{booking.vendor_profile.display_name} for #{date_str} has been cancelled.",
+        notification_type: 'booking_cancelled',
+        related_type: 'Booking',
+        related_id: booking.id
+      )
+    end
+
+    def notify_cancellation_vendor(date_str)
+      SendNotification.call(
+        user: booking.vendor_profile.user,
+        title: 'Booking Cancelled',
+        message: "The booking from #{booking.customer.full_name} for #{date_str} has been cancelled.",
+        notification_type: 'booking_cancelled',
+        related_type: 'Booking',
+        related_id: booking.id
+      )
     end
   end
 end

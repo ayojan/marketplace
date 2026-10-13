@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-ActiveAdmin.register User do # rubocop:disable Metrics/BlockLength
+ActiveAdmin.register User do
   menu priority: 2
   permit_params :email, :password, :password_confirmation, :first_name, :last_name, :role, :confirmed_at
 
@@ -48,7 +48,7 @@ ActiveAdmin.register User do # rubocop:disable Metrics/BlockLength
     f.actions
   end
 
-  show do # rubocop:disable Metrics/BlockLength
+  show do
     attributes_table do
       row :id
       row :email

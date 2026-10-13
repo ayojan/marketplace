@@ -40,7 +40,7 @@ RSpec.describe InAppNotification do
     it 'validates required fields' do
       notification = described_class.new
       expect(notification).not_to be_valid
-      expect(notification.errors[:user_id]).to be_present
+      expect(notification.errors[:user]).to be_present
       expect(notification.errors[:title]).to be_present
       expect(notification.errors[:message]).to be_present
       expect(notification.errors[:notification_type]).to be_present

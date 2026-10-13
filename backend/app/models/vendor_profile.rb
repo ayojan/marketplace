@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength, Rails/UniqueValidationWithoutIndex
+# rubocop:disable Metrics/ClassLength
 
 # == Schema Information
 #
@@ -138,8 +138,8 @@ class VendorProfile < ApplicationRecord
 
   def service_categories_list
     if @service_categories.present?
-      @service_categories.split(',').map(&:strip).reject(&:blank?)
-    elsif services.loaded? && services.all? { |s| s.association(:categories).loaded? }
+      @service_categories.split(',').map(&:strip).compact_blank
+    elsif loaded_categories?
       services.flat_map(&:categories).map(&:name).uniq
     else
       services.joins(:categories).distinct.pluck('categories.name')
@@ -183,8 +183,7 @@ class VendorProfile < ApplicationRecord
 
   def featured_portfolio_items
     if portfolio_items.loaded?
-      items = portfolio_items.select(&:is_featured).sort_by { |i| [i.display_order || 0, i.created_at || Time.current] }.first(6)
-      items.presence || portfolio_items.sort_by { |i| [i.display_order || 0, i.created_at || Time.current] }.first(6)
+      loaded_featured_portfolio_items
     else
       items = portfolio_items.featured.ordered.limit(6)
       items.presence || portfolio_items.ordered.limit(6)
@@ -262,6 +261,19 @@ class VendorProfile < ApplicationRecord
 
   private
 
+  def loaded_categories?
+    services.loaded? && services.all? { |s| s.association(:categories).loaded? }
+  end
+
+  def loaded_featured_portfolio_items
+    items = sort_portfolio_items(portfolio_items.select(&:is_featured)).first(6)
+    items.presence || sort_portfolio_items(portfolio_items).first(6)
+  end
+
+  def sort_portfolio_items(items)
+    items.sort_by { |i| [i.display_order || 0, i.created_at || Time.current] }
+  end
+
   def rating_stats
     @rating_stats ||= VendorProfiles::CalculateRatingStats.call(vendor_profile: self)
   end
@@ -291,4 +303,4 @@ class VendorProfile < ApplicationRecord
     errors.add(:website, 'is not a valid URL') unless valid_scheme && valid_domain
   end
 end
-# rubocop:enable Metrics/ClassLength, Rails/UniqueValidationWithoutIndex
+# rubocop:enable Metrics/ClassLength

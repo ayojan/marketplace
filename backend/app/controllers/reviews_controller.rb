@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# rubocop:disable Metrics/ClassLength
 class ReviewsController < ApiController
   before_action :authenticate_user!, except: %i[index service_reviews vendor_reviews]
   before_action :set_review, only: %i[update destroy]
@@ -38,19 +39,7 @@ class ReviewsController < ApiController
       return render json: { error: 'You can only review your own bookings' }, status: :forbidden
     end
 
-    result = Reviews::CreateReview.call(
-      customer: current_user,
-      booking: @booking,
-      service: @booking.service,
-      vendor_profile: @booking.vendor_profile,
-      rating: review_params[:rating].to_i,
-      quality_rating: review_params[:quality_rating]&.to_i,
-      communication_rating: review_params[:communication_rating]&.to_i,
-      value_rating: review_params[:value_rating]&.to_i,
-      punctuality_rating: review_params[:punctuality_rating]&.to_i,
-      comment: review_params[:comment],
-      photos: Array.wrap(params[:photos]).compact
-    )
+    result = Reviews::CreateReview.call(**build_create_review_params(@booking))
 
     if result[:success]
       render json: { message: 'Review submitted successfully', review: review_json(result[:review]) }, status: :created
@@ -83,7 +72,9 @@ class ReviewsController < ApiController
 
     if existing_vote
       existing_vote.destroy
+      # rubocop:disable Rails/SkipsModelValidations
       Review.where(id: @review.id).where('helpful_votes > 0').update_all('helpful_votes = helpful_votes - 1')
+      # rubocop:enable Rails/SkipsModelValidations
       @review.reload
       render json: { message: 'Vote removed', helpful_votes: @review.helpful_votes, voted: false }
     else
@@ -100,9 +91,7 @@ class ReviewsController < ApiController
   def respond
     @review = Review.find(params[:id])
     response_text = params[:vendor_response] || params.dig(:review, :vendor_response)
-    if response_text.blank?
-      return render json: { error: 'Response text is required' }, status: :bad_request
-    end
+    return render json: { error: 'Response text is required' }, status: :bad_request if response_text.blank?
 
     result = Reviews::RespondToReview.call(
       review: @review,
@@ -182,4 +171,21 @@ class ReviewsController < ApiController
   def vendor_json(vendor)
     { id: vendor.id, business_name: vendor.business_name }
   end
+
+  def build_create_review_params(booking)
+    {
+      customer: current_user,
+      booking: booking,
+      service: booking.service,
+      vendor_profile: booking.vendor_profile,
+      rating: review_params[:rating].to_i,
+      quality_rating: review_params[:quality_rating]&.to_i,
+      communication_rating: review_params[:communication_rating]&.to_i,
+      value_rating: review_params[:value_rating]&.to_i,
+      punctuality_rating: review_params[:punctuality_rating]&.to_i,
+      comment: review_params[:comment],
+      photos: Array.wrap(params[:photos]).compact
+    }
+  end
 end
+# rubocop:enable Metrics/ClassLength

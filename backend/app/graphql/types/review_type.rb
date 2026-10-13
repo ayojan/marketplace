@@ -29,7 +29,6 @@ class Types::ReviewType < Types::BaseObject
   field :booking, Types::NodeType, null: false, description: 'Booking that was reviewed'
   field :customer, Types::UserType, null: false, description: 'Customer who submitted the review'
   field :service, Types::ServiceType, null: false, description: 'Service that the review targets'
-  # rubocop:disable GraphQL/ExtractType
   field :vendor_profile,
         Types::VendorProfileType,
         null: false,

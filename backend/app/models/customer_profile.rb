@@ -34,6 +34,7 @@ class CustomerProfile < ApplicationRecord
   # has_many :reviews, through: :user
 
   # Enums
+  # rubocop:disable Naming/VariableNumber
   enum :budget_range, {
     under_500: 'under_500',
     between_500_1000: '500_1000',
@@ -42,6 +43,7 @@ class CustomerProfile < ApplicationRecord
     over_5000: 'over_5000',
     custom: 'custom'
   }, prefix: :budget
+  # rubocop:enable Naming/VariableNumber
 
   # Validations
   validates :user_id, uniqueness: true
@@ -95,9 +97,10 @@ class CustomerProfile < ApplicationRecord
     company_name.presence || user.full_name
   end
 
-  def is_frequent_customer?
+  def frequent_customer?
     total_bookings >= 5
   end
+  alias is_frequent_customer? frequent_customer?
 
   def customer_tier
     case total_bookings
@@ -116,9 +119,8 @@ class CustomerProfile < ApplicationRecord
   def self.search_by_name_or_location(query)
     return all if query.blank?
 
-    joins(:user).where(
-      'users.first_name ILIKE ? OR users.last_name ILIKE ? OR customer_profiles.company_name ILIKE ? OR customer_profiles.location ILIKE ?',
-      "%#{query}%", "%#{query}%", "%#{query}%", "%#{query}%"
-    )
+    sql = 'users.first_name ILIKE :q OR users.last_name ILIKE :q OR ' \
+          'customer_profiles.company_name ILIKE :q OR customer_profiles.location ILIKE :q'
+    joins(:user).where(sql, q: "%#{query}%")
   end
 end

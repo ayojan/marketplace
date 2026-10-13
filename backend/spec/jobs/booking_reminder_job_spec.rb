@@ -86,7 +86,7 @@ RSpec.describe BookingReminderJob do
       end
     end
 
-    context 'idempotency: job runs twice' do
+    context 'when job runs twice' do
       before { booking }
 
       it 'does not send duplicate reminders on second run' do
@@ -149,7 +149,7 @@ RSpec.describe BookingReminderJob do
       end
     end
 
-    context 'booking outside time window' do
+    context 'with booking outside time window' do
       let(:far_future_booking) do
         create(:booking,
                vendor_profile: vendor_profile,
@@ -171,7 +171,7 @@ RSpec.describe BookingReminderJob do
       end
     end
 
-    context 'booking with cancelled status' do
+    context 'with cancelled booking' do
       let(:cancelled_booking) do
         create(:booking,
                vendor_profile: vendor_profile,
@@ -193,7 +193,7 @@ RSpec.describe BookingReminderJob do
       end
     end
 
-    context 'logging' do
+    context 'with logging' do
       before { booking }
 
       it 'logs successful completion' do

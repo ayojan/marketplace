@@ -2,10 +2,12 @@
 
 module Resolvers
   class CustomerFavoritesResolver < GraphQL::Schema::Resolver
+    description 'Resolver for customer favorite vendor profiles'
+
     type [Types::VendorProfileType], null: false
 
-    argument :page, Int, required: false, default_value: 1
-    argument :per_page, Int, required: false, default_value: 12
+    argument :page, Int, required: false, default_value: 1, description: 'Page number for pagination'
+    argument :per_page, Int, required: false, default_value: 12, description: 'Items per page'
     argument :sort, String, required: false, default_value: 'recent', description: 'Sort by: recent, rating, or reviews'
 
     def resolve(sort: 'recent', page: 1, per_page: 12)

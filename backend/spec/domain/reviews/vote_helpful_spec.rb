@@ -44,7 +44,7 @@ RSpec.describe Reviews::VoteHelpful do
       end
     end
 
-    context 'multiple votes' do
+    context 'with multiple votes' do
       it 'allows multiple people to vote on the same review' do
         voter1 = create(:user, :customer)
         voter2 = create(:user, :customer)

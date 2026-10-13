@@ -26,7 +26,7 @@ class ReviewVote < ApplicationRecord
   belongs_to :review
   belongs_to :voter, class_name: 'User'
 
-  validates :review_id, uniqueness: { scope: :voter_id, message: 'You have already voted on this review' }
+  validates :review_id, uniqueness: { scope: :voter_id, message: :already_voted }
 
   # Prevent review author from voting
   validate :voter_cannot_be_review_author
