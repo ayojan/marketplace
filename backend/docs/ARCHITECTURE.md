@@ -1,191 +1,88 @@
 # Backend Architecture
 
-The Ayoj Backend is built as a **Modular Monolith** using Ruby on Rails and the `packwerk` gem to enforce boundary separation.
+The Ayoj backend is a Ruby on Rails API application. It exposes REST endpoints alongside a GraphQL endpoint, owns the application’s business rules and persistence, and uses Sidekiq-backed background processing for work that should not block HTTP requests.
 
 ## System Overview
 
 ```mermaid
-flowchart TD
-    %% Layer Styles
-    classDef client fill:#f5f5f5,stroke:#333,stroke-width:2px;
-    classDef interface fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
-    classDef domain fill:#fff3e0,stroke:#e65100,stroke-width:2px;
-    classDef infra fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
-    classDef db fill:#ffebee,stroke:#c62828,stroke-width:2px;
+flowchart LR
+    classDef edge fill:#f8fafc,stroke:#475569,stroke-width:1.5px,color:#0f172a;
+    classDef api fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e;
+    classDef domain fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+    classDef async fill:#f3e8ff,stroke:#7e22ce,stroke-width:1.5px,color:#3b0764;
+    classDef store fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
 
-    Client([Frontend / Mobile Clients]):::client
-
-    subgraph Interfaces ["API Layer"]
-        direction LR
-        GraphQL[GraphQL Endpoint]:::interface
-        REST[REST Endpoints]:::interface
-        Auth[JWT / Auth]:::interface
-    end
-
-    subgraph Domains ["Modular Monolith (Packwerk)"]
+    Client[Next.js frontend or API client]:::edge -->|HTTPS + JWT| Edge[Nginx reverse proxy]:::edge
+    Edge --> REST[REST controllers<br/>/auth, /bookings, /services, ...]:::api
+    Edge --> GQL[GraphQL controller<br/>POST /graphql]:::api
+    Edge --> Health[Health checks<br/>/up, /health]:::api
+    subgraph Rails[Rails application]
         direction TB
-        UserMgmt[User Management]:::domain
-        ServiceCat[Service Catalog]:::domain
-        BookingMgmt[Booking Management]:::domain
-        Reviews[Reviews]:::domain
-        
-        %% Internal Dependencies
-        BookingMgmt -.-> UserMgmt
-        BookingMgmt -.-> ServiceCat
-        ServiceCat -.-> Reviews
+        REST --> Auth[Authentication and authorization<br/>Devise, JWT, Pundit]:::api
+        GQL --> Auth
+        Auth --> Domain[Domain services, forms, query objects,<br/>policies, presenters, and models]:::domain
+        Domain --> Jobs[Active Job / Sidekiq jobs]:::async
     end
-
-    subgraph Infrastructure ["Infrastructure & Storage"]
-        direction LR
-        Jobs[[Sidekiq Workers]]:::infra
-        Storage([ActiveStorage / S3]):::infra
-        Redis[(Redis)]:::db
-        DB[(PostgreSQL)]:::db
-    end
-
-    %% External Flow
-    Client ==>|Queries/Mutations| GraphQL
-    Client ==>|Uploads| REST
-
-    %% API to Domain
-    GraphQL --> Auth
-    REST --> Auth
-    
-    GraphQL ==> Domains
-    REST ==> Domains
-
-    %% Domain to Infrastructure
-    Domains ==> DB
-    Domains --> Storage
-    Domains --> Jobs
-    
-    %% Async Flow
-    Jobs --> Redis
+    Domain <--> DB[(PostgreSQL)]:::store
+    Domain --> Storage[Active Storage]:::store
+    Jobs --> Redis[(Redis queues)]:::store
+    Jobs --> Mail[SMTP email delivery]:::edge
+    Jobs --> Storage
 ```
 
-## Component Breakdown
+## HTTP Interfaces
 
-### 1. API Layer
-- **GraphQL (`/graphql`)**: The primary interface for the frontend. Uses `graphql-ruby`.
-- **REST (`/api/v1`)**: Used for specialized operations like file uploads, analytics, and health checks.
+| Interface | Current entry point | Use |
+|---|---|---|
+| REST | Resource routes at the Rails root, such as `/auth`, `/services`, `/vendors`, `/bookings`, and `/portfolio_items` | Primary browser-facing CRUD and workflow operations, including uploads |
+| GraphQL | `POST /graphql` | Typed queries and mutations implemented with `graphql-ruby` |
+| Health | `/up`, `/health` | Deployment and service health checks |
+| Development tools | `/graphiql`, `/sidekiq` | Available only in development when their dependencies are loaded |
 
-### 2. Packs (Business Logic)
-Each pack is a self-contained module with its own models, services, and tests.
-- **`user_management`**: Handles authentication, user profiles, and roles (Admin, Vendor, Customer).
-- **`service_catalog`**: Manages photographer services, categories, and portfolios.
-- **`booking_management`**: Core logic for availability slots, booking requests, and status transitions.
-- **`reviews`**: Handles customer feedback and rating distribution.
+There is no Rails `/api/v1` namespace. When deployed behind the shared Nginx configuration, the public `/api/*` prefix is a proxy concern and is stripped before the request reaches Rails.
 
-### 3. Core Services
-- **`JWTService`**: Handles token issuance and verification.
-- **`AuthorizeApiRequest`**: Command pattern service for securing endpoints.
-- **`VendorAnalyticsService`**: Aggregates data for vendor dashboards.
+## Application Layers
 
-### 4. Infrastructure
-- **PostgreSQL**: Primary relational database.
-- **Redis**: Powering Sidekiq for background jobs (image processing, email notifications).
-- **ActiveStorage**: Handles portfolio image uploads and processing via `libvips`.
-
-## Enforced Boundaries
-We use `packwerk` to ensure that packs do not have circular dependencies and only access each other's public APIs.
-
----
-
-## Model & Domain Layer Design
-
-### Principle: Lean Models, Rich Domain Services
-
-**Models** focus on **data integrity only**:
-- ✅ Basic validations (presence, format, length)
-- ✅ Database constraints and relationships
-- ✅ Simple query scopes
-- ✅ Read-only helpers
-- ❌ Complex business logic
-- ❌ External calls
-- ❌ State machines
-- ❌ Authorization
-
-**Domain Services** handle **business logic**:
-- Workflow orchestration
-- State transitions
-- Dependency injection
-- Testable in isolation (no Rails framework dependency)
-
-**Query Objects** provide **single source of truth** for reusable queries:
-- `BookingConflictsQuery` - Used in model scopes, domain services, and controllers
-- `VendorAvailabilityQuery` - Prevents query duplication
-- One change = works everywhere
-
-### Example: Booking Lifecycle
-
-```ruby
-# Model: Lean
-class Booking < ApplicationRecord
-  validates :event_date, presence: true
-  validate :event_date_in_future, on: :create
-
-  scope :cancellable, -> { where(status: %i[pending accepted]).where('event_date > ?', 24.hours.from_now) }
-
-  def can_be_cancelled?
-    cancellable?  # Uses scope, not inline logic
-  end
-end
-
-# Domain Service: Business Rules
-class Bookings::Validate
-  def call
-    errors = []
-    errors << validate_vendor_availability  # Uses query object
-    errors << validate_no_conflicts          # Uses query object
-  end
-end
-
-# State Machine: Single Source of Truth
-class Bookings::StateMachine
-  VALID_TRANSITIONS = {
-    pending: %i[accepted declined],
-    accepted: %i[completed cancelled],
-    # ...
-  }
-end
-
-# Controller: Thin
-def create
-  booking = @user.bookings.build(booking_params)
-  errors = Bookings::Validate.call(booking: booking)
-
-  if errors.empty?
-    booking.save && render_success
-  else
-    render_errors(errors)
-  end
-end
+```mermaid
+flowchart TD
+    classDef layer fill:#ffffff,stroke:#64748b,stroke-width:1.25px,color:#0f172a;
+    classDef core fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+    Request[HTTP or GraphQL request]:::layer --> Interface[Controllers, GraphQL resolvers and mutations]:::layer
+    Interface --> Guard[Authentication and Pundit authorization]:::layer
+    Guard --> UseCases[Domain services and forms]:::core
+    UseCases --> Read[Query objects]:::core
+    UseCases --> Write[Active Record models and transactions]:::core
+    UseCases --> Present[Presenters and serializers]:::layer
+    Write --> Database[(PostgreSQL)]:::layer
+    UseCases --> Async[Jobs and notifications]:::layer
 ```
 
-### Layers Summary
+| Layer | Key locations | Responsibility |
+|---|---|---|
+| Interface | `app/controllers/`, `app/graphql/` | Request validation, response shaping, REST and GraphQL entry points |
+| Access control | `app/controllers/concerns/`, `app/policies/`, JWT services | Authentication and authorization |
+| Business workflows | `app/domain/`, `app/services/`, `app/forms/` | Booking, availability, notification, review, favorites, and vendor-profile rules |
+| Read and presentation | `app/models/queries/`, `app/presenters/` | Reusable read models and response formatting |
+| Persistence | `app/models/`, `db/` | Active Record associations, validations, and database schema |
+| Async and integrations | `app/jobs/`, `app/mailers/`, Active Storage | Image processing, notifications, mail delivery, and media attachment handling |
 
-| Layer | Responsibility | Example |
-|-------|---|---|
-| **Model** | Data + simple queries | `scope :cancellable` |
-| **Query Object** | Complex queries (reusable) | `BookingConflictsQuery` |
-| **Domain Service** | Business logic orchestration | `Bookings::Validate`, `Bookings::StateMachine` |
-| **Controller Concern** | HTTP request/response only | `render_errors`, `authenticate_user!` |
+The codebase is organized as a modular Rails application through these directories. It does not currently include Packwerk configuration, so the documentation does not claim Packwerk-enforced package boundaries.
 
-### File Structure
+## Background Work and Storage
+
+- Rails uses Sidekiq as its Active Job adapter. Redis is the queue backend.
+- Background jobs include image processing, notification delivery, booking reminders, and vendor-stat recalculation.
+- PostgreSQL is the primary transactional data store.
+- Active Storage owns attached service, portfolio, and review media. Its storage service is environment-configured.
+- Mailers deliver transactional and notification email through the configured SMTP provider.
+
+## Local Development
+
+```bash
+cd backend
+bundle install
+rails db:prepare
+rails s -p 3001
 ```
-app/
-├── models/
-│   ├── booking.rb                    # ~35 LOC (lean)
-│   └── queries/
-│       ├── booking_conflicts_query.rb
-│       └── vendor_availability_query.rb
-├── domain/
-│   └── bookings/
-│       ├── validate.rb               # Business validation
-│       ├── state_machine.rb          # State rules
-│       ├── authorize_access.rb       # Authorization
-│       └── send_message.rb
-└── controllers/concerns/
-    └── booking_management/
-        └── booking_actions.rb        # HTTP only
-```
+
+Run PostgreSQL and Redis with the root `docker-compose.local.yml` configuration when developing the applications on the host.
