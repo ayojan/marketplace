@@ -21,6 +21,7 @@ module VendorSerializable
       service_categories: vendor.service_categories_list,
       profile_image_url: primary_image,
       image: primary_image,
+      base_price: calculate_vendor_min_price(vendor),
       featured_portfolio: featured_items.first(3).map { |item| portfolio_item_json(item) }
     }
   end
@@ -59,8 +60,17 @@ module VendorSerializable
       average_rating: vendor.average_rating,
       total_reviews: vendor.total_reviews,
       is_verified: vendor.verified?,
+      base_price: calculate_vendor_min_price(vendor),
       service_categories: vendor.service_categories_list
     }
+  end
+
+  def calculate_vendor_min_price(vendor)
+    if vendor.services.loaded?
+      vendor.services.filter_map(&:base_price).min
+    else
+      vendor.services.minimum(:base_price)
+    end
   end
 
   def vendor_meta_attributes(vendor, _primary_image)

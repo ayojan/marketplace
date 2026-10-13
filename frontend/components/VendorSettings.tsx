@@ -46,17 +46,17 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
 
   // Form states
   const [formData, setFormData] = useState({
-    business_name: initialVendor?.business_name || user?.business_name || 'The Wedding Narratives',
-    owner_name: initialVendor?.owner_name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'Aarav Sharma'),
-    email: initialVendor?.email || user?.email || 'contact@weddingnarratives.in',
-    phone: initialVendor?.phone || '+91 98765 43210',
+    business_name: initialVendor?.business_name || user?.business_name || '',
+    owner_name: initialVendor?.owner_name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : ''),
+    email: initialVendor?.email || user?.email || '',
+    phone: initialVendor?.phone || '',
     location: initialVendor?.location || 'Delhi NCR',
-    website: 'https://weddingnarratives.in',
-    instagram_handle: 'weddingnarratives',
-    years_experience: 7,
-    description: 'Premier wedding storytelling studio delivering timeless cinematic films and bespoke luxury candid photography across India.',
-    business_license: '07AAAAA0000A1Z5',
-    cancellation_policy: 'Flexible',
+    website: initialVendor?.website || '',
+    instagram_handle: initialVendor?.instagram_handle || '',
+    years_experience: initialVendor?.years_experience || 0,
+    description: initialVendor?.description || '',
+    business_license: initialVendor?.business_license || '',
+    cancellation_policy: initialVendor?.cancellation_policy || 'Flexible',
     instant_booking: true,
     min_advance_days: '2',
     advance_deposit_percent: '30',
@@ -64,8 +64,20 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
     notify_sms_bookings: true,
     notify_messages: true,
     notify_marketing: false,
-    verification_status: 'verified' as 'unverified' | 'pending_verification' | 'verified' | 'rejected'
+    verification_status: (initialVendor?.verification_status || 'unverified') as 'unverified' | 'pending_verification' | 'verified' | 'rejected'
   });
+
+  // Keep owner name and email in sync with authenticated user
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        owner_name: prev.owner_name || `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+        email: prev.email || user.email || '',
+        business_name: prev.business_name || user.business_name || ''
+      }));
+    }
+  }, [user]);
 
   // Load existing profile from API
   useEffect(() => {

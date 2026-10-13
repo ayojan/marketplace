@@ -29,7 +29,6 @@ import Header from '@/components/Header';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { MOCK_VENDORS } from '@/lib/mockVendorData';
 
 interface BookingFlowProps {
   params: {
@@ -119,27 +118,8 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
         }
       }
 
-      // Catalog / mock fallback when service ID is non-numeric (e.g. s1, s2) or not in database
-      const allMockServices = MOCK_VENDORS.flatMap((v) =>
-        v.services.map((s) => ({
-          id: s.id,
-          name: s.name,
-          description: s.description,
-          base_price: s.base_price,
-          formatted_price: s.formatted_price,
-          category: { id: 1, name: s.category },
-          vendor: {
-            id: v.id,
-            business_name: v.business_name,
-            location: v.location,
-          },
-        }))
-      );
-
-      const matched =
-        allMockServices.find((s) => String(s.id).toLowerCase() === String(params.serviceId).toLowerCase()) ||
-        allMockServices[0];
-      setService(matched);
+      // If service is not found in database, clear service and stop loading
+      setService(null);
       setLoading(false);
     };
 
@@ -271,12 +251,9 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
     try {
       const numPrice = Number(service.base_price) || 0;
       const combinedDateTime = bookingDate && startTime ? `${bookingDate}T${startTime}:00` : bookingDate;
-      const isNumeric = /^\d+$/.test(String(service.id));
-      const effectiveServiceId = isNumeric ? service.id : 15; // Map mock services to active demo service
-
       const bookingData = {
         booking: {
-          service_id: effectiveServiceId,
+          service_id: service.id,
           event_date: combinedDateTime,
           event_location: location,
           requirements: requirements.trim() || undefined,
@@ -318,6 +295,29 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
       <div className="min-h-screen bg-[#FAF7F2] flex flex-col items-center justify-center p-6 font-sans">
         <div className="size-12 rounded-full border-2 border-[#9E5338] border-t-transparent animate-spin mb-4" />
         <p className="text-xs font-semibold uppercase tracking-wider text-[#9E5338]">Loading booking details...</p>
+      </div>
+    );
+  }
+
+  if (!service) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] text-[#1C1B19] font-sans">
+        <Header />
+        <div className="max-w-xl mx-auto px-6 py-20 text-center">
+          <div className="size-16 rounded-full bg-[#F3EADF] text-[#9E5338] mx-auto flex items-center justify-center mb-6">
+            <HelpCircle className="size-8" />
+          </div>
+          <h2 className="text-2xl font-serif text-[#221F1C] mb-3">Service Not Found</h2>
+          <p className="text-sm text-[#6B6560] mb-6">
+            The requested service or vendor could not be located in our verified database. It may have been updated or removed.
+          </p>
+          <button
+            onClick={() => router.push('/marketplace')}
+            className="px-6 py-2.5 bg-[#9E5338] text-white rounded-lg text-sm font-semibold hover:bg-[#85432B] transition-colors shadow-sm"
+          >
+            Explore Verified Vendors
+          </button>
+        </div>
       </div>
     );
   }
