@@ -59,17 +59,20 @@ class VendorAnalyticsService
   end
 
   def recent_activity
-    # Combined recent bookings and reviews
-    bookings = @vendor_profile.bookings.order(created_at: :desc).limit(5).map do |b|
-      { type: 'booking', id: b.id, customer: b.customer.full_name, date: b.event_date, status: b.status,
+    (recent_bookings + recent_reviews).sort_by { |a| a[:date] || a[:created_at] }.last(10).reverse
+  end
+
+  def recent_bookings
+    @vendor_profile.bookings.includes(:customer).order(created_at: :desc).limit(5).map do |b|
+      { type: 'booking', id: b.id, customer: b.customer&.full_name, date: b.event_date, status: b.status,
         amount: b.total_amount.to_f }
     end
+  end
 
-    reviews = @vendor_profile.reviews.published.order(created_at: :desc).limit(5).map do |r|
-      { type: 'review', id: r.id, customer: r.customer.full_name, rating: r.rating, date: r.created_at }
+  def recent_reviews
+    @vendor_profile.reviews.published.includes(:customer).order(created_at: :desc).limit(5).map do |r|
+      { type: 'review', id: r.id, customer: r.customer&.full_name, rating: r.rating, date: r.created_at }
     end
-
-    (bookings + reviews).sort_by { |a| a[:date] || a[:created_at] }.last(10).reverse
   end
 
   def calculate_conversion_rate

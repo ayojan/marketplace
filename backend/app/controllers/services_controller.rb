@@ -3,7 +3,7 @@
 # rubocop:disable Metrics/ClassLength
 class ServicesController < ApiController
   before_action :authenticate_user!, except: %i[index show search]
-  before_action :set_service, only: %i[show update destroy]
+  before_action :set_service, only: %i[update destroy]
   before_action :ensure_vendor, only: %i[create update destroy]
   before_action :ensure_service_owner, only: %i[update destroy]
 
@@ -27,6 +27,13 @@ class ServicesController < ApiController
   end
 
   def show
+    @service = Service.includes(
+      :categories,
+      :bookings,
+      service_images: { image_attachment: :blob },
+      vendor_profile: { portfolio_items: { images_attachments: :blob } }
+    ).find(params[:id])
+
     render json: service_response(@service, include_details: true)
   end
 

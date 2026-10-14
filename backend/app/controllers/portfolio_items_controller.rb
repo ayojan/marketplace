@@ -16,7 +16,7 @@ class PortfolioItemsController < ApiController
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     if params[:vendor_profile_id] || params[:vendor_id]
       # Public access to view any vendor's portfolio
-      @portfolio_items = @vendor_profile.portfolio_items.ordered
+      @portfolio_items = @vendor_profile.portfolio_items.with_attached_images.includes(:vendor_profile).ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
       @portfolio_items = @portfolio_items.featured if params[:featured] == 'true'
       categories = @vendor_profile.portfolio_categories
@@ -28,7 +28,8 @@ class PortfolioItemsController < ApiController
 
       return render json: { portfolio_items: [], categories: [] } unless current_user&.vendor_profile
 
-      @portfolio_items = current_user.vendor_profile.portfolio_items.ordered
+      @portfolio_items = current_user.vendor_profile.portfolio_items
+                                     .with_attached_images.includes(:vendor_profile).ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
       categories = current_user.vendor_profile.portfolio_categories
     end

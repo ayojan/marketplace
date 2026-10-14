@@ -54,10 +54,16 @@ class BookingManagement::BookingPresenter
   end
 
   def service_hash
+    cat_names = if service.association(:categories).loaded?
+                  service.categories.map(&:name)
+                else
+                  service.categories.pluck(:name)
+                end
+
     {
       id: service.id,
       name: service.name,
-      category: service.categories.pluck(:name).join(', ')
+      category: cat_names.join(', ')
     }
   end
 
