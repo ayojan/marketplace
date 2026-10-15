@@ -19,6 +19,7 @@
 #  latitude            :decimal(10, 6)
 #  location            :string
 #  longitude           :decimal(10, 6)
+#  metadata            :jsonb
 #  phone               :string
 #  rejection_reason    :text
 #  response_time_hours :decimal(5, 2)
@@ -61,6 +62,12 @@ class VendorProfile < ApplicationRecord
   # Customer favorites
   has_many :customer_favorites, dependent: :destroy
   has_many :favorited_by_users, through: :customer_favorites, source: :user
+
+  # Store accessors for onboarding and operational metadata
+  store_accessor :metadata, :vendor_type, :pincode, :state, :serviceable_locations,
+                 :travel_radius, :travel_charges_type, :travel_charges_amount,
+                 :out_of_area_approval, :min_booking_value, :package_inclusions, :package_exclusions,
+                 :onboarding_completed, :onboarding_step
 
   # Enums
   enum :verification_status, {

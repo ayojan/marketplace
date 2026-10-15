@@ -200,6 +200,51 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google sign-in action
+  const loginWithGoogle = async (googleData) => {
+    dispatch({ type: AUTH_ACTIONS.LOGIN_START });
+    try {
+      const payload = googleData.auth ? googleData : { auth: googleData };
+      const response = await apiService.auth.google(payload);
+      const { user, token, refresh_token, message, needs_mobile_onboarding } = response.data;
+
+      if (token) {
+        tokenService.setToken(token);
+        tokenService.setUser(user);
+        if (refresh_token) {
+          tokenService.setRefreshToken(refresh_token);
+        }
+
+        dispatch({
+          type: AUTH_ACTIONS.LOGIN_SUCCESS,
+          payload: { user, token },
+        });
+      }
+
+      return {
+        success: true,
+        message: message || 'Google sign-in successful',
+        user,
+        needs_mobile_onboarding: Boolean(needs_mobile_onboarding)
+      };
+    } catch (error) {
+      const data = error.response?.data;
+      const errorMessage = data?.error || data?.message || 'Google sign-in failed';
+      dispatch({
+        type: AUTH_ACTIONS.LOGIN_FAILURE,
+        payload: errorMessage,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+        status: error.response?.status,
+        code: data?.code,
+        email: data?.email,
+        details: data?.details
+      };
+    }
+  };
+
   // Logout action
   const logout = async () => {
     try {
@@ -230,6 +275,7 @@ export const AuthProvider = ({ children }) => {
     ...state,
     login,
     register,
+    loginWithGoogle,
     logout,
     clearError,
     updateUser,

@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   scope :auth do
     post :login, to: 'auth#login'
     post :register, to: 'auth#register'
+    post :google, to: 'auth#google'
     delete :logout, to: 'auth#logout'
   end
 
@@ -37,6 +38,8 @@ Rails.application.routes.draw do
   resources :profiles, only: %i[show create update destroy] do
     collection do
       get :me
+      put :me, to: 'profiles#update_me'
+      patch :me, to: 'profiles#update_me'
       get :service_categories
       post :request_verification
     end

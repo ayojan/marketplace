@@ -10,6 +10,8 @@ backend/.bundle
 # Ignore all environment files (except templates).
 /.env*
 !/.env*.erb
+backend/.env*
+!backend/.env*.erb
 .idea
 .agents
 .claude

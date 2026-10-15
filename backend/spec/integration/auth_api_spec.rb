@@ -76,6 +76,58 @@ RSpec.describe 'Authentication API' do
       expect(json_response['user']['confirmed']).to be true
     end
 
+    it 'successfully registers a vendor and assigns unique slug even with short category description' do
+      expect do
+        post '/auth/register', params: {
+          auth: {
+            email: 'vendor_jashnify@example.com',
+            password: 'password123',
+            password_confirmation: 'password123',
+            first_name: 'Test',
+            last_name: 'Vendor',
+            role: 'vendor',
+            vendor_profile_attributes: {
+              business_name: 'Jashnify',
+              location: 'Delhi NCR',
+              description: 'Event Planning & Coordination'
+            }
+          }
+        }, as: :json
+      end.to change(User, :count).by(1).and change(VendorProfile, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      user = User.find_by(email: 'vendor_jashnify@example.com')
+      expect(user.vendor_profile.slug).to eq('jashnify')
+      expect(user.vendor_profile.description.length).to be >= 50
+    end
+
+    it 'maps the selected registration category to the database Category and creates a starter service' do
+      create(:category, name: 'Event Management') unless Category.exists?(name: 'Event Management')
+
+      expect do
+        post '/auth/register', params: {
+          auth: {
+            email: 'vendor_planner@example.com',
+            password: 'password123',
+            password_confirmation: 'password123',
+            first_name: 'Planner',
+            last_name: 'Vendor',
+            role: 'vendor',
+            vendor_profile_attributes: {
+              business_name: 'Delhi Event Planners',
+              location: 'Delhi NCR',
+              category: 'Event Planning & Coordination'
+            }
+          }
+        }, as: :json
+      end.to change(User, :count).by(1).and change(Service, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      user = User.find_by(email: 'vendor_planner@example.com')
+      expect(user.vendor_profile.slug).to eq('delhi-event-planners')
+      expect(user.vendor_profile.service_categories_list).to include('Event Management')
+    end
+
     it 'rejects registration with invalid data' do
       post '/auth/register', params: {
         auth: {

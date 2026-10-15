@@ -4,7 +4,7 @@
 class ProfilesController < ApiController
   before_action :authenticate_user!, except: [:service_categories]
   before_action :set_profile, only: %i[show update destroy]
-  before_action :ensure_vendor_role, only: %i[me create update destroy]
+  before_action :ensure_vendor_role, only: %i[me update_me create update destroy]
   before_action :ensure_own_profile, only: %i[update destroy]
 
   def show
@@ -23,6 +23,22 @@ class ProfilesController < ApiController
     end
   end
 
+  def update_me
+    @profile = current_user.vendor_profile
+    return render json: { error: 'No profile found' }, status: :not_found unless @profile
+
+    apply_metadata(@profile)
+
+    if @profile.update(profile_params)
+      render json: profile_response(@profile)
+    else
+      render json: {
+        error: 'Profile update failed',
+        details: @profile.errors.full_messages
+      }, status: :unprocessable_content
+    end
+  end
+
   def create
     if current_user.vendor_profile.present?
       render json: { error: 'Profile already exists' }, status: :unprocessable_content
@@ -31,6 +47,7 @@ class ProfilesController < ApiController
 
     @profile = VendorProfile.new(profile_params)
     @profile.user = current_user
+    apply_metadata(@profile)
 
     if @profile.save
       render json: profile_response(@profile), status: :created
@@ -43,6 +60,8 @@ class ProfilesController < ApiController
   end
 
   def update
+    apply_metadata(@profile)
+
     if @profile.update(profile_params)
       render json: profile_response(@profile)
     else
@@ -98,10 +117,42 @@ class ProfilesController < ApiController
     render json: { error: 'Access denied. You can only manage your own profile.' }, status: :forbidden
   end
 
+  def apply_metadata(profile)
+    meta_raw = params.dig(:vendor_profile, :metadata)
+    return if meta_raw.blank?
+
+    parsed = parse_metadata_param(meta_raw)
+    profile.metadata = (profile.metadata || {}).merge(parsed.stringify_keys)
+  rescue StandardError => e
+    Rails.logger.warn("Metadata extraction error: #{e.message}")
+  end
+
+  def parse_metadata_param(meta_raw)
+    if meta_raw.is_a?(String)
+      parse_metadata_json(meta_raw)
+    elsif meta_raw.respond_to?(:to_unsafe_h)
+      meta_raw.to_unsafe_h
+    elsif meta_raw.is_a?(Hash)
+      meta_raw
+    else
+      {}
+    end
+  end
+
+  def parse_metadata_json(raw_str)
+    JSON.parse(raw_str)
+  rescue JSON::ParserError
+    {}
+  end
+
   def profile_params
-    params.expect(vendor_profile: [:business_name, :description, :location, :phone, :website,
-                                   :years_experience, :cancellation_policy, :instagram_handle,
-                                   :business_license, { service_categories_list: [] }])
+    return {} if params[:vendor_profile].blank?
+
+    params.require(:vendor_profile).except(:metadata).permit(
+      :business_name, :description, :location, :phone, :website,
+      :years_experience, :cancellation_policy, :instagram_handle,
+      :business_license, service_categories_list: []
+    )
   end
 
   def profile_response(profile)
@@ -120,6 +171,7 @@ class ProfilesController < ApiController
       verification_status: profile.verification_status,
       years_experience: profile.years_experience,
       service_categories: profile.service_categories_list || [],
+      metadata: profile.metadata || {},
       created_at: profile.created_at,
       updated_at: profile.updated_at
     }
