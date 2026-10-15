@@ -27,7 +27,7 @@
 #  index_users_on_reset_password_token  (reset_password_token) UNIQUE
 #
 
-#rubocop: disable Metrics/ClassLength
+# rubocop: disable Metrics/ClassLength
 class User < ApplicationRecord
   # == Devise Modules ==
   # Include default devise modules. Others available are:
@@ -193,4 +193,4 @@ class User < ApplicationRecord
     Rails.logger.error "Failed to enqueue welcome email for user #{id}: #{e.message}"
   end
 end
-#rubocop: enable Metrics/ClassLength
+# rubocop: enable Metrics/ClassLength
