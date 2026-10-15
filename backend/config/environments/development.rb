@@ -83,4 +83,8 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Allow local .test domains (ayoj.test, admin.ayoj.test, api.ayoj.test)
+  config.hosts << /.*\.ayoj\.test/
+  config.hosts << 'ayoj.test'
 end

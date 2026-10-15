@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # Redirect root to ActiveAdmin when accessed on admin subdomain (e.g. admin.ayoj.test or admin.ayoj.in)
+  constraints subdomain: 'admin' do
+    root to: redirect('/admin'), as: :admin_subdomain_root
+  end
+
   root to: 'rails/health#show'
 
   post '/graphql', to: 'graphql#execute'

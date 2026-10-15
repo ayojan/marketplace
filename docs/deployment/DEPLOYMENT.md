@@ -34,13 +34,14 @@ This guide explains how to deploy the Ayoj full-stack application for free using
 3. **Configuration:**
    - **Name:** `ayoj-backend`
    - **Root Directory:** `backend`
-   - **Build Command:** `bundle install`
-   - **Start Command:** `bundle exec rails s`
+   - **Build Command:** `./bin/render-build.sh`
+   - **Start Command:** `bundle exec puma -C config/puma.rb`
 4. **Environment Variables:**
    - `DATABASE_URL`: Your Supabase URI
    - `REDIS_URL`: Your Upstash URL
    - `RAILS_MASTER_KEY`: Content of your `backend/config/master.key`
    - `RAILS_ENV`: `production`
+   - `RAILS_SERVE_STATIC_FILES`: `true`
    - `PORT`: `3000`
 
 ---
@@ -79,9 +80,16 @@ In Vercel **Settings > Domains**, add `ayoj.in`. Add these records to your domai
 - **A Record:** `@` -> `76.76.21.21`
 - **CNAME Record:** `www` -> `cname.vercel-dns.com`
 
-### 2. API (Render)
-In Render **Settings > Custom Domains**, add `api.ayoj.in`. Add this record to your domain registrar:
+### 2. API & Admin Portal (Render)
+In Render, navigate to your `ayoj-backend` service > **Settings > Custom Domains**:
+1. Add `api.ayoj.in`
+2. Add `admin.ayoj.in`
+
+Add these CNAME records to your DNS registrar (Cloudflare / GoDaddy / Namecheap):
 - **CNAME Record:** `api` -> `ayoj-backend.onrender.com`
+- **CNAME Record:** `admin` -> `ayoj-backend.onrender.com`
+
+Render automatically provisions free, auto-renewing SSL/TLS certificates for both subdomains!
 
 ---
 

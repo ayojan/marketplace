@@ -33,6 +33,12 @@ admin = User.find_or_create_by!(email: 'admin@example.com') do |u|
   u.confirmed_at = Time.current
 end
 
+admin_user = AdminUser.find_or_create_by!(email: 'admin@example.com') do |au|
+  au.password = 'password'
+  au.password_confirmation = 'password'
+end
+admin_user.update(password: 'password', password_confirmation: 'password') unless admin_user.valid_password?('password')
+
 # 3. Seed Customers
 puts "--- Creating Customers ---"
 customer_data = [
@@ -198,12 +204,15 @@ puts "========================================================"
 puts "  DEMO LOGINS & CREDENTIALS FOR TESTING AYOJ MARKETPLACE"
 puts "========================================================"
 puts ""
-puts "  Role       | Email                   | Password"
-puts "  -----------|-------------------------|------------"
-puts "  CUSTOMER   | priya@example.com       | password123"
-puts "  CUSTOMER   | customer1@example.com   | password123"
-puts "  VENDOR     | vendor1@example.com     | password123"
-puts "  VENDOR     | vendor2@example.com     | password123"
-puts "  ADMIN      | admin@example.com       | password123"
+puts "  Role         | Email                   | Password"
+puts "  -------------|-------------------------|------------"
+puts "  CUSTOMER     | priya@example.com       | password123"
+puts "  CUSTOMER     | customer1@example.com   | password123"
+puts "  VENDOR       | vendor1@example.com     | password123"
+puts "  VENDOR       | vendor2@example.com     | password123"
+puts "  API ADMIN    | admin@example.com       | password123"
+puts "  ACTIVE ADMIN | admin@example.com       | password"
+puts ""
+puts "  ActiveAdmin Portal URL: http://localhost:3001/admin"
 puts ""
 puts "========================================================"

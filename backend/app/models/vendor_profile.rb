@@ -295,7 +295,7 @@ class VendorProfile < ApplicationRecord
       business_license years_experience average_rating
       total_reviews latitude longitude created_at updated_at user_id
       instagram_handle facebook_url cancellation_policy response_time_hours
-      completion_rate
+      completion_rate verification_status
     ]
   end
 
