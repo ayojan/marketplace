@@ -1,0 +1,14 @@
+Hello <%= @customer.user.name %>,
+
+Reminder: Your booking with <%= @vendor.business_name %> for <%= @service.name %> is scheduled for tomorrow.
+
+Event Details:
+- Service: <%= @service.name %>
+- Vendor: <%= @vendor.business_name %>
+- Date & Time: <%= format_booking_time(@booking) %>
+- Location: <%= @booking.event_location %>
+
+View booking: <%= @view_booking_url %>
+
+Best regards,
+The Ayoj Team

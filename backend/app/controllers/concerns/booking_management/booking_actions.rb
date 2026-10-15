@@ -187,8 +187,12 @@ module BookingManagement::ModificationActions
     return unless booking_modification_authorized?
 
     if @booking.can_be_cancelled?
-      @booking.update!(status: :cancelled)
-      render json: { message: 'Booking cancelled successfully' }
+      result = Bookings::UpdateBookingStatus.call(booking: @booking, new_status: 'cancelled')
+      if result[:success]
+        render json: { message: 'Booking cancelled successfully' }
+      else
+        render json: { error: result[:error] }, status: :unprocessable_content
+      end
     else
       render json: { error: 'Booking cannot be cancelled' }, status: :unprocessable_content
     end

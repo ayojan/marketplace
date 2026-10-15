@@ -4,6 +4,10 @@ module Notifications
   # Abstracts email delivery for notifications
   # Allows swapping mailers or notification channels without touching jobs
   class EmailService
+    def self.send_welcome_email(user)
+      new.send_welcome_email(user)
+    end
+
     def self.send_booking_created(booking, recipient)
       new.send_booking_created(booking, recipient)
     end
@@ -28,10 +32,16 @@ module Notifications
       new.send_new_message(message, recipient)
     end
 
-    def send_booking_created(booking, recipient)
-      return if recipient.vendor_profile.blank?
+    def send_welcome_email(user)
+      UserMailer.welcome_email(user).deliver_now
+    end
 
-      VendorBookingMailer.new_booking_notification(booking).deliver_now
+    def send_booking_created(booking, recipient)
+      if recipient.vendor_profile.present?
+        VendorBookingMailer.new_booking_notification(booking).deliver_now
+      else
+        CustomerBookingMailer.booking_confirmation(booking).deliver_now
+      end
     end
 
     def send_booking_approved(booking, _recipient)

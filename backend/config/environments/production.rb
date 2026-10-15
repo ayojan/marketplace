@@ -19,8 +19,8 @@ Rails.application.configure do
   # key such as config/credentials/production.key. This key is used to decrypt credentials (and other encrypted files).
   # config.require_master_key = true
 
-  # Disable serving static files from `public/`, relying on NGINX/Apache to do so instead.
-  # config.public_file_server.enabled = false
+  # Enable serving static files from `public/` (required for ActiveAdmin assets on Render)
+  config.public_file_server.enabled = ENV["RAILS_SERVE_STATIC_FILES"].present? || ENV["RENDER"].present? || true
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
@@ -65,6 +65,8 @@ Rails.application.configure do
   # config.active_job.queue_name_prefix = "marketplace_production"
 
   config.action_mailer.perform_caching = false
+  resend_configured = ENV['RESEND_API_KEY'].present? || Rails.application.credentials.dig(:resend, :api_key).present?
+  config.action_mailer.delivery_method = resend_configured ? :resend : :smtp
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.

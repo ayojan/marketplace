@@ -1,0 +1,24 @@
+<h2>Booking Cancelled</h2>
+
+<p>Hello <%= @customer.user.name %>,</p>
+
+<p>Your booking with <strong><%= @vendor.business_name %></strong> for <strong><%= @service.name %></strong> has been cancelled.</p>
+
+<div class="details-card">
+  <h3>Cancelled Booking Details</h3>
+  <ul class="details-list">
+    <li><strong>Service:</strong> <%= @service.name %></li>
+    <li><strong>Vendor:</strong> <%= @vendor.business_name %></li>
+    <li><strong>Scheduled Date:</strong> <%= format_booking_time(@booking) %></li>
+    <li><strong>Status:</strong> Cancelled</li>
+  </ul>
+</div>
+
+<div class="button-container">
+  <a href="<%= frontend_url('/explore') %>" class="button">Browse Other Services</a>
+</div>
+
+<p style="margin-top: 24px;">If you have any questions or this cancellation was unexpected, please contact our support team at <a href="mailto:support@ayoj.in">support@ayoj.in</a>.</p>
+
+<p>Best regards,<br>
+<strong>The Ayoj Team</strong></p>

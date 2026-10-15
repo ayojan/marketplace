@@ -1,0 +1,9 @@
+Hello <%= @customer.user.name %>,
+
+Your booking with <%= @vendor.business_name %> for <%= @service.name %> has been declined.
+
+The vendor is unavailable for the requested date and time.
+Explore more vendors on Ayoj: <%= frontend_url('/explore') %>
+
+Best regards,
+The Ayoj Team

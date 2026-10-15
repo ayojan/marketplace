@@ -59,6 +59,48 @@ module Notifications
     end
 
     def send_email_notification
+      booking = Booking.find_by(id: @related_id) if @related_type == 'Booking' || @related_type.blank?
+      return if booking && deliver_booking_email?(booking)
+
+      dispatch_generic_email
+    end
+
+    def deliver_booking_email?(booking)
+      mailer = booking_mailer_for(booking)
+      return false unless mailer
+
+      mailer.deliver_later
+      true
+    end
+
+    def booking_mailer_for(booking)
+      case @notification_type
+      when 'booking_created'
+        if @user.vendor?
+          VendorBookingMailer.new_booking_notification(booking)
+        else
+          CustomerBookingMailer.booking_confirmation(booking)
+        end
+      when 'booking_accepted', 'booking_approved'
+        CustomerBookingMailer.booking_approved_notification(booking)
+      when 'booking_rejected'
+        CustomerBookingMailer.booking_rejected_notification(booking)
+      when 'booking_cancelled'
+        cancellation_mailer_for(booking)
+      when 'booking_reminder'
+        CustomerBookingMailer.booking_reminder(booking)
+      end
+    end
+
+    def cancellation_mailer_for(booking)
+      if @user.vendor?
+        VendorBookingMailer.booking_cancelled_notification(booking)
+      else
+        CustomerBookingMailer.booking_cancelled_notification(booking)
+      end
+    end
+
+    def dispatch_generic_email
       mailer_method = "#{@notification_type}_email"
       return unless NotificationMailer.respond_to?(mailer_method)
 

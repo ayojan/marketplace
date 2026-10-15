@@ -1,0 +1,26 @@
+<h2>Booking Request Update</h2>
+
+<p>Hello <%= @customer.user.name %>,</p>
+
+<p>Your booking with <strong><%= @vendor.business_name %></strong> for <strong><%= @service.name %></strong> has been declined.</p>
+
+<div class="details-card">
+  <h3>Booking Information</h3>
+  <ul class="details-list">
+    <li><strong>Service:</strong> <%= @service.name %></li>
+    <li><strong>Vendor:</strong> <%= @vendor.business_name %></li>
+    <li><strong>Requested Date:</strong> <%= format_booking_time(@booking) %></li>
+    <li><strong>Status:</strong> Declined</li>
+  </ul>
+</div>
+
+<p>The vendor is unfortunately unavailable or unable to fulfill this request for the selected date and time.</p>
+
+<div class="button-container">
+  <a href="<%= frontend_url('/explore') %>" class="button">Explore Other Vendors</a>
+</div>
+
+<p style="margin-top: 24px;">Don't worry! We have many other talented vendors ready to help make your event unforgettable.</p>
+
+<p>Best regards,<br>
+<strong>The Ayoj Team</strong></p>

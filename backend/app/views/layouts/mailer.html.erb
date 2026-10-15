@@ -1,13 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= message.subject %></title>
     <style>
-      /* Email styles need to be inline */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8fafc;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #1e293b;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrapper {
+        width: 100%;
+        background-color: #f8fafc;
+        padding: 40px 16px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+      .header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        padding: 28px 32px;
+        text-align: center;
+      }
+      .brand-title {
+        color: #ffffff;
+        font-size: 26px;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -0.5px;
+      }
+      .brand-subtitle {
+        color: #e0e7ff;
+        font-size: 13px;
+        margin: 4px 0 0 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .content {
+        padding: 32px;
+      }
+      h1, h2 {
+        color: #0f172a;
+        margin-top: 0;
+        font-weight: 700;
+      }
+      p {
+        margin: 0 0 16px 0;
+        color: #334155;
+        font-size: 15px;
+      }
+      .details-card {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 24px 0;
+      }
+      .details-card h3 {
+        margin-top: 0;
+        margin-bottom: 12px;
+        font-size: 16px;
+        color: #0f172a;
+      }
+      .details-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .details-list li {
+        padding: 8px 0;
+        font-size: 14px;
+        color: #475569;
+        border-bottom: 1px solid #edf2f7;
+      }
+      .details-list li:last-child {
+        border-bottom: none;
+      }
+      .details-list strong {
+        color: #1e293b;
+        display: inline-block;
+        width: 130px;
+      }
+      .button-container {
+        text-align: center;
+        margin: 32px 0 16px 0;
+      }
+      .button {
+        background-color: #4f46e5;
+        color: #ffffff !important;
+        font-weight: 600;
+        font-size: 15px;
+        text-decoration: none;
+        padding: 12px 28px;
+        border-radius: 8px;
+        display: inline-block;
+      }
+      .button:hover {
+        background-color: #4338ca;
+      }
+      .footer {
+        background-color: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        padding: 24px 32px;
+        text-align: center;
+        font-size: 13px;
+        color: #64748b;
+      }
+      .footer a {
+        color: #4f46e5;
+        text-decoration: none;
+      }
     </style>
   </head>
-
   <body>
-    <%= yield %>
+    <div class="wrapper">
+      <div class="container">
+        <div class="header">
+          <h1 class="brand-title">Ayoj</h1>
+          <p class="brand-subtitle">Celebrations Made Effortless</p>
+        </div>
+        <div class="content">
+          <%= yield %>
+        </div>
+        <div class="footer">
+          <p style="margin: 0 0 8px 0;">Need help? Contact our support team at <a href="mailto:support@ayoj.in">support@ayoj.in</a></p>
+          <p style="margin: 0;">&copy; <%= Time.current.year %> Ayoj. All rights reserved.</p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

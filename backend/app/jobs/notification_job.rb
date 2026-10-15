@@ -14,6 +14,14 @@ class NotificationJob < ApplicationJob
   }.freeze
 
   def perform(notification_type, recipient_id, data = {})
+    idempotency_key = JobIdempotencyCache.generate_key(
+      self.class.name,
+      notification_type,
+      recipient_id,
+      data['booking_id'] || data['message_id']
+    )
+    return if JobIdempotencyCache.processed?(idempotency_key)
+
     recipient = User.find(recipient_id)
 
     if (action = BOOKING_ACTIONS[notification_type])
@@ -25,6 +33,8 @@ class NotificationJob < ApplicationJob
     else
       Rails.logger.warn "Unknown notification type: #{notification_type}"
     end
+
+    JobIdempotencyCache.mark_processed(idempotency_key)
   rescue ActiveRecord::RecordNotFound => e
     Rails.logger.error "Notification job failed: #{e.message}"
   end

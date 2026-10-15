@@ -1,0 +1,18 @@
+Hello <%= @user.first_name %>,
+
+Welcome to Ayoj! We are thrilled to have you with us.
+
+<% if @user.vendor? %>
+You are now registered as a service provider on Ayoj. You can manage your business profile, add services, configure availability, and receive booking requests from clients.
+
+Access your Vendor Dashboard: <%= @dashboard_url %>
+<% else %>
+You can now discover and book top verified wedding and event professionals, check live availability, and manage all your celebration details in one place.
+
+Explore Vendors on Ayoj: <%= @dashboard_url %>
+<% end %>
+
+If you have any questions, feel free to reply to this email or reach us at support@ayoj.in.
+
+Warm regards,
+The Ayoj Team

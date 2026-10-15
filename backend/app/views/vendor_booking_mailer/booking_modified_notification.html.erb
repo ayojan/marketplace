@@ -1,0 +1,23 @@
+<h2>Booking Modified</h2>
+
+<p>Hello <%= @vendor.business_name %>,</p>
+
+<p>The booking with <strong><%= @customer.user.name %></strong> for <strong><%= @service.name %></strong> has been modified.</p>
+
+<div class="details-card">
+  <h3>Updated Booking Details</h3>
+  <ul class="details-list">
+    <li><strong>Client:</strong> <%= @customer.user.name %></li>
+    <li><strong>Service:</strong> <%= @service.name %></li>
+    <li><strong>Event Date:</strong> <%= format_booking_time(@booking) %></li>
+    <li><strong>Location:</strong> <%= @booking.event_location %></li>
+    <li><strong>Total Amount:</strong> ₹<%= number_with_precision(@booking.total_amount, precision: 2) %></li>
+  </ul>
+</div>
+
+<div class="button-container">
+  <a href="<%= @view_booking_url %>" class="button">View Updated Booking</a>
+</div>
+
+<p>Best regards,<br>
+<strong>The Ayoj Team</strong></p>

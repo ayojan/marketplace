@@ -37,8 +37,13 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.perform_caching = false
   config.action_mailer.perform_deliveries = true
-  config.action_mailer.delivery_method = :smtp
-  
+  resend_configured = ENV['RESEND_API_KEY'].present? || Rails.application.credentials.dig(:resend, :api_key).present?
+  config.action_mailer.delivery_method = resend_configured ? :resend : :smtp
+
+  # Enable mailer previews
+  config.action_mailer.show_previews = true
+  config.action_mailer.preview_paths << Rails.root.join('spec/mailers/previews')
+
   # Configure default URL options for mailers
   config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
   

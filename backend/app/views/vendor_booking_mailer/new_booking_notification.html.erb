@@ -1,25 +1,33 @@
-<h2>New Booking Request</h2>
+<h2>New Booking Request! 📬</h2>
 
 <p>Hello <%= @vendor.business_name %>,</p>
 
-<p>You have received a new booking request from <strong><%= @customer.user.full_name %></strong>.</p>
+<p>You have received a new booking request from <strong><%= @customer.user.name %></strong> for <strong><%= @service.name %></strong>.</p>
 
-<h3>Booking Details:</h3>
-<ul>
-  <li><strong>Service:</strong> <%= @service.name %></li>
-  <li><strong>Date & Time:</strong> <%= format_booking_time(@booking) %></li>
-  <li><strong>Duration:</strong> <%= time_duration(@booking.event_date, @booking.event_end_date || @booking.event_date + 2.hours) %></li>
-  <li><strong>Customer:</strong> <%= @customer.user.full_name %></li>
-  <li><strong>Email:</strong> <%= @customer.user.email %></li>
-  <% if @booking.requirements.present? %>
-  <li><strong>Requirements:</strong> <%= @booking.requirements %></li>
-  <% end %>
-  <% if @booking.special_instructions.present? %>
-  <li><strong>Special Instructions:</strong> <%= @booking.special_instructions %></li>
-  <% end %>
-</ul>
+<div class="details-card">
+  <h3>Booking Request Summary</h3>
+  <ul class="details-list">
+    <li><strong>Client Name:</strong> <%= @customer.user.name %></li>
+    <li><strong>Client Email:</strong> <%= @customer.user.email %></li>
+    <li><strong>Service:</strong> <%= @service.name %></li>
+    <li><strong>Event Date:</strong> <%= format_booking_time(@booking) %></li>
+    <li><strong>Duration:</strong> <%= time_duration(@booking.event_date, @booking.event_end_date || @booking.event_date + 2.hours) %></li>
+    <li><strong>Event Location:</strong> <%= @booking.event_location %></li>
+    <li><strong>Estimated Value:</strong> ₹<%= number_with_precision(@booking.total_amount, precision: 2) %></li>
+    <% if @booking.requirements.present? %>
+      <li><strong>Requirements:</strong> <%= @booking.requirements %></li>
+    <% end %>
+    <% if @booking.special_instructions.present? %>
+      <li><strong>Instructions:</strong> <%= @booking.special_instructions %></li>
+    <% end %>
+  </ul>
+</div>
 
-<p>Please log in to your dashboard to approve or decline this booking request.</p>
+<div class="button-container">
+  <a href="<%= @view_booking_url %>" class="button">Respond to Booking</a>
+</div>
+
+<p style="margin-top: 24px;">Please review and accept or decline this request promptly to maintain high responsiveness ratings on Ayoj.</p>
 
 <p>Best regards,<br>
-The Marketplace Team</p>
+<strong>The Ayoj Team</strong></p>

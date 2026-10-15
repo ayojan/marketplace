@@ -1,10 +1,26 @@
 # frozen_string_literal: true
 
 class ApplicationMailer < ActionMailer::Base
-  default from: ENV.fetch('MAILER_FROM_EMAIL', 'noreply@marketplace.com')
+  default from: lambda {
+    if Rails.env.test?
+      'noreply@marketplace.com'
+    else
+      ENV['MAILER_FROM_EMAIL'].presence ||
+        Rails.application.credentials.dig(:resend, :from_email).presence ||
+        'Ayoj <notifications@ayoj.in>'
+    end
+  }
   layout 'mailer'
 
-  helper_method :format_booking_time, :time_duration
+  helper_method :format_booking_time, :time_duration, :frontend_url
+
+  def frontend_url(path = '')
+    base = ENV.fetch('FRONTEND_URL', 'http://localhost:3000').chomp('/')
+    return base if path.blank?
+
+    path = "/#{path}" unless path.start_with?('/')
+    "#{base}#{path}"
+  end
 
   def format_booking_time(booking)
     booking.event_date.strftime('%B %d, %Y at %I:%M %p')

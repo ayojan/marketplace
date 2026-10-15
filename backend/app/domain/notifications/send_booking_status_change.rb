@@ -13,8 +13,10 @@ module Notifications
 
     def call
       case status
-      when 'confirmed'
+      when 'accepted', 'confirmed'
         send_confirmation_notification
+      when 'declined', 'rejected'
+        send_rejection_notification
       when 'cancelled'
         send_cancellation_notification
       else
@@ -38,6 +40,23 @@ module Notifications
       { success: true }
     rescue StandardError => e
       Rails.logger.error("Failed to send confirmation notification: #{e.message}")
+      { success: false, error: e.message }
+    end
+
+    def send_rejection_notification
+      # Notify customer that vendor declined their booking
+      date_str = booking.event_date.strftime('%B %d, %Y')
+      SendNotification.call(
+        user: booking.customer,
+        title: 'Booking Declined',
+        message: "#{booking.vendor_profile.display_name} has declined your booking request for #{date_str}.",
+        notification_type: 'booking_rejected',
+        related_type: 'Booking',
+        related_id: booking.id
+      )
+      { success: true }
+    rescue StandardError => e
+      Rails.logger.error("Failed to send rejection notification: #{e.message}")
       { success: false, error: e.message }
     end
 
