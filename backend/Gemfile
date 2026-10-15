@@ -32,6 +32,9 @@ gem 'devise'
 # JWT for token authentication
 gem 'jwt'
 
+# Google Authentication
+gem 'googleauth', '~> 1.8'
+
 # Pundit for authorization policies
 gem 'pundit', '~> 2.3'
 

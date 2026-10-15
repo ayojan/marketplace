@@ -17,6 +17,7 @@
 #  latitude            :decimal(10, 6)
 #  location            :string
 #  longitude           :decimal(10, 6)
+#  metadata            :jsonb
 #  phone               :string
 #  rejection_reason    :text
 #  response_time_hours :decimal(5, 2)

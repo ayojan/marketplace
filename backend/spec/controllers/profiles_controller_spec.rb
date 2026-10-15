@@ -216,6 +216,44 @@ RSpec.describe ProfilesController do
     end
   end
 
+  describe 'PUT #update_me' do
+    let(:update_params) do
+      {
+        vendor_profile: {
+          business_name: 'Updated My Business',
+          description: 'This is an updated description that meets the minimum length requirement easily.',
+          metadata: {
+            onboarding_completed: true,
+            packages: [{ title: 'Royal Package', price: 50_000 }]
+          }
+        }
+      }
+    end
+
+    context 'when authenticated as vendor' do
+      it 'updates the profile and merges metadata' do
+        request.headers.merge!(auth_headers(vendor_user))
+        vendor_profile.update!(metadata: { initial_key: 'initial_val' })
+
+        put :update_me, params: update_params, as: :json
+
+        expect(response).to have_http_status(:ok)
+        json_response = response.parsed_body
+        expect(json_response['business_name']).to eq('Updated My Business')
+        expect(json_response['metadata']['onboarding_completed']).to be(true)
+        expect(json_response['metadata']['initial_key']).to eq('initial_val')
+        expect(json_response['metadata']['packages']).to be_an(Array)
+      end
+    end
+
+    context 'when not authenticated' do
+      it 'returns unauthorized' do
+        put :update_me, params: update_params, format: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
   describe 'GET #service_categories' do
     before do
       create(:category, name: 'Active Category', active: true)

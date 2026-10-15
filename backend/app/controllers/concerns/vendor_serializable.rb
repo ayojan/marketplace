@@ -23,6 +23,7 @@ module VendorSerializable
       profile_image_url: primary_image,
       image: primary_image,
       base_price: calculate_vendor_min_price(vendor),
+      metadata: vendor.metadata || {},
       featured_portfolio: featured_items.first(3).map { |item| portfolio_item_json(item) }
     }
   end
@@ -64,7 +65,8 @@ module VendorSerializable
       total_reviews: vendor.total_reviews,
       is_verified: vendor.verified?,
       base_price: calculate_vendor_min_price(vendor),
-      service_categories: vendor.service_categories_list
+      service_categories: vendor.service_categories_list,
+      metadata: vendor.metadata || {}
     }
   end
 

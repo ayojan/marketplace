@@ -40,6 +40,7 @@ class User < ApplicationRecord
   # == Associations ==
   has_one :vendor_profile, dependent: :destroy
   has_one :customer_profile, dependent: :destroy
+  has_many :auth_identities, dependent: :destroy
 
   accepts_nested_attributes_for :vendor_profile
   accepts_nested_attributes_for :customer_profile
@@ -117,6 +118,20 @@ class User < ApplicationRecord
     @full_name ||= "#{first_name} #{last_name}".strip
   end
   alias name full_name
+
+  # Returns primary phone / mobile number associated with user's profile
+  def phone
+    vendor? ? vendor_profile&.phone : customer_profile&.phone
+  end
+  alias mobile_number phone
+
+  def needs_mobile_onboarding?
+    phone.blank?
+  end
+
+  def google_identity
+    auth_identities.find_by(provider: 'google')
+  end
 
   # Returns a display name for UI or logs
   def display_name

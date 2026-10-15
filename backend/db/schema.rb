@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_15_030000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_15_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -52,6 +52,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_030000) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_admin_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
+  end
+
+  create_table "auth_identities", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "provider", null: false
+    t.string "uid", null: false
+    t.string "email"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "uid"], name: "index_auth_identities_on_provider_and_uid", unique: true
+    t.index ["user_id", "provider"], name: "index_auth_identities_on_user_id_and_provider", unique: true
+    t.index ["user_id"], name: "index_auth_identities_on_user_id"
   end
 
   create_table "availability_slots", force: :cascade do |t|
@@ -334,6 +347,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_030000) do
     t.decimal "response_time_hours", precision: 5, scale: 2
     t.decimal "completion_rate", precision: 5, scale: 4
     t.string "slug", null: false
+    t.jsonb "metadata", default: {}
     t.index ["business_name"], name: "index_vendor_profiles_on_business_name"
     t.index ["favorites_count"], name: "index_vendor_profiles_on_favorites_count"
     t.index ["latitude", "longitude"], name: "index_vendor_profiles_on_coordinates"
@@ -357,6 +371,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_030000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "auth_identities", "users"
   add_foreign_key "availability_slots", "vendor_profiles"
   add_foreign_key "booking_messages", "bookings"
   add_foreign_key "booking_messages", "users", column: "sender_id"

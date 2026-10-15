@@ -75,6 +75,7 @@ export const apiService = {
   auth: {
     login: (credentials) => api.post('/auth/login', credentials),
     register: (userData) => api.post('/auth/register', userData),
+    google: (data) => api.post('/auth/google', data),
     logout: () => api.delete('/auth/logout'),
   },
 
@@ -98,6 +99,7 @@ export const apiService = {
     getById: (id) => api.get(`/profiles/${id}`),
     create: (data) => api.post('/profiles', data),
     update: (id, data) => api.put(`/profiles/${id}`, data),
+    updateMe: (data) => api.put('/profiles/me', data),
     delete: (id) => api.delete(`/profiles/${id}`),
     requestVerification: () => api.post('/profiles/request_verification'),
   },

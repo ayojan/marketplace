@@ -32,7 +32,8 @@ import {
   Menu,
   X,
   Camera,
-  Store
+  Store,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -55,9 +56,11 @@ const VendorDashboard = () => {
   const [dashboardData, setDashboardData] = useState<{
     services: any[];
     analytics: any | null;
+    profile: any | null;
   }>({
     services: [],
-    analytics: null
+    analytics: null,
+    profile: null
   });
 
   const [loading, setLoading] = useState(false);
@@ -65,21 +68,25 @@ const VendorDashboard = () => {
   const loadDashboardData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const [servicesResponse, analyticsResponse] = await Promise.all([
+      const [servicesResponse, analyticsResponse, profileResponse] = await Promise.all([
         apiService.services.getAll().catch(() => null),
-        apiService.analytics.dashboard().catch(() => null)
+        apiService.analytics.dashboard().catch(() => null),
+        apiService.profiles.me().catch(() => null)
       ]);
       const fetchedServices = servicesResponse?.data?.services || [];
       const fetchedAnalytics = analyticsResponse?.data || null;
+      const fetchedProfile = profileResponse?.data || null;
 
       setDashboardData({
         services: fetchedServices,
-        analytics: fetchedAnalytics
+        analytics: fetchedAnalytics,
+        profile: fetchedProfile
       });
     } catch (err) {
       setDashboardData({
         services: [],
-        analytics: null
+        analytics: null,
+        profile: null
       });
     } finally {
       setLoading(false);
@@ -104,6 +111,8 @@ const VendorDashboard = () => {
     router.push('/');
   };
 
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
   const renderOverview = () => {
     const analytics = dashboardData.analytics;
     const revenue = analytics?.revenue_stats?.total_revenue ?? 0;
@@ -112,8 +121,54 @@ const VendorDashboard = () => {
     const avgRating = analytics?.overview?.average_rating ? `${Number(analytics.overview.average_rating).toFixed(1)}` : 'New';
     const recentActivity = analytics?.recent_activity ?? [];
 
+    const isProfileOnboarded = Boolean(
+      dashboardData.profile?.metadata?.onboarding_completed ||
+      String(dashboardData.profile?.metadata?.onboarding_completed) === 'true' ||
+      (dashboardData.profile?.verification_status && dashboardData.profile?.verification_status !== 'unverified') ||
+      (dashboardData.services.length > 0 && Number(dashboardData.profile?.metadata?.onboarding_step) >= 5)
+    );
+
+    const showIncompleteBanner = Boolean(
+      dashboardData.profile &&
+      !isProfileOnboarded &&
+      !bannerDismissed
+    );
+
     return (
       <div className="space-y-6">
+        {/* Onboarding Incomplete Banner */}
+        {showIncompleteBanner && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#F3EADF] border border-[#E8E2D9] text-[#221F1C] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs relative">
+            <div className="flex items-center gap-3.5 pr-8 sm:pr-0">
+              <div className="size-10 rounded-xl bg-[#9E5338] text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Sparkles className="size-5" />
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-[#221F1C]">Your Marketplace Listing is Incomplete</h4>
+                <p className="text-[11px] text-[#6B6560] mt-0.5 max-w-xl">
+                  Finish setting up your service offerings, travel radius, and portfolio packages to publish your profile and start receiving client inquiries.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
+              <Button
+                onClick={() => router.push('/vendor/onboarding')}
+                className="bg-[#9E5338] hover:bg-[#85432c] text-white rounded-xl text-xs font-bold h-9 px-4 shadow-sm transition-all"
+              >
+                Resume Onboarding →
+              </Button>
+              <button
+                onClick={() => setBannerDismissed(true)}
+                className="size-8 rounded-lg text-[#6B6560] hover:text-[#221F1C] hover:bg-[#E8E2D9]/60 flex items-center justify-center transition-colors"
+                title="Dismiss banner"
+                aria-label="Dismiss banner"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Compact Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[

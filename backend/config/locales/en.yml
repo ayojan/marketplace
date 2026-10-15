@@ -2,6 +2,10 @@ en:
   activerecord:
     errors:
       models:
+        auth_identity:
+          attributes:
+            uid:
+              taken: 'has already been linked to an account'
         review:
           attributes:
             booking_id:

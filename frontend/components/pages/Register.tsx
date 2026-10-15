@@ -19,6 +19,7 @@ import {
   Tag,
   ShieldCheck,
   Sparkles,
+  Github,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,9 @@ import { Label } from '@/components/ui/label';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import AuthLeftPanel from '@/components/auth/AuthLeftPanel';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 import AyojLogo from '@/components/AyojLogo';
+import VendorOnboardingWizard from '@/components/vendor/VendorOnboardingWizard';
 
 const SERVICE_CATEGORIES = [
   'Photography & Cinematography',
@@ -70,6 +73,11 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, error, clearError } = useAuth();
 
+  // If vendor role is requested, render the multi-step onboarding wizard
+  if (roleParam === 'vendor') {
+    return <VendorOnboardingWizard />;
+  }
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -106,7 +114,8 @@ const Register = () => {
       vendor_profile_attributes?: {
         business_name: string;
         location: string;
-        description: string;
+        category?: string;
+        description?: string;
       };
     } = {
       email: formData.email,
@@ -114,17 +123,8 @@ const Register = () => {
       password_confirmation: formData.passwordConfirmation,
       first_name: formData.firstName,
       last_name: formData.lastName,
-      role: activeRole,
+      role: 'customer',
     };
-
-    if (activeRole === 'vendor') {
-      payload.vendor_profile_attributes = {
-        business_name:
-          formData.businessName || `${formData.firstName} ${formData.lastName}'s Studio`,
-        location: formData.location || 'Delhi NCR',
-        description: formData.category || SERVICE_CATEGORIES[0],
-      };
-    }
 
     const result = await register(payload);
 
@@ -484,6 +484,24 @@ const Register = () => {
                   </>
                 )}
               </Button>
+
+              {/* Divider */}
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-[#E8E2D9]"></div>
+                <span className="shrink-0 px-3 text-[10px] uppercase font-semibold text-[#6B6560] tracking-wider bg-white">
+                  Or sign up with
+                </span>
+                <div className="flex-grow border-t border-[#E8E2D9]"></div>
+              </div>
+
+              {/* Social Logins */}
+              <div className="grid grid-cols-2 gap-3">
+                <GoogleSignInButton mode="register" role={activeRole} />
+                <Button variant="outline" className="h-10 rounded-xl border-[#E8E2D9] bg-[#FBF8F4] hover:bg-[#F3EADF] text-[#221F1C] text-xs font-medium gap-2 cursor-pointer">
+                  <Github className="w-4 h-4 text-[#221F1C]" />
+                  Github
+                </Button>
+              </div>
             </form>
           </motion.div>
 

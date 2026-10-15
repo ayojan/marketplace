@@ -66,6 +66,7 @@ RSpec/DescribeClass:
   Exclude:
     - 'spec/integration/**/*'
     - 'spec/jobs/sidekiq_queue_assignment_spec.rb'
+    - 'spec/requests/**/*'
 
 RSpec/MultipleExpectations:
   Max: 10
