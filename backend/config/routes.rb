@@ -19,6 +19,9 @@ Rails.application.routes.draw do
   get 'up' => 'rails/health#show', as: :rails_health_check
   get 'health' => 'health#show'
 
+  # Redirect sitemap requests to frontend application
+  get '/sitemap.xml', to: redirect("#{ENV.fetch('FRONTEND_URL', 'http://localhost:3000')}/sitemap.xml")
+
   # Authentication routes (user_management pack)
   scope :auth do
     post :login, to: 'auth#login'
