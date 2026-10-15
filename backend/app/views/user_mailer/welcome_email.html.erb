@@ -1,0 +1,40 @@
+<h2>Welcome to Ayoj, <%= @user.first_name %>! 🎉</h2>
+
+<% if @user.vendor? %>
+  <p>We are thrilled to welcome you as a service partner on <strong>Ayoj</strong>. You now have access to hundreds of clients planning their weddings, birthdays, and special occasions.</p>
+
+  <div class="details-card">
+    <h3>Getting Started with Your Vendor Portal</h3>
+    <ul class="details-list">
+      <li><strong>Business Profile:</strong> Set up your portfolio, pricing, and business bio</li>
+      <li><strong>Services:</strong> Add your service packages and offerings</li>
+      <li><strong>Availability:</strong> Configure your event calendar and availability slots</li>
+      <li><strong>Bookings:</strong> Review and manage client requests seamlessly</li>
+    </ul>
+  </div>
+
+  <div class="button-container">
+    <a href="<%= @dashboard_url %>" class="button">Go to Vendor Dashboard</a>
+  </div>
+<% else %>
+  <p>Thank you for joining <strong>Ayoj</strong>! We are dedicated to making every event seamless, memorable, and stress-free.</p>
+
+  <div class="details-card">
+    <h3>What you can do on Ayoj:</h3>
+    <ul class="details-list">
+      <li><strong>Explore Verified Vendors:</strong> Photographers, caterers, decorators, planners, and more</li>
+      <li><strong>Instant Booking:</strong> Check real-time availability and transparent pricing</li>
+      <li><strong>Direct Communication:</strong> Message vendors directly to customize your requirements</li>
+      <li><strong>Organized Planning:</strong> Track your event timeline and checklists in one place</li>
+    </ul>
+  </div>
+
+  <div class="button-container">
+    <a href="<%= @dashboard_url %>" class="button">Explore Vendors</a>
+  </div>
+<% end %>
+
+<p style="margin-top: 24px;">If you ever have any questions or feedback, we are here to help anytime at <a href="mailto:support@ayoj.in">support@ayoj.in</a>.</p>
+
+<p>Warm regards,<br>
+<strong>The Ayoj Team</strong></p>

@@ -1,0 +1,13 @@
+Hello <%= @customer.user.name %>,
+
+Your booking with <%= @vendor.business_name %> for <%= @service.name %> has been cancelled.
+
+Details:
+- Service: <%= @service.name %>
+- Vendor: <%= @vendor.business_name %>
+- Date: <%= format_booking_time(@booking) %>
+
+Explore other services: <%= frontend_url('/explore') %>
+
+Best regards,
+The Ayoj Team

@@ -26,6 +26,8 @@
 #  index_users_on_email                 (email) UNIQUE
 #  index_users_on_reset_password_token  (reset_password_token) UNIQUE
 #
+
+#rubocop: disable Metrics/ClassLength
 class User < ApplicationRecord
   # == Devise Modules ==
   # Include default devise modules. Others available are:
@@ -74,6 +76,7 @@ class User < ApplicationRecord
   # == Callbacks ==
   after_create :create_profile
   after_create :create_email_notification_preference
+  after_commit :send_welcome_email, on: :create
   # NOTE: auto_confirm_user is removed to enforce proper email confirmation flow
   # Users should confirm via email, not be auto-confirmed
 
@@ -180,4 +183,14 @@ class User < ApplicationRecord
   def password_required?
     !persisted? || password.present? || password_confirmation.present?
   end
+
+  # Sends welcome email via Active Job after commit
+  def send_welcome_email
+    return if admin?
+
+    WelcomeNotificationJob.perform_later(id)
+  rescue StandardError => e
+    Rails.logger.error "Failed to enqueue welcome email for user #{id}: #{e.message}"
+  end
 end
+#rubocop: enable Metrics/ClassLength

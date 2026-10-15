@@ -1,0 +1,15 @@
+Hello <%= @customer.user.full_name %>,
+
+Your booking with <%= @vendor.business_name %> for <%= @service.name %> has been confirmed.
+
+Booking Details:
+- Service: <%= @service.name %>
+- Vendor: <%= @vendor.business_name %>
+- Date & Time: <%= format_booking_time(@booking) %>
+- Duration: <%= time_duration(@booking.event_date, @booking.event_end_date || @booking.event_date + 2.hours) %>
+- Contact: <%= @vendor.user.email %>
+
+View Booking: <%= @view_booking_url %>
+
+Best regards,
+The Ayoj Team

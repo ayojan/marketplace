@@ -1,0 +1,14 @@
+Hello <%= @vendor.business_name %>,
+
+The booking with <%= @customer.user.name %> for <%= @service.name %> has been modified.
+
+Updated Details:
+- Client: <%= @customer.user.name %>
+- Service: <%= @service.name %>
+- Event Date: <%= format_booking_time(@booking) %>
+- Total: Rs. <%= number_with_precision(@booking.total_amount, precision: 2) %>
+
+View booking: <%= @view_booking_url %>
+
+Best regards,
+The Ayoj Team

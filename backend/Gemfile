@@ -59,9 +59,11 @@ gem 'image_processing', '~> 1.2'
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 gem 'activeadmin'
 gem 'rack-cors'
+gem 'resend'
 gem 'sassc-rails'
 
 group :development, :test do
+  gem 'dotenv-rails', '~> 3.2'
   gem 'rubocop', '~> 1.62', require: false
   gem 'rubocop-factory_bot', require: false
   gem 'rubocop-graphql', require: false

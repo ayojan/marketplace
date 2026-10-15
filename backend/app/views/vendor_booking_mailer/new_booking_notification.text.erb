@@ -1,0 +1,16 @@
+Hello <%= @vendor.business_name %>,
+
+You have a new booking request from <%= @customer.user.name %> for <%= @service.name %>.
+
+Booking Details:
+- Customer: <%= @customer.user.name %> (<%= @customer.user.email %>)
+- Service: <%= @service.name %>
+- Date & Time: <%= format_booking_time(@booking) %>
+- Duration: <%= time_duration(@booking.event_date, @booking.event_end_date || @booking.event_date + 2.hours) %>
+- Location: <%= @booking.event_location %>
+- Total Amount: Rs. <%= number_with_precision(@booking.total_amount, precision: 2) %>
+
+Manage Booking: <%= @view_booking_url %>
+
+Best regards,
+The Ayoj Team

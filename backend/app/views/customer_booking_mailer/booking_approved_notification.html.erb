@@ -1,21 +1,30 @@
-<h2>Booking Confirmed!</h2>
+<h2>Booking Confirmed! 🎉</h2>
 
 <p>Hello <%= @customer.user.full_name %>,</p>
 
-<p>Great news! Your booking with <strong><%= @vendor.business_name %></strong> has been confirmed.</p>
+<p>Great news! Your booking with <strong><%= @vendor.business_name %></strong> for <strong><%= @service.name %></strong> has been confirmed.</p>
 
-<h3>Booking Details:</h3>
-<ul>
-  <li><strong>Service:</strong> <%= @service.name %></li>
-  <li><strong>Date & Time:</strong> <%= format_booking_time(@booking) %></li>
-  <li><strong>Duration:</strong> <%= time_duration(@booking.event_date, @booking.event_end_date || @booking.event_date + 2.hours) %></li>
-  <li><strong>Vendor:</strong> <%= @vendor.business_name %></li>
-  <li><strong>Contact:</strong> <%= @vendor.user.email %></li>
-</ul>
+<div class="details-card">
+  <h3>Confirmed Booking Details</h3>
+  <ul class="details-list">
+    <li><strong>Service:</strong> <%= @service.name %></li>
+    <li><strong>Vendor:</strong> <%= @vendor.business_name %></li>
+    <li><strong>Date & Time:</strong> <%= format_booking_time(@booking) %></li>
+    <li><strong>Duration:</strong> <%= time_duration(@booking.event_date, @booking.event_end_date || @booking.event_date + 2.hours) %></li>
+    <li><strong>Location:</strong> <%= @booking.event_location %></li>
+    <li><strong>Contact Email:</strong> <%= @vendor.user.email %></li>
+    <% if @vendor.phone.present? %>
+      <li><strong>Contact Phone:</strong> <%= @vendor.phone %></li>
+    <% end %>
+    <li><strong>Total Amount:</strong> ₹<%= number_with_precision(@booking.total_amount, precision: 2) %></li>
+  </ul>
+</div>
 
-<p>We'll send you a reminder 24 hours before your appointment.</p>
+<div class="button-container">
+  <a href="<%= @view_booking_url %>" class="button">View Booking in Dashboard</a>
+</div>
 
-<p>If you need to make any changes, please contact the vendor directly or log in to your dashboard.</p>
+<p style="margin-top: 24px;">We'll send you a reminder 24 hours before your event. If you need to make any changes, you can message the vendor directly through your dashboard.</p>
 
 <p>Best regards,<br>
-The Marketplace Team</p>
+<strong>The Ayoj Team</strong></p>

@@ -1,0 +1,23 @@
+<h2>Event Reminder! ⏰</h2>
+
+<p>Hello <%= @customer.user.name %>,</p>
+
+<p>Reminder: Your booking with <strong><%= @vendor.business_name %></strong> for <strong><%= @service.name %></strong> is scheduled for tomorrow.</p>
+
+<div class="details-card">
+  <h3>Event Schedule</h3>
+  <ul class="details-list">
+    <li><strong>Service:</strong> <%= @service.name %></li>
+    <li><strong>Vendor:</strong> <%= @vendor.business_name %></li>
+    <li><strong>Date & Time:</strong> <%= format_booking_time(@booking) %></li>
+    <li><strong>Location:</strong> <%= @booking.event_location %></li>
+    <li><strong>Vendor Contact:</strong> <%= @vendor.user.email %></li>
+  </ul>
+</div>
+
+<div class="button-container">
+  <a href="<%= @view_booking_url %>" class="button">View Booking Details</a>
+</div>
+
+<p>Best regards,<br>
+<strong>The Ayoj Team</strong></p>
