@@ -10,12 +10,20 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     allowed = [
       'https://ayoj.in',
       'https://www.ayoj.in',
+      'https://admin.ayoj.in',
+      'http://ayoj.test',
+      'http://ayoj.test:3000',
+      'http://admin.ayoj.test',
+      'http://admin.ayoj.test:3001',
+      'http://api.ayoj.test',
       'http://localhost:3000',
-      'http://127.0.0.1:3000'
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
     ]
     allowed += ENV['ALLOWED_ORIGINS'].split(',').map(&:strip) if ENV['ALLOWED_ORIGINS'].present?
 
-    origins(*allowed)
+    origins(*allowed, %r{\Ahttps?://([a-z0-9-]+\.)?ayoj\.(in|test)(:\d+)?\z})
 
     resource '*',
              headers: :any,
