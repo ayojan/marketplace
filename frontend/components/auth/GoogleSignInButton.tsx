@@ -57,15 +57,10 @@ export default function GoogleSignInButton({
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [mobileNumber, setMobileNumber] = useState('');
 
-  // Dev setup & instant test modal
-  const [showDevSetupModal, setShowDevSetupModal] = useState(false);
-  const [devEmail, setDevEmail] = useState('akv1087@gmail.com');
-
-  const configuredClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const configuredClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
   const isRealClientConfigured = Boolean(
     configuredClientId &&
-    !configuredClientId.includes('test-google-client-id') &&
-    configuredClientId.endsWith('.apps.googleusercontent.com')
+    !configuredClientId.includes('test-google-client-id')
   );
   const clientId = configuredClientId || '';
   const hiddenGisRef = useRef<HTMLDivElement>(null);
@@ -189,7 +184,7 @@ export default function GoogleSignInButton({
   // Trigger Google Sign-In prompt
   const handleTriggerSignIn = () => {
     if (!isRealClientConfigured) {
-      setShowDevSetupModal(true);
+      toast.error('Google Sign-In is temporarily unavailable. Please sign in with your email.');
       return;
     }
 
@@ -211,29 +206,6 @@ export default function GoogleSignInButton({
       }
     } catch (err) {
       console.warn('Google prompt fallback error:', err);
-    }
-  };
-
-  // Development simulation sign in handler
-  const handleDevSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!devEmail) return;
-
-    setShowDevSetupModal(false);
-    setIsLoading(true);
-
-    try {
-      const sanitizedEmail = devEmail.trim().toLowerCase();
-      const devToken = `dev-google-token:${JSON.stringify({
-        email: sanitizedEmail,
-        name: sanitizedEmail.split('@')[0],
-        sub: `google-user-${sanitizedEmail.replace(/[^a-zA-Z0-9]/g, '')}`
-      })}`;
-      await handleCredentialResponse({ credential: devToken });
-    } catch (err: any) {
-      toast.error(err.message || 'Dev sign-in failed');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -458,122 +430,6 @@ export default function GoogleSignInButton({
         )}
       </AnimatePresence>
 
-      {/* Dev Mode & Setup Instructions Modal */}
-      <AnimatePresence>
-        {showDevSetupModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-lg bg-white border border-[#E8E2D9] rounded-2xl shadow-xl overflow-hidden p-6 sm:p-7 relative max-h-[90vh] overflow-y-auto"
-            >
-              <button
-                onClick={() => setShowDevSetupModal(false)}
-                className="absolute top-4 right-4 text-[#6B6560] hover:text-[#221F1C] p-1.5 rounded-lg hover:bg-[#F3EADF] transition-colors cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="size-4" />
-              </button>
-
-              <div className="flex items-center gap-3 mb-4">
-                <div className="size-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200">
-                  <AlertCircle className="size-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-serif font-bold text-[#221F1C]">Google Sign-In Configuration</h3>
-                  <p className="text-xs text-[#6B6560]">Why Error 401: invalid_client happens &amp; dev test options</p>
-                </div>
-              </div>
-
-              <div className="bg-amber-50/70 border border-amber-200/90 rounded-xl p-3.5 mb-5 text-xs text-[#221F1C] space-y-1.5">
-                <p className="font-semibold text-amber-900">Why Google showed "Error 401: invalid_client":</p>
-                <p className="text-[12px] text-amber-950/80 leading-relaxed">
-                  Google OAuth requires a registered <strong>OAuth 2.0 Web Client ID</strong> from Google Cloud Console with <code className="bg-amber-100/70 px-1 py-0.5 rounded text-[#221F1C]">http://localhost:3000</code> added to authorized JavaScript origins. Without this set up in your environment, Google rejects authentication requests.
-                </p>
-              </div>
-
-              {/* Dev Quick Sign In Box */}
-              <div className="border border-[#E8E2D9] rounded-xl p-4 bg-[#FBF8F4] mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-[#221F1C] uppercase tracking-wider flex items-center gap-1.5">
-                    <span>⚡ Instant Dev Sign-In</span>
-                  </span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-medium px-2 py-0.5 rounded-full">
-                    Ready to Test
-                  </span>
-                </div>
-                <p className="text-xs text-[#6B6560] mb-3">
-                  You don't have to wait for Google Cloud setup! Test the entire Ayoj Google auth flow, JWT issuance, account collision, and dashboard redirect right now:
-                </p>
-
-                <form onSubmit={handleDevSignIn} className="space-y-3">
-                  <div>
-                    <Label htmlFor="devEmailInput" className="text-xs font-semibold text-[#221F1C] mb-1.5 block">
-                      Test Google Account Email
-                    </Label>
-                    <Input
-                      id="devEmailInput"
-                      type="email"
-                      value={devEmail}
-                      onChange={(e) => setDevEmail(e.target.value)}
-                      placeholder="akv1087@gmail.com"
-                      required
-                      className="h-9 bg-white border-[#E8E2D9] rounded-lg text-xs"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading || !devEmail}
-                    className="w-full h-9 rounded-lg text-xs font-semibold bg-[#9E5338] hover:bg-[#85432c] text-white flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Authenticating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Continue with {devEmail}</span>
-                        <ArrowRight className="size-3.5" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </div>
-
-              {/* Real Google Cloud Setup Steps */}
-              <div className="border-t border-[#E8E2D9] pt-4 text-xs text-[#6B6560] space-y-2.5">
-                <h4 className="font-semibold text-[#221F1C]">To enable live Google Sign-In with real Google popups:</h4>
-                <ol className="list-decimal pl-4 space-y-1.5 text-[11px] leading-relaxed">
-                  <li>
-                    Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-[#9E5338] underline font-medium">Google Cloud Console &gt; Credentials</a>.
-                  </li>
-                  <li>
-                    Click <strong>Create Credentials &gt; OAuth client ID</strong>. Application type: <strong>Web application</strong>.
-                  </li>
-                  <li>
-                    Under <em>Authorized JavaScript origins</em>, add: <code className="bg-[#F3EADF] px-1.5 py-0.5 rounded text-[#221F1C]">http://localhost:3000</code>.
-                  </li>
-                  <li>
-                    Copy your Client ID and add to <code className="bg-[#F3EADF] px-1.5 py-0.5 rounded text-[#221F1C]">frontend/.env.local</code>:
-                    <div className="bg-[#221F1C] text-emerald-400 p-2 rounded-lg mt-1 font-mono text-[10px] select-all break-all">
-                      NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-                    </div>
-                  </li>
-                  <li>
-                    Also add to <code className="bg-[#F3EADF] px-1.5 py-0.5 rounded text-[#221F1C]">backend/.env</code>:
-                    <div className="bg-[#221F1C] text-emerald-400 p-2 rounded-lg mt-1 font-mono text-[10px] select-all break-all">
-                      GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-                    </div>
-                  </li>
-                </ol>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 }
