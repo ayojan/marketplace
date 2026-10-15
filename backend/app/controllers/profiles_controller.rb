@@ -8,14 +8,11 @@ class ProfilesController < ApiController
   before_action :ensure_own_profile, only: %i[update destroy]
 
   def show
-    if params[:id]
-      @profile = VendorProfile.find(params[:id])
+    if @profile
       render json: profile_response(@profile)
     else
       render json: { error: 'Profile not found' }, status: :not_found
     end
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Vendor profile not found' }, status: :not_found
   end
 
   def me
@@ -81,7 +78,7 @@ class ProfilesController < ApiController
 
   def set_profile
     @profile = if params[:id]
-                 VendorProfile.find(params[:id])
+                 VendorProfile.find_by_id_or_slug!(params[:id])
                else
                  current_user.vendor_profile
                end
@@ -110,6 +107,7 @@ class ProfilesController < ApiController
   def profile_response(profile)
     {
       id: profile.id,
+      slug: profile.slug,
       user_id: profile.user_id,
       business_name: profile.business_name,
       description: profile.description,

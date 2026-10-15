@@ -126,7 +126,13 @@ module BookingManagement::ListingActions
 
   def index
     bookings = bookings_scope
-               .includes(:customer, :vendor_profile, :service, :booking_messages)
+               .includes(
+                 :customer,
+                 :review,
+                 :booking_messages,
+                 service: :categories,
+                 vendor_profile: [:user, { portfolio_items: { images_attachments: :blob } }]
+               )
                .order(created_at: :desc)
                .page(params[:page])
                .per(params[:per_page] || 20)

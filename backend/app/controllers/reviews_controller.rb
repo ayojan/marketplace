@@ -22,12 +22,14 @@ class ReviewsController < ApiController
   # GET /api/vendors/:vendor_id/reviews or /vendors/:id/reviews
   def vendor_reviews
     vendor_id = params[:vendor_id] || params[:id]
-    @reviews = Review.published.where(vendor_profile_id: vendor_id).recent.includes(:customer, :service)
-    vendor = VendorProfile.find_by(id: vendor_id)
+    vendor = VendorProfile.find_by_id_or_slug(vendor_id)
+    return render json: { error: 'Vendor not found' }, status: :not_found unless vendor
+
+    @reviews = Review.published.where(vendor_profile_id: vendor.id).recent.includes(:customer, :service)
     render json: {
       reviews: @reviews.map { |r| review_json(r) },
-      average_rating: vendor&.average_rating || 0.0,
-      total_reviews: vendor&.total_reviews || @reviews.count
+      average_rating: vendor.average_rating,
+      total_reviews: vendor.total_reviews
     }
   end
 

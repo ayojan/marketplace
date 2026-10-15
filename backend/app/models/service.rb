@@ -165,13 +165,20 @@ class Service < ApplicationRecord
   end
 
   def rating_distribution
-    dist = reviews.published.group(:rating).count
+    stats = reviews.published.pick(
+      Arel.sql('COUNT(CASE WHEN rating = 5 THEN 1 END)'),
+      Arel.sql('COUNT(CASE WHEN rating = 4 THEN 1 END)'),
+      Arel.sql('COUNT(CASE WHEN rating = 3 THEN 1 END)'),
+      Arel.sql('COUNT(CASE WHEN rating = 2 THEN 1 END)'),
+      Arel.sql('COUNT(CASE WHEN rating = 1 THEN 1 END)')
+    )&.map(&:to_i) || [0, 0, 0, 0, 0]
+
     {
-      5 => dist[5] || 0,
-      4 => dist[4] || 0,
-      3 => dist[3] || 0,
-      2 => dist[2] || 0,
-      1 => dist[1] || 0
+      5 => stats[0],
+      4 => stats[1],
+      3 => stats[2],
+      2 => stats[3],
+      1 => stats[4]
     }
   end
 

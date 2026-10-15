@@ -44,8 +44,8 @@ module Marketplace
     #
     # config.time_zone = "Central Time (US & Canada)"
 
-    # Opt in to Rails 8.0 to_time behavior
-    config.active_support.to_time_preserves_timezone = true
+    # Opt in to Rails 8.1 to_time behavior
+    config.active_support.to_time_preserves_timezone = :zone
 
     # Auto-load query objects and domain services
     config.eager_load_paths << Rails.root.join('app/models/queries')

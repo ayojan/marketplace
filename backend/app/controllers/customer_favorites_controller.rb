@@ -17,7 +17,7 @@ class CustomerFavoritesController < ApiController
 
   # POST /customer_favorites
   def create
-    vendor_profile = VendorProfile.find_by(id: params[:vendor_profile_id])
+    vendor_profile = VendorProfile.find_by_id_or_slug(params[:vendor_profile_id])
     return render json: { error: 'Vendor profile not found' }, status: :not_found unless vendor_profile
 
     authorize_favorite!(vendor_profile)
@@ -34,7 +34,10 @@ class CustomerFavoritesController < ApiController
 
   # DELETE /customer_favorites/by_vendor/:vendor_profile_id
   def destroy_by_vendor
-    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: params[:vendor_profile_id])
+    vendor_profile = VendorProfile.find_by_id_or_slug(params[:vendor_profile_id])
+    return render json: { error: 'Vendor profile not found' }, status: :not_found unless vendor_profile
+
+    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: vendor_profile.id)
 
     if favorite
       favorite.destroy
@@ -46,7 +49,8 @@ class CustomerFavoritesController < ApiController
 
   # GET /customer_favorites/check/:vendor_profile_id
   def check
-    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: params[:vendor_profile_id])
+    vendor_profile = VendorProfile.find_by_id_or_slug(params[:vendor_profile_id])
+    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: vendor_profile&.id)
 
     render json: {
       is_favorite: favorite.present?,
@@ -88,6 +92,7 @@ class CustomerFavoritesController < ApiController
       created_at: favorite.created_at,
       vendor: {
         id: vendor.id,
+        slug: vendor.slug,
         business_name: vendor.business_name,
         location: vendor.location,
         average_rating: vendor.average_rating,

@@ -12,6 +12,7 @@ module VendorSerializable
 
     {
       id: vendor.id,
+      slug: vendor.slug,
       business_name: vendor.business_name,
       location: vendor.location,
       average_rating: vendor.average_rating,
@@ -27,16 +28,18 @@ module VendorSerializable
   end
 
   def vendor_detail_json(vendor)
-    primary_image = extract_primary_image(vendor.featured_portfolio_items.first)
+    featured_items = vendor.featured_portfolio_items
+    primary_image = extract_primary_image(featured_items.first)
 
     vendor_core_attributes(vendor, primary_image)
       .merge(vendor_operational_attributes(vendor))
-      .merge(vendor_meta_attributes(vendor, primary_image))
+      .merge(vendor_meta_attributes(vendor, featured_items))
   end
 
   def vendor_core_attributes(vendor, primary_image)
     {
       id: vendor.id,
+      slug: vendor.slug,
       business_name: vendor.business_name,
       description: vendor.description,
       location: vendor.location,
@@ -73,11 +76,11 @@ module VendorSerializable
     end
   end
 
-  def vendor_meta_attributes(vendor, _primary_image)
+  def vendor_meta_attributes(vendor, featured_items)
     {
       coordinates: vendor.coordinates,
-      portfolio_items_count: vendor.portfolio_items.count,
-      featured_portfolio: vendor.featured_portfolio_items.map { |item| portfolio_item_json(item) },
+      portfolio_items_count: vendor.portfolio_items.size,
+      featured_portfolio: featured_items.map { |item| portfolio_item_json(item) },
       user: vendor_user_json(vendor.user),
       created_at: vendor.created_at,
       updated_at: vendor.updated_at

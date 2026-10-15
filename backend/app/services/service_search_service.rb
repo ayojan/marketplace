@@ -184,13 +184,16 @@ class ServiceSearchService
   end
 
   def category_facets
-    filtered_services.except(:limit, :offset, :order)
-                     .joins(:service_categories)
-                     .group('service_categories.category_id')
-                     .count
-                     .map do |cat_id, count|
-                       category = Category.find_by(id: cat_id)
-                       { id: cat_id, name: category&.name, count: count }
+    counts = filtered_services.except(:limit, :offset, :order)
+                              .joins(:service_categories)
+                              .group('service_categories.category_id')
+                              .count
+    return [] if counts.empty?
+
+    categories = Category.where(id: counts.keys).index_by(&:id)
+    counts.map do |cat_id, count|
+      category = categories[cat_id]
+      { id: cat_id, name: category&.name, count: count }
     end
   end
 

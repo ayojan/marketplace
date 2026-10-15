@@ -19,6 +19,13 @@ AllCops:
 Rails:
   Enabled: true
 
+Rails/DynamicFindBy:
+  AllowedMethods:
+    - find_by_sql
+    - find_by_token_for
+    - find_by_id_or_slug
+    - find_by_id_or_slug!
+
 # Commonly tweaked rules for modern Rails
 Style/Documentation:
   Enabled: false

@@ -18,6 +18,7 @@ class Types::VendorProfileType < Types::BaseObject
         Types::RatingDistributionType,
         null: false,
         description: 'Distribution of ratings across review scores'
+  field :slug, String, null: false, description: 'Unique URL slug for the vendor'
   field :total_reviews, Integer, null: false, description: 'Total number of reviews for the vendor'
   field :updated_at, GraphQL::Types::ISO8601DateTime, null: false, description: 'When the profile was last updated'
   field :verification_status, String, null: false, description: 'Current verification status'

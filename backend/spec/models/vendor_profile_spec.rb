@@ -20,6 +20,7 @@
 #  phone               :string
 #  rejection_reason    :text
 #  response_time_hours :decimal(5, 2)
+#  slug                :string           not null
 #  total_reviews       :integer          default(0)
 #  verification_status :integer          default("unverified")
 #  verified_at         :datetime
@@ -35,6 +36,7 @@
 #  index_vendor_profiles_on_coordinates          (latitude,longitude)
 #  index_vendor_profiles_on_favorites_count      (favorites_count)
 #  index_vendor_profiles_on_location             (location)
+#  index_vendor_profiles_on_slug                 (slug) UNIQUE
 #  index_vendor_profiles_on_user_id              (user_id) UNIQUE
 #  index_vendor_profiles_on_verification_status  (verification_status)
 #
@@ -413,6 +415,115 @@ RSpec.describe VendorProfile do
         test_vendor_profile.website = ''
         test_vendor_profile.save
         expect(test_vendor_profile.website).to eq('')
+      end
+    end
+  end
+
+  describe 'slug functionality' do
+    describe 'auto-generating slug' do
+      it 'generates a parameterized slug from business_name' do
+        profile = create(:user, :vendor, first_name: 'Jane', last_name: 'Doe').vendor_profile
+        profile.update!(business_name: 'Creative Studio Delhi', slug: nil)
+        expect(profile.slug).to eq('creative-studio-delhi')
+      end
+
+      it 'handles special characters and extra spaces' do
+        vendor = build(:vendor_profile, business_name: 'Sharma & Sons @ Photographers!!!', slug: nil)
+        vendor.save!
+        expect(vendor.slug).to eq('sharma-sons-photographers')
+      end
+
+      it 'falls back to "vendor" if business_name produces an empty slug' do
+        vendor = build(:vendor_profile, business_name: '***', slug: nil)
+        vendor.save!
+        expect(vendor.slug).to eq('vendor')
+      end
+
+      it 'does not overwrite custom slug if already present' do
+        vendor = build(:vendor_profile, business_name: 'Custom Name', slug: 'my-custom-slug')
+        vendor.save!
+        expect(vendor.slug).to eq('my-custom-slug')
+      end
+    end
+
+    describe 'collision resolution without registration errors' do
+      it 'appends incrementing suffixes when duplicate business names are registered' do
+        first_user = create(:user, role: :vendor)
+        first_profile = first_user.vendor_profile
+        first_profile.update!(business_name: 'Royal Weddings', slug: nil)
+        expect(first_profile.slug).to eq('royal-weddings')
+
+        second_user = create(:user, role: :vendor)
+        second_profile = second_user.vendor_profile
+        second_profile.update!(business_name: 'Royal Weddings', slug: nil)
+        expect(second_profile.slug).to eq('royal-weddings-2')
+
+        third_user = create(:user, role: :vendor)
+        third_profile = third_user.vendor_profile
+        third_profile.update!(business_name: 'Royal Weddings', slug: nil)
+        expect(third_profile.slug).to eq('royal-weddings-3')
+      end
+
+      it 'correctly determines the next available number even with existing suffixed slugs' do
+        u1 = create(:user, role: :vendor)
+        u1.vendor_profile.update!(business_name: 'Unique Shoot', slug: 'unique-shoot')
+
+        u2 = create(:user, role: :vendor)
+        u2.vendor_profile.update!(business_name: 'Unique Shoot', slug: 'unique-shoot-5')
+
+        u3 = create(:user, role: :vendor)
+        u3.vendor_profile.update!(business_name: 'Unique Shoot', slug: nil)
+        expect(u3.vendor_profile.slug).to eq('unique-shoot-6')
+      end
+    end
+
+    describe 'lookup methods' do
+      let!(:profile) do
+        user = create(:user, role: :vendor)
+        user.vendor_profile.tap do |vp|
+          vp.update!(business_name: 'Star Capture Studio', slug: nil)
+        end
+      end
+
+      describe '.find_by_id_or_slug' do
+        it 'finds vendor by exact slug' do
+          expect(described_class.find_by_id_or_slug(profile.slug)).to eq(profile)
+        end
+
+        it 'finds vendor by case-insensitive slug' do
+          expect(described_class.find_by_id_or_slug(profile.slug.upcase)).to eq(profile)
+        end
+
+        it 'finds vendor by numeric ID' do
+          expect(described_class.find_by_id_or_slug(profile.id)).to eq(profile)
+          expect(described_class.find_by_id_or_slug(profile.id.to_s)).to eq(profile)
+        end
+
+        it 'returns nil when vendor is not found' do
+          expect(described_class.find_by_id_or_slug('non-existent-vendor')).to be_nil
+          expect(described_class.find_by_id_or_slug(999_999)).to be_nil
+        end
+      end
+
+      describe '.find_by_id_or_slug!' do
+        it 'finds vendor by slug' do
+          expect(described_class.find_by_id_or_slug!(profile.slug)).to eq(profile)
+        end
+
+        it 'finds vendor by numeric ID' do
+          expect(described_class.find_by_id_or_slug!(profile.id)).to eq(profile)
+        end
+
+        it 'raises ActiveRecord::RecordNotFound when not found' do
+          expect { described_class.find_by_id_or_slug!('unknown-slug') }
+            .to raise_error(ActiveRecord::RecordNotFound)
+        end
+      end
+
+      describe '#to_param' do
+        it 'returns slug instead of id' do
+          expect(profile.to_param).to eq(profile.slug)
+        end
       end
     end
   end

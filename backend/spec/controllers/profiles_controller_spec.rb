@@ -24,6 +24,18 @@ RSpec.describe ProfilesController do
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
         expect(json_response['id']).to eq(vendor_profile.id)
+        expect(json_response['slug']).to eq(vendor_profile.slug)
+        expect(json_response['business_name']).to eq(vendor_profile.business_name)
+      end
+
+      it 'returns the vendor profile when queried by slug' do
+        request.headers.merge!(auth_headers(vendor_user))
+        get :show, params: { id: vendor_profile.slug }, format: :json
+
+        expect(response).to have_http_status(:ok)
+        json_response = response.parsed_body
+        expect(json_response['id']).to eq(vendor_profile.id)
+        expect(json_response['slug']).to eq(vendor_profile.slug)
         expect(json_response['business_name']).to eq(vendor_profile.business_name)
       end
     end

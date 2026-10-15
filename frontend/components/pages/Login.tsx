@@ -20,19 +20,9 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, error, clearError, loginDemoVendor, loginDemoCustomer } = useAuth();
+  const { login, error, clearError } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const handleDemoVendor = () => {
-    loginDemoVendor();
-    router.push('/');
-  };
-
-  const handleDemoCustomer = () => {
-    loginDemoCustomer();
-    router.push('/');
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -101,32 +91,6 @@ const Login = () => {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white border border-[#E8E2D9] rounded-2xl p-6 sm:p-8 shadow-sm w-full relative z-10 space-y-5"
           >
-            {/* Quick Demo Access Box (Convenient 1-Click Evaluation) */}
-            <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338]">
-                  Quick Demo Access
-                </span>
-                <span className="text-[10px] text-[#6B6560]">1-Click Login</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  type="button" 
-                  onClick={handleDemoCustomer} 
-                  className="py-2 px-3 rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] font-semibold text-xs hover:border-[#9E5338] hover:text-[#9E5338] transition-all cursor-pointer shadow-xs text-center"
-                >
-                  Customer Demo
-                </button>
-                <button 
-                  type="button" 
-                  onClick={handleDemoVendor} 
-                  className="py-2 px-3 rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] font-semibold text-xs hover:border-[#9E5338] hover:text-[#9E5338] transition-all cursor-pointer shadow-xs text-center"
-                >
-                  Vendor Demo
-                </button>
-              </div>
-            </div>
-
             {/* Error Banner */}
             {error && (
               <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-xs flex items-start gap-2.5">

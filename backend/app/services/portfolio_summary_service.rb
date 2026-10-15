@@ -14,17 +14,31 @@ class PortfolioSummaryService
       total_items: items.count,
       featured_items: items.featured.count,
       categories: items.group(:category).count,
-      total_images: items.sum(&:image_count),
-      recent_items: items.order(created_at: :desc).limit(5).map do |item|
-        {
-          id: item.id,
-          title: item.title,
-          category: item.category,
-          image_count: item.image_count,
-          is_featured: item.is_featured,
-          created_at: item.created_at
-        }
-      end
+      total_images: total_images_count(items),
+      recent_items: format_recent_items(items)
     }
+  end
+
+  private
+
+  def total_images_count(items)
+    ActiveStorage::Attachment.where(
+      record_type: 'PortfolioItem',
+      record_id: items.select(:id),
+      name: 'images'
+    ).count
+  end
+
+  def format_recent_items(items)
+    items.with_attached_images.order(created_at: :desc).limit(5).map do |item|
+      {
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        image_count: item.image_count,
+        is_featured: item.is_featured,
+        created_at: item.created_at
+      }
+    end
   end
 end

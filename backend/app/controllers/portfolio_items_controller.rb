@@ -16,7 +16,7 @@ class PortfolioItemsController < ApiController
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     if params[:vendor_profile_id] || params[:vendor_id]
       # Public access to view any vendor's portfolio
-      @portfolio_items = @vendor_profile.portfolio_items.ordered
+      @portfolio_items = @vendor_profile.portfolio_items.with_attached_images.includes(:vendor_profile).ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
       @portfolio_items = @portfolio_items.featured if params[:featured] == 'true'
       categories = @vendor_profile.portfolio_categories
@@ -28,7 +28,8 @@ class PortfolioItemsController < ApiController
 
       return render json: { portfolio_items: [], categories: [] } unless current_user&.vendor_profile
 
-      @portfolio_items = current_user.vendor_profile.portfolio_items.ordered
+      @portfolio_items = current_user.vendor_profile.portfolio_items
+                                     .with_attached_images.includes(:vendor_profile).ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
       categories = current_user.vendor_profile.portfolio_categories
     end
@@ -196,7 +197,7 @@ class PortfolioItemsController < ApiController
       @vendor_profile = current_user&.vendor_profile
       render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found unless @vendor_profile
     else
-      @vendor_profile = VendorProfile.find(vendor_id)
+      @vendor_profile = VendorProfile.find_by_id_or_slug!(vendor_id)
     end
   rescue ActiveRecord::RecordNotFound
     render json: { errors: ['Vendor profile not found'] }, status: :not_found
@@ -239,6 +240,7 @@ class PortfolioItemsController < ApiController
       image_count: item.image_count,
       vendor_profile: {
         id: item.vendor_profile.id,
+        slug: item.vendor_profile.slug,
         business_name: item.vendor_profile.business_name
       }
     }

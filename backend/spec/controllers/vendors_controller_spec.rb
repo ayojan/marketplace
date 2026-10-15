@@ -79,14 +79,35 @@ RSpec.describe VendorsController do
         get :show, params: { id: vendor_profile.id }
         expect(response).to have_http_status(:ok)
         vendor_data = response.parsed_body['vendor']
-        expect(vendor_data).to include('id' => vendor_profile.id, 'business_name' => vendor_profile.business_name)
+        expect(vendor_data).to include(
+          'id' => vendor_profile.id,
+          'slug' => vendor_profile.slug,
+          'business_name' => vendor_profile.business_name
+        )
         expect(vendor_data['portfolio_items_count']).to eq(2)
+      end
+
+      it 'returns detailed vendor information when looking up by slug' do
+        get :show, params: { id: vendor_profile.slug }
+        expect(response).to have_http_status(:ok)
+        vendor_data = response.parsed_body['vendor']
+        expect(vendor_data).to include(
+          'id' => vendor_profile.id,
+          'slug' => vendor_profile.slug,
+          'business_name' => vendor_profile.business_name
+        )
       end
     end
 
     context 'when vendor does not exist' do
       it 'returns not found error' do
         get :show, params: { id: 99_999 }
+        expect(response).to have_http_status(:not_found)
+        expect(response.parsed_body['error']).to eq('Vendor not found')
+      end
+
+      it 'returns not found error for unknown slug' do
+        get :show, params: { id: 'unknown-vendor-slug' }
         expect(response).to have_http_status(:not_found)
         expect(response.parsed_body['error']).to eq('Vendor not found')
       end
