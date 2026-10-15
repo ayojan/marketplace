@@ -175,6 +175,7 @@ const CustomerDashboard = () => {
       const fetchedFavs = response?.data?.favorites || [];
       const mapped = fetchedFavs.map((f: any) => ({
         id: String(f.vendor?.id || f.vendor_profile_id),
+        slug: f.vendor?.slug,
         favorite_id: f.id,
         name: f.vendor?.business_name || 'Creative Partner',
         category: Array.isArray(f.vendor?.service_categories) ? f.vendor?.service_categories[0] : (f.vendor?.service_categories || 'Creative Partner'),
@@ -434,7 +435,7 @@ const CustomerDashboard = () => {
                     className="p-5 rounded-2xl border border-[#E8E2D9] bg-[#FBF8F4] hover:border-[#9E5338]/40 transition-all flex flex-col sm:flex-row gap-4 justify-between"
                   >
                     <div className="flex items-start gap-4">
-                      <Link href={`/vendors/${booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden shrink-0 border border-[#E8E2D9] group/vimg cursor-pointer">
+                      <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden shrink-0 border border-[#E8E2D9] group/vimg cursor-pointer">
                         <ImageWithFallback
                           src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'}
                           alt={booking.vendor?.business_name || 'Vendor'}
@@ -449,7 +450,7 @@ const CustomerDashboard = () => {
                           {renderStatusBadge(booking.status)}
                         </div>
 
-                        <Link href={`/vendors/${booking.vendor?.id || 4}`} className="inline-block hover:text-[#9E5338] transition-colors cursor-pointer">
+                        <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="inline-block hover:text-[#9E5338] transition-colors cursor-pointer">
                           <p className="text-xs font-semibold text-[#6B6560]">
                             {booking.vendor?.business_name} • <span className="text-[#9E5338] font-normal">{booking.vendor?.location}</span>
                           </p>
@@ -483,7 +484,7 @@ const CustomerDashboard = () => {
                           Write Review
                         </Button>
                       )}
-                      <Link href={`/vendors/${booking.vendor?.id || 1}`}>
+                      <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 1}`}>
                         <Button size="sm" variant="ghost" className="text-xs text-[#6B6560] hover:text-[#221F1C] rounded-full">
                           View Vendor
                         </Button>
@@ -509,7 +510,7 @@ const CustomerDashboard = () => {
                 {recommendedPros.map((vendor) => (
                   <Link
                     key={vendor.id}
-                    href={`/vendors/${vendor.id}`}
+                    href={`/vendors/${vendor.slug || vendor.id}`}
                     className="p-4 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] flex gap-3.5 items-center hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
                   >
                     <div className="relative size-14 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
@@ -617,7 +618,7 @@ const CustomerDashboard = () => {
                 savedVendors.slice(0, 3).map((pro) => (
                   <Link 
                     key={pro.id} 
-                    href={`/vendors/${pro.id}`}
+                    href={`/vendors/${pro.slug || pro.id}`}
                     className="flex items-center justify-between p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9] hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -724,7 +725,7 @@ const CustomerDashboard = () => {
             <div key={booking.id} className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm hover:border-[#9E5338]/40 transition-all space-y-4">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E2D9]">
                 <div className="flex items-center gap-4">
-                  <Link href={`/vendors/${booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden border border-[#E8E2D9] shrink-0 group/vimg cursor-pointer">
+                  <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden border border-[#E8E2D9] shrink-0 group/vimg cursor-pointer">
                     <ImageWithFallback 
                       src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'} 
                       alt={booking.vendor?.business_name || 'Vendor'} 
@@ -738,7 +739,7 @@ const CustomerDashboard = () => {
                       {booking.vendor?.category || 'Creative Partner'}
                     </span>
                     <h4 className="text-base font-serif font-bold text-[#221F1C] mt-1">{booking.service?.name}</h4>
-                    <Link href={`/vendors/${booking.vendor?.id || 4}`} className="hover:text-[#9E5338] transition-colors cursor-pointer inline-block">
+                    <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="hover:text-[#9E5338] transition-colors cursor-pointer inline-block">
                       <p className="text-xs text-[#6B6560] font-medium">{booking.vendor?.business_name} • {booking.vendor?.location}</p>
                     </Link>
                   </div>
@@ -847,7 +848,7 @@ const CustomerDashboard = () => {
             <div key={vendor.id} className="bg-white rounded-2xl border border-[#E8E2D9] overflow-hidden shadow-sm hover:border-[#9E5338]/40 transition-all group flex flex-col justify-between">
               <div>
                 <div className="relative aspect-[16/10] w-full bg-[#FBF8F4]">
-                  <Link href={`/vendors/${vendor.id}`} className="block w-full h-full cursor-pointer">
+                  <Link href={`/vendors/${vendor.slug || vendor.id}`} className="block w-full h-full cursor-pointer">
                     <ImageWithFallback src={vendor.image} alt={vendor.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <span className="absolute bottom-3 left-3 text-[10px] font-bold uppercase tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md pointer-events-none">
                       {vendor.category}
@@ -863,7 +864,7 @@ const CustomerDashboard = () => {
 
                 <div className="p-5 space-y-2">
                   <div className="flex items-center justify-between">
-                    <Link href={`/vendors/${vendor.id}`}>
+                    <Link href={`/vendors/${vendor.slug || vendor.id}`}>
                       <h4 className="text-base font-serif font-bold text-[#221F1C] hover:text-[#9E5338] transition-colors cursor-pointer">{vendor.name}</h4>
                     </Link>
                     <div className="flex items-center gap-1 text-xs font-bold text-[#221F1C]">
@@ -885,7 +886,7 @@ const CustomerDashboard = () => {
               </div>
 
               <div className="p-5 pt-0">
-                <Link href={`/vendors/${vendor.id}`}>
+                <Link href={`/vendors/${vendor.slug || vendor.id}`}>
                   <Button size="sm" className="w-full bg-[#F3EADF] hover:bg-[#9E5338] hover:text-white text-[#9E5338] font-bold text-xs rounded-full h-9 transition-colors">
                     View Vendor Profile
                   </Button>

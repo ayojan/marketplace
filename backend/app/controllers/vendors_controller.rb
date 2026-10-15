@@ -128,7 +128,7 @@ class VendorsController < ApiController
   end
 
   def set_vendor_profile
-    @vendor_profile = VendorProfile.find(params[:id])
+    @vendor_profile = VendorProfile.find_by_id_or_slug!(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Vendor not found' }, status: :not_found
   end

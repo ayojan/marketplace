@@ -76,25 +76,15 @@ class BookingManagement::BookingPresenter
   end
 
   def vendor_hash
-    first_featured = vendor_profile.featured_portfolio_items.first
-    primary_image = if first_featured.respond_to?(:primary_image_url)
-                      first_featured.primary_image_url
-                    elsif first_featured&.images&.attached?
-                      begin
-                        Rails.application.routes.url_helpers.url_for(first_featured.images.first)
-                      rescue StandardError
-                        nil
-                      end
-                    end
-
     {
       id: vendor_profile.id,
+      slug: vendor_profile.slug,
       user_id: vendor_profile.user_id,
       name: vendor_profile.user.full_name,
       business_name: vendor_profile.business_name,
       location: vendor_profile.location,
       profile_id: vendor_profile.id,
-      image: primary_image,
+      image: vendor_primary_image,
       category: vendor_profile.service_categories_list.first || 'Creative Partner'
     }
   end
@@ -112,5 +102,15 @@ class BookingManagement::BookingPresenter
       comment: booking.review.comment,
       created_at: booking.review.created_at
     }
+  end
+
+  def vendor_primary_image
+    first_featured = vendor_profile.featured_portfolio_items.first
+    return first_featured.primary_image_url if first_featured.respond_to?(:primary_image_url)
+    return unless first_featured&.images&.attached?
+
+    Rails.application.routes.url_helpers.url_for(first_featured.images.first)
+  rescue StandardError
+    nil
   end
 end

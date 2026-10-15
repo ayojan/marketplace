@@ -18,6 +18,7 @@ interface Service {
   images?: { id?: number | string; url?: string }[];
   vendor_profile: {
     id: string;
+    slug?: string;
     business_name: string;
     location: string;
     average_rating: number;
@@ -134,7 +135,7 @@ const ServiceSearch = () => {
                 <div key={service.id} className="group bg-card rounded-[2rem] border border-border/50 overflow-hidden hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-500 flex flex-col">
                   {/* Entire visible photo clickable to open vendor profile */}
                   <Link 
-                    href={`/vendors/${service.vendor_profile.id}`}
+                    href={`/vendors/${service.vendor_profile.slug || service.vendor_profile.id}`}
                     className="block aspect-[4/3] bg-secondary/30 relative overflow-hidden cursor-pointer group/img"
                     aria-label={`View ${service.vendor_profile.business_name} profile`}
                   >
@@ -164,7 +165,7 @@ const ServiceSearch = () => {
                   <div className="p-8 flex-1 flex flex-col relative">
                     <div className="flex justify-between items-start mb-6">
                       <div className="space-y-1.5">
-                        <Link href={`/vendors/${service.vendor_profile.id}`} className="block">
+                        <Link href={`/vendors/${service.vendor_profile.slug || service.vendor_profile.id}`} className="block">
                           <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
                               {service.vendor_profile.business_name}
@@ -196,7 +197,7 @@ const ServiceSearch = () => {
                         </span>
                       </div>
                       <Link 
-                        href={`/vendors/${service.vendor_profile.id}`}
+                        href={`/vendors/${service.vendor_profile.slug || service.vendor_profile.id}`}
                         className="bg-secondary text-white px-6 py-3 rounded-full hover:bg-primary transition-all text-sm font-bold border border-border/50"
                       >
                         View Profile

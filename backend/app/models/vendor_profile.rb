@@ -22,6 +22,7 @@
 #  phone               :string
 #  rejection_reason    :text
 #  response_time_hours :decimal(5, 2)
+#  slug                :string           not null
 #  total_reviews       :integer          default(0)
 #  verification_status :integer          default("unverified")
 #  verified_at         :datetime
@@ -37,6 +38,7 @@
 #  index_vendor_profiles_on_coordinates          (latitude,longitude)
 #  index_vendor_profiles_on_favorites_count      (favorites_count)
 #  index_vendor_profiles_on_location             (location)
+#  index_vendor_profiles_on_slug                 (slug) UNIQUE
 #  index_vendor_profiles_on_user_id              (user_id) UNIQUE
 #  index_vendor_profiles_on_verification_status  (verification_status)
 #
@@ -68,8 +70,13 @@ class VendorProfile < ApplicationRecord
     rejected: 3
   }, prefix: :verification
 
+  # Callbacks
+  before_validation :generate_slug, if: -> { slug.blank? }
+  before_save :normalize_website
+
   # Validations
   validates :user_id, uniqueness: true
+  validates :slug, presence: true, uniqueness: { case_sensitive: false }
   validates :business_name, presence: true, length: { minimum: 2, maximum: 100 }
   validates :description, length: { minimum: 50, maximum: 2000 }, allow_blank: true
   validates :location, presence: true, length: { maximum: 255 }
@@ -223,7 +230,41 @@ class VendorProfile < ApplicationRecord
     nil
   end
 
+  def to_param
+    slug.presence || id.to_s
+  end
+
   # Class methods
+  def self.find_by_id_or_slug!(id_or_slug)
+    find_by_id_or_slug(id_or_slug) ||
+      raise(ActiveRecord::RecordNotFound, "Couldn't find VendorProfile with '#{id_or_slug}'")
+  end
+
+  def self.find_by_id_or_slug(id_or_slug)
+    return nil if id_or_slug.blank?
+
+    found = find_by(slug: id_or_slug.to_s.downcase)
+    return found if found
+
+    find_by(id: id_or_slug) if id_or_slug.to_s.match?(/\A\d+\z/)
+  end
+
+  def self.next_available_slug(base, current_id: nil)
+    base_slug = base.to_s.parameterize.presence || 'vendor'
+    scope = current_id ? where.not(id: current_id) : all
+    existing_slugs = scope.where('slug = ? OR slug LIKE ?', base_slug, "#{base_slug}-%").pluck(:slug)
+
+    return base_slug unless existing_slugs.include?(base_slug)
+
+    next_number = max_slug_suffix(existing_slugs, base_slug) + 1
+    "#{base_slug}-#{next_number}"
+  end
+
+  def self.max_slug_suffix(slugs, base_slug)
+    pattern = /\A#{Regexp.escape(base_slug)}-(\d+)\z/
+    slugs.filter_map { |s| s == base_slug ? 1 : s[pattern, 1]&.to_i }.max || 1
+  end
+
   def self.search_by_name_or_location(query)
     return all if query.blank?
 
@@ -243,7 +284,7 @@ class VendorProfile < ApplicationRecord
   # Explicitly allowlist safe searchable fields for Ransack/ActiveAdmin
   def self.ransackable_attributes(_auth_object = nil)
     %w[
-      id business_name description location phone website
+      id slug business_name description location phone website
       business_license years_experience average_rating
       total_reviews latitude longitude created_at updated_at user_id
       instagram_handle facebook_url cancellation_policy response_time_hours
@@ -256,10 +297,12 @@ class VendorProfile < ApplicationRecord
     GeographicLocation.sql_distance_predicate
   end
 
-  # Callbacks
-  before_save :normalize_website
-
   private
+
+  def generate_slug
+    base = business_name.presence || 'vendor'
+    self.slug = self.class.next_available_slug(base, current_id: id)
+  end
 
   def loaded_categories?
     services.loaded? && services.all? { |s| s.association(:categories).loaded? }

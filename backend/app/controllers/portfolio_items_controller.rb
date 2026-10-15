@@ -197,7 +197,7 @@ class PortfolioItemsController < ApiController
       @vendor_profile = current_user&.vendor_profile
       render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found unless @vendor_profile
     else
-      @vendor_profile = VendorProfile.find(vendor_id)
+      @vendor_profile = VendorProfile.find_by_id_or_slug!(vendor_id)
     end
   rescue ActiveRecord::RecordNotFound
     render json: { errors: ['Vendor profile not found'] }, status: :not_found
@@ -240,6 +240,7 @@ class PortfolioItemsController < ApiController
       image_count: item.image_count,
       vendor_profile: {
         id: item.vendor_profile.id,
+        slug: item.vendor_profile.slug,
         business_name: item.vendor_profile.business_name
       }
     }

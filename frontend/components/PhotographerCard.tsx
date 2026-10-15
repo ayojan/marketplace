@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 interface Vendor {
   id: string;
+  slug?: string;
   name?: string;
   business_name?: string;
   image?: string;
@@ -33,6 +34,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   const [isLiked, setIsLiked] = useState(photographer.is_favorite || false);
   const [isLiking, setIsLiking] = useState(false);
   const id = photographer.id;
+  const slugOrId = photographer.slug || photographer.id;
   const name = photographer.name || photographer.business_name || 'Creative Partner';
   const image = photographer.image || photographer.profile_image_url || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=1000&auto=format&fit=crop';
   const rawRating = photographer.rating ?? photographer.average_rating;
@@ -119,7 +121,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
       {/* Photo header - Entire visible photo clickable to open vendor profile */}
       <div className="relative aspect-[16/10] overflow-hidden bg-[#F3EADF]">
         <Link 
-          href={`/vendors/${id}`}
+          href={`/vendors/${slugOrId}`}
           className="block w-full h-full cursor-pointer relative"
           aria-label={`View ${name} profile`}
         >
@@ -154,7 +156,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
       <div className="p-4 space-y-2.5 bg-white">
         
         {/* Clickable Vendor Title */}
-        <Link href={`/vendors/${id}`} className="block">
+        <Link href={`/vendors/${slugOrId}`} className="block">
           <h3 className="text-base font-serif font-bold text-[#221F1C] truncate tracking-tight group-hover:text-[#9E5338] transition-colors cursor-pointer">
             {name}
           </h3>
@@ -207,7 +209,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
             </div>
           </div>
 
-          <Link href={`/vendors/${id}`}>
+          <Link href={`/vendors/${slugOrId}`}>
             <span className="px-3.5 py-1.5 rounded-full border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:bg-[#9E5338] hover:text-white hover:border-[#9E5338] transition-all inline-block cursor-pointer">
               View Profile
             </span>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_15_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_15_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -333,10 +333,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_15_000002) do
     t.text "cancellation_policy"
     t.decimal "response_time_hours", precision: 5, scale: 2
     t.decimal "completion_rate", precision: 5, scale: 4
+    t.string "slug", null: false
     t.index ["business_name"], name: "index_vendor_profiles_on_business_name"
     t.index ["favorites_count"], name: "index_vendor_profiles_on_favorites_count"
     t.index ["latitude", "longitude"], name: "index_vendor_profiles_on_coordinates"
     t.index ["location"], name: "index_vendor_profiles_on_location"
+    t.index ["slug"], name: "index_vendor_profiles_on_slug", unique: true
     t.index ["user_id"], name: "index_vendor_profiles_on_user_id", unique: true, comment: "Ensures each user has at most one vendor profile"
     t.index ["verification_status"], name: "index_vendor_profiles_on_verification_status"
     t.check_constraint "completion_rate IS NULL OR completion_rate >= 0::numeric AND completion_rate <= 1.0", name: "check_completion_rate_valid"

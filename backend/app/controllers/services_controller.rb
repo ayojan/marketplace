@@ -190,6 +190,7 @@ class ServicesController < ApiController
     img_url = vendor_image_url(vendor)
     {
       id: vendor&.id,
+      slug: vendor&.slug,
       business_name: vendor&.business_name,
       location: vendor&.location,
       average_rating: vendor&.average_rating,

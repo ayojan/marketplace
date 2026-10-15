@@ -12,6 +12,7 @@ module VendorSerializable
 
     {
       id: vendor.id,
+      slug: vendor.slug,
       business_name: vendor.business_name,
       location: vendor.location,
       average_rating: vendor.average_rating,
@@ -38,6 +39,7 @@ module VendorSerializable
   def vendor_core_attributes(vendor, primary_image)
     {
       id: vendor.id,
+      slug: vendor.slug,
       business_name: vendor.business_name,
       description: vendor.description,
       location: vendor.location,
