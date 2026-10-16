@@ -1,5 +1,28 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: auth_identities
+#
+#  id         :bigint           not null, primary key
+#  email      :string
+#  metadata   :jsonb
+#  provider   :string           not null
+#  uid        :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  user_id    :bigint           not null
+#
+# Indexes
+#
+#  index_auth_identities_on_provider_and_uid      (provider,uid) UNIQUE
+#  index_auth_identities_on_user_id               (user_id)
+#  index_auth_identities_on_user_id_and_provider  (user_id,provider) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#
 require 'rails_helper'
 
 RSpec.describe AuthIdentity do
