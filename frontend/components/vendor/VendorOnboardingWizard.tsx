@@ -172,7 +172,9 @@ export default function VendorOnboardingWizard() {
   const router = useRouter();
   const { user, register, isAuthenticated } = useAuth();
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [currentStep, setCurrentStep] = useState<number>(
+    isAuthenticated && user?.role === 'vendor' ? 2 : 1
+  );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
@@ -628,9 +630,11 @@ export default function VendorOnboardingWizard() {
     }
   };
 
+  const isVendorAuthenticated = isAuthenticated && user?.role === 'vendor';
+
   // Step metadata for stepper bar
   const STEPS = [
-    { number: 1, title: 'Account', subtitle: 'Login credentials' },
+    { number: 1, title: 'Account', subtitle: isVendorAuthenticated ? 'Completed' : 'Login credentials' },
     { number: 2, title: 'Business Profile', subtitle: 'Identity & Bio' },
     { number: 3, title: 'Categories & Services', subtitle: 'Offerings & Pricing' },
     { number: 4, title: 'Service Locations', subtitle: 'Coverage & Travel' },
@@ -675,18 +679,19 @@ export default function VendorOnboardingWizard() {
             {/* Step Indicators */}
             <div className="grid grid-cols-5 gap-2 md:gap-4 relative">
               {STEPS.map((step) => {
-                const isCompleted = currentStep > step.number;
+                const isCompleted = currentStep > step.number || (step.number === 1 && isVendorAuthenticated);
                 const isCurrent = currentStep === step.number;
+                const isClickable = (isCompleted || isCurrent) && !(step.number === 1 && isVendorAuthenticated);
                 return (
                   <button
                     key={step.number}
                     onClick={() => {
-                      if (isCompleted || isCurrent) setCurrentStep(step.number);
+                      if (isClickable) setCurrentStep(step.number);
                     }}
-                    disabled={!isCompleted && !isCurrent}
-                    className={`flex flex-col items-center text-center group cursor-pointer transition-all ${
-                      !isCompleted && !isCurrent ? 'opacity-40 cursor-not-allowed' : ''
-                    }`}
+                    disabled={!isClickable}
+                    className={`flex flex-col items-center text-center group transition-all ${
+                      isClickable ? 'cursor-pointer' : 'cursor-default'
+                    } ${!isCompleted && !isCurrent ? 'opacity-40' : ''}`}
                   >
                     <div
                       className={`size-9 rounded-full flex items-center justify-center font-bold text-xs mb-1.5 transition-all shadow-sm ${
@@ -931,6 +936,18 @@ export default function VendorOnboardingWizard() {
                 </p>
               </div>
 
+              {isVendorAuthenticated && (
+                <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl p-3.5 flex items-center gap-3 text-xs">
+                  <div className="size-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <Check className="size-3.5 stroke-[3]" />
+                  </div>
+                  <div>
+                    <p className="font-bold">Account Created Successfully!</p>
+                    <p className="text-emerald-700 text-[11px]">Your login credentials are saved. Complete your business profile below to get your showcase live on Ayoj.</p>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleStep2Submit} className="space-y-5">
                 {/* Business Name */}
                 <div className="space-y-1.5">
@@ -1106,14 +1123,23 @@ export default function VendorOnboardingWizard() {
 
                 {/* Navigation CTA */}
                 <div className="pt-4 flex items-center justify-between border-t border-[#E8E2D9]">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCurrentStep(1)}
-                    className="border-[#E8E2D9] text-[#6B6560] hover:text-[#221F1C] rounded-xl text-xs h-10 px-4"
-                  >
-                    <ArrowLeft className="size-3.5 mr-1.5" /> Back
-                  </Button>
+                  {isVendorAuthenticated ? (
+                    <Link
+                      href="/vendor/dashboard"
+                      className="inline-flex items-center gap-1.5 text-xs text-[#6B6560] hover:text-[#221F1C] font-semibold py-2 px-3.5 rounded-xl border border-[#E8E2D9] hover:bg-[#F3EADF] transition-colors"
+                    >
+                      <ArrowLeft className="size-3.5" /> Save & Exit to Dashboard
+                    </Link>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentStep(1)}
+                      className="border-[#E8E2D9] text-[#6B6560] hover:text-[#221F1C] rounded-xl text-xs h-10 px-4"
+                    >
+                      <ArrowLeft className="size-3.5 mr-1.5" /> Back
+                    </Button>
+                  )}
 
                   <Button
                     type="submit"

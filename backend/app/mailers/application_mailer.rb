@@ -1,15 +1,43 @@
 # frozen_string_literal: true
 
 class ApplicationMailer < ActionMailer::Base
-  default from: lambda {
-    if Rails.env.test?
-      'noreply@marketplace.com'
-    else
+  class << self
+    def welcome_sender
+      return 'noreply@marketplace.com' if Rails.env.test?
+
+      ENV.fetch('MAILER_WELCOME_FROM', 'Ayoj Welcome <welcome@ayoj.in>')
+    end
+
+    def bookings_sender
+      return 'noreply@marketplace.com' if Rails.env.test?
+
+      ENV.fetch('MAILER_BOOKINGS_FROM', 'Ayoj Bookings <bookings@ayoj.in>')
+    end
+
+    def reminders_sender
+      return 'noreply@marketplace.com' if Rails.env.test?
+
+      ENV.fetch('MAILER_REMINDERS_FROM', 'Ayoj Reminders <reminders@ayoj.in>')
+    end
+
+    def support_sender
+      return 'noreply@marketplace.com' if Rails.env.test?
+
+      ENV.fetch('MAILER_SUPPORT_FROM', 'Ayoj Support <support@ayoj.in>')
+    end
+
+    def default_sender
+      return 'noreply@marketplace.com' if Rails.env.test?
+
       ENV['MAILER_FROM_EMAIL'].presence ||
         Rails.application.credentials.dig(:resend, :from_email).presence ||
         'Ayoj <notifications@ayoj.in>'
     end
-  }
+  end
+
+  delegate :welcome_sender, :bookings_sender, :reminders_sender, :support_sender, :default_sender, to: :class
+
+  default from: -> { default_sender }
   layout 'mailer'
 
   helper_method :format_booking_time, :time_duration, :frontend_url

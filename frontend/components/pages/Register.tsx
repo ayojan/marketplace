@@ -13,47 +13,34 @@ import {
   EyeOff,
   ArrowLeft,
   Briefcase,
-  CheckCircle2,
   Building,
-  MapPin,
-  Tag,
-  ShieldCheck,
   Sparkles,
   Github,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import AuthLeftPanel from '@/components/auth/AuthLeftPanel';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 import AyojLogo from '@/components/AyojLogo';
-import VendorOnboardingWizard from '@/components/vendor/VendorOnboardingWizard';
-
-const SERVICE_CATEGORIES = [
-  'Photography & Cinematography',
-  'Bridal Makeup & Hair',
-  'Decor & Styling',
-  'Event Planning & Coordination',
-  'DJ & Sound Entertainment',
-  'Catering & Food Experience',
-];
-
-const POPULAR_CITIES = [
-  'Delhi NCR',
-  'Mumbai',
-  'Bengaluru',
-  'Jaipur',
-  'Goa',
-  'Chandigarh',
-];
 
 const Register = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const roleParam = searchParams.get('role');
-  const activeRole: 'customer' | 'vendor' = roleParam === 'vendor' ? 'vendor' : 'customer';
+  const [activeRole, setActiveRole] = useState<'customer' | 'vendor'>(
+    roleParam === 'vendor' ? 'vendor' : 'customer'
+  );
+
+  useEffect(() => {
+    if (roleParam === 'vendor') {
+      setActiveRole('vendor');
+    } else if (roleParam === 'customer') {
+      setActiveRole('customer');
+    }
+  }, [roleParam]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -64,22 +51,20 @@ const Register = () => {
     email: '',
     password: '',
     passwordConfirmation: '',
-    // Vendor specific fields
     businessName: '',
-    category: SERVICE_CATEGORIES[0],
-    location: POPULAR_CITIES[0],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, error, clearError } = useAuth();
 
-  // If vendor role is requested, render the multi-step onboarding wizard
-  if (roleParam === 'vendor') {
-    return <VendorOnboardingWizard />;
-  }
+  const handleRoleChange = (role: 'customer' | 'vendor') => {
+    setActiveRole(role);
+    if (error) clearError();
+    router.replace(`/register?role=${role}`);
+  };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -97,8 +82,8 @@ const Register = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
       return;
     }
 
@@ -113,9 +98,7 @@ const Register = () => {
       role: 'customer' | 'vendor';
       vendor_profile_attributes?: {
         business_name: string;
-        location: string;
-        category?: string;
-        description?: string;
+        location?: string;
       };
     } = {
       email: formData.email,
@@ -123,8 +106,16 @@ const Register = () => {
       password_confirmation: formData.passwordConfirmation,
       first_name: formData.firstName,
       last_name: formData.lastName,
-      role: 'customer',
+      role: activeRole,
     };
+
+    if (activeRole === 'vendor') {
+      const bName = formData.businessName.trim() || `${formData.firstName} ${formData.lastName}'s Services`;
+      payload.vendor_profile_attributes = {
+        business_name: bName,
+        location: 'Delhi NCR',
+      };
+    }
 
     const result = await register(payload);
 
@@ -135,12 +126,15 @@ const Register = () => {
         });
         router.push('/login');
       } else {
-        toast.success(
-          activeRole === 'vendor'
-            ? 'Welcome to Ayoj Partner Network!'
-            : 'Welcome to Ayoj! Start planning your celebration.'
-        );
-        router.push(searchParams?.get('from') || '/');
+        if (activeRole === 'vendor') {
+          toast.success("Account created! Let's set up your business profile.", {
+            duration: 4000,
+          });
+          router.push('/vendor/onboarding');
+        } else {
+          toast.success('Welcome to Ayoj! Start planning your celebration.');
+          router.push(searchParams?.get('from') || '/');
+        }
       }
     }
 
@@ -171,6 +165,34 @@ const Register = () => {
 
         <div className="w-full max-w-md mx-auto my-auto space-y-5 py-2">
           
+          {/* Role Toggle Tabs */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#F3EADF] rounded-xl border border-[#E8E2D9]">
+            <button
+              type="button"
+              onClick={() => handleRoleChange('customer')}
+              className={`py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeRole === 'customer'
+                  ? 'bg-white text-[#9E5338] shadow-xs'
+                  : 'text-[#6B6560] hover:text-[#221F1C]'
+              }`}
+            >
+              <Sparkles className="size-3.5" />
+              <span>Customer (Book Events)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleChange('vendor')}
+              className={`py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeRole === 'vendor'
+                  ? 'bg-white text-[#9E5338] shadow-xs'
+                  : 'text-[#6B6560] hover:text-[#221F1C]'
+              }`}
+            >
+              <Briefcase className="size-3.5" />
+              <span>Partner / Vendor</span>
+            </button>
+          </div>
+
           {/* Heading */}
           <motion.div
             key={activeRole}
@@ -178,25 +200,12 @@ const Register = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F3EADF] text-[#9E5338] text-[11px] font-semibold mb-3 border border-[#E8E2D9]">
-              {activeRole === 'vendor' ? (
-                <>
-                  <Briefcase className="size-3" />
-                  <span>Ayoj Partner Onboarding</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="size-3" />
-                  <span>Ayoj Customer Registration</span>
-                </>
-              )}
-            </div>
             <h2 className="text-3xl md:text-4xl font-serif font-normal text-[#221F1C] mb-2 tracking-tight">
               {activeRole === 'vendor' ? 'Become an Ayoj Partner' : 'Create your account'}
             </h2>
             <p className="text-[#6B6560] text-xs sm:text-sm font-normal max-w-xs mx-auto">
               {activeRole === 'vendor'
-                ? 'List your services, showcase your portfolio & receive direct client inquiries'
+                ? 'Quick 1-step signup — set up your business profile & services right after'
                 : 'Join Ayoj to find, compare and book verified event professionals'}
             </p>
           </motion.div>
@@ -278,87 +287,33 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Vendor Specific Business Profile Fields */}
+              {/* Vendor Specific Optional Business Name */}
               {activeRole === 'vendor' && (
-                <div className="space-y-3 pt-0.5">
-                  <div className="group">
+                <div className="group">
+                  <div className="flex items-center justify-between mb-1">
                     <Label
                       htmlFor="businessName"
-                      className="text-[#221F1C] font-semibold text-xs mb-1 block"
+                      className="text-[#221F1C] font-semibold text-xs block"
                     >
-                      Business / Studio Name
+                      Business or Brand Name
                     </Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Building className="h-3.5 w-3.5 text-[#6B6560]" />
-                      </div>
-                      <Input
-                        id="businessName"
-                        name="businessName"
-                        type="text"
-                        required={activeRole === 'vendor'}
-                        className="pl-8 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C] placeholder:text-[#6B6560]"
-                        placeholder="e.g. Royal Canvas Photography"
-                        value={formData.businessName}
-                        onChange={handleChange}
-                      />
-                    </div>
+                    <span className="text-[10px] text-[#6B6560] bg-[#F3EADF] px-1.5 py-0.5 rounded font-medium">
+                      Optional
+                    </span>
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="group">
-                      <Label
-                        htmlFor="category"
-                        className="text-[#221F1C] font-semibold text-xs mb-1 block"
-                      >
-                        Service Category
-                      </Label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Tag className="h-3.5 w-3.5 text-[#6B6560]" />
-                        </div>
-                        <select
-                          id="category"
-                          name="category"
-                          value={formData.category}
-                          onChange={handleChange}
-                          className="w-full pl-8 pr-3 h-10 bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C] appearance-none cursor-pointer"
-                        >
-                          {SERVICE_CATEGORIES.map((cat) => (
-                            <option key={cat} value={cat}>
-                              {cat}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Building className="h-3.5 w-3.5 text-[#6B6560]" />
                     </div>
-
-                    <div className="group">
-                      <Label
-                        htmlFor="location"
-                        className="text-[#221F1C] font-semibold text-xs mb-1 block"
-                      >
-                        Base City
-                      </Label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <MapPin className="h-3.5 w-3.5 text-[#6B6560]" />
-                        </div>
-                        <select
-                          id="location"
-                          name="location"
-                          value={formData.location}
-                          onChange={handleChange}
-                          className="w-full pl-8 pr-3 h-10 bg-[#FBF8F4] border border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C] appearance-none cursor-pointer"
-                        >
-                          {POPULAR_CITIES.map((city) => (
-                            <option key={city} value={city}>
-                              {city}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                    <Input
+                      id="businessName"
+                      name="businessName"
+                      type="text"
+                      className="pl-8 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C] placeholder:text-[#6B6560]"
+                      placeholder="e.g. Royal Canvas Photography (or your name)"
+                      value={formData.businessName}
+                      onChange={handleChange}
+                    />
                   </div>
                 </div>
               )}
@@ -409,7 +364,7 @@ const Register = () => {
                       autoComplete="new-password"
                       required
                       className="pl-8 pr-9 h-10 bg-[#FBF8F4] border-[#E8E2D9] rounded-xl focus:border-[#9E5338] text-xs text-[#221F1C] placeholder:text-[#6B6560]"
-                      placeholder="Min. 6 chars"
+                      placeholder="Min. 8 chars"
                       value={formData.password}
                       onChange={handleChange}
                     />
@@ -478,12 +433,18 @@ const Register = () => {
                 ) : (
                   <>
                     {activeRole === 'vendor'
-                      ? 'Register as Ayoj Partner'
+                      ? 'Register & Continue to Onboarding'
                       : 'Create Account'}
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                   </>
                 )}
               </Button>
+
+              {activeRole === 'vendor' && (
+                <p className="text-[11px] text-[#6B6560] text-center pt-1 font-normal">
+                  ✨ Quick 1-step registration. You'll complete your service details and portfolio in the onboarding wizard.
+                </p>
+              )}
 
               {/* Divider */}
               <div className="relative flex items-center py-2">
