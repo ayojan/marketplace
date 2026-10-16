@@ -15,7 +15,7 @@
 #  remember_created_at    :datetime
 #  reset_password_sent_at :datetime
 #  reset_password_token   :string
-#  role                   :integer          default("customer"), not null
+#  role                   :string           default("customer"), not null
 #  unconfirmed_email      :string
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
@@ -37,7 +37,7 @@ class User < ApplicationRecord
          :recoverable, :rememberable, :validatable, :confirmable
 
   # ── Enums & Scopes ────────────────────────────────────────────────────────────
-  enum :role, { customer: 0, vendor: 1, admin: 2 }, suffix: true
+  enum :role, { customer: 'customer', vendor: 'vendor', admin: 'admin' }, suffix: true
 
   scope :customers,   -> { customer_role }
   scope :vendors,     -> { vendor_role }

@@ -23,7 +23,7 @@
 #  response_time_hours :decimal(5, 2)
 #  slug                :string           not null
 #  total_reviews       :integer          default(0)
-#  verification_status :integer          default("unverified")
+#  verification_status :string           default("unverified")
 #  verified_at         :datetime
 #  website             :string
 #  years_experience    :integer          default(0)
@@ -73,10 +73,10 @@ class Vendor < ApplicationRecord
 
   # ── Enums ─────────────────────────────────────────────────────────────────────
   enum :verification_status, {
-    unverified: 0,
-    pending_verification: 1,
-    verified: 2,
-    rejected: 3
+    unverified: 'unverified',
+    pending_verification: 'pending_verification',
+    verified: 'verified',
+    rejected: 'rejected'
   }, prefix: :verification
 
   # ── Callbacks ─────────────────────────────────────────────────────────────────

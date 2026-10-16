@@ -21,7 +21,7 @@ class DeviseCreateUsers < ActiveRecord::Migration[8.0]
       t.string   :unconfirmed_email
 
       ## User Details & Role
-      t.integer :role, null: false, default: 0
+      t.string  :role, null: false, default: 'customer'
       t.string  :first_name
       t.string  :last_name
 

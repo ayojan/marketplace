@@ -10,8 +10,8 @@
 #  base_price     :decimal(10, 2)
 #  description    :text
 #  name           :string
-#  pricing_type   :integer          default("hourly")
-#  status         :integer          default("draft")
+#  pricing_type   :string           default("hourly")
+#  status         :string           default("draft")
 #  total_reviews  :integer          default(0)
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
@@ -43,16 +43,16 @@ class Service < ApplicationRecord
 
   # Enums
   enum :pricing_type, {
-    hourly: 0,
-    package: 1,
-    custom: 2
+    hourly: 'hourly',
+    package: 'package',
+    custom: 'custom'
   }
 
   enum :status, {
-    draft: 0,
-    active: 1,
-    inactive: 2,
-    archived: 3
+    draft: 'draft',
+    active: 'active',
+    inactive: 'inactive',
+    archived: 'archived'
   }
 
   # Validations

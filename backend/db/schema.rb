@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_16_171500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -101,7 +101,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.string "event_duration"
     t.string "event_location", null: false
     t.decimal "total_amount", precision: 10, scale: 2, null: false
-    t.integer "status", default: 0, null: false
+    t.string "status", default: "pending", null: false
     t.text "requirements"
     t.text "special_instructions"
     t.datetime "booking_reminder_sent_at"
@@ -241,7 +241,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.integer "value_rating"
     t.integer "punctuality_rating"
     t.text "comment"
-    t.integer "status", default: 0
+    t.string "status", default: "published"
     t.text "vendor_response"
     t.datetime "vendor_responded_at"
     t.integer "helpful_votes", default: 0, null: false
@@ -290,8 +290,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.string "name"
     t.text "description"
     t.decimal "base_price", precision: 10, scale: 2
-    t.integer "pricing_type", default: 0
-    t.integer "status", default: 0
+    t.string "pricing_type", default: "hourly"
+    t.string "status", default: "draft"
     t.decimal "average_rating", precision: 3, scale: 2, default: "0.0"
     t.integer "total_reviews", default: 0
     t.datetime "created_at", null: false
@@ -462,7 +462,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
     t.string "unconfirmed_email"
-    t.integer "role", default: 0, null: false
+    t.string "role", default: "customer", null: false
     t.string "first_name"
     t.string "last_name"
     t.datetime "created_at", null: false
@@ -495,7 +495,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.integer "total_reviews", default: 0
     t.decimal "latitude", precision: 10, scale: 6
     t.decimal "longitude", precision: 10, scale: 6
-    t.integer "verification_status", default: 0
+    t.string "verification_status", default: "unverified"
     t.datetime "verified_at"
     t.text "rejection_reason"
     t.integer "favorites_count", default: 0, null: false

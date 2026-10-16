@@ -1,5 +1,50 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: vendors
+#
+#  id                  :bigint           not null, primary key
+#  average_rating      :decimal(3, 2)    default(0.0)
+#  business_license    :string
+#  business_name       :string           not null
+#  cancellation_policy :text
+#  completion_rate     :decimal(5, 4)
+#  description         :text
+#  facebook_url        :string
+#  favorites_count     :integer          default(0), not null
+#  instagram_handle    :string
+#  latitude            :decimal(10, 6)
+#  location            :string
+#  longitude           :decimal(10, 6)
+#  metadata            :jsonb
+#  phone               :string
+#  rejection_reason    :text
+#  response_time_hours :decimal(5, 2)
+#  slug                :string           not null
+#  total_reviews       :integer          default(0)
+#  verification_status :string           default("unverified")
+#  verified_at         :datetime
+#  website             :string
+#  years_experience    :integer          default(0)
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#  user_id             :bigint           not null
+#
+# Indexes
+#
+#  index_vendors_on_business_name        (business_name)
+#  index_vendors_on_coordinates          (latitude,longitude)
+#  index_vendors_on_favorites_count      (favorites_count)
+#  index_vendors_on_location             (location)
+#  index_vendors_on_slug                 (slug) UNIQUE
+#  index_vendors_on_user_id              (user_id) UNIQUE
+#  index_vendors_on_verification_status  (verification_status)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#
 require 'rails_helper'
 
 RSpec.describe Vendor do
@@ -12,6 +57,19 @@ RSpec.describe Vendor do
     it { is_expected.to have_many(:services).dependent(:destroy) }
     it { is_expected.to have_many(:categories).through(:services) }
     it { is_expected.to have_many(:bookings).dependent(:destroy) }
+  end
+
+  describe 'enums' do
+    subject(:vendor) { vendor_user.vendor }
+
+    it {
+      expect(vendor).to define_enum_for(:verification_status).with_values(
+        unverified: 'unverified',
+        pending_verification: 'pending_verification',
+        verified: 'verified',
+        rejected: 'rejected'
+      ).with_prefix(:verification).backed_by_column_of_type(:string)
+    }
   end
 
   describe 'validations' do

@@ -15,7 +15,7 @@ class CreateVendors < ActiveRecord::Migration[8.0]
       t.integer :total_reviews, default: 0
       t.decimal :latitude, precision: 10, scale: 6
       t.decimal :longitude, precision: 10, scale: 6
-      t.integer :verification_status, default: 0
+      t.string :verification_status, default: 'unverified'
       t.datetime :verified_at
       t.text :rejection_reason
       t.integer :favorites_count, default: 0, null: false

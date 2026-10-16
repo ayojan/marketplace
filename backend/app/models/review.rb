@@ -11,7 +11,7 @@
 #  punctuality_rating   :integer
 #  quality_rating       :integer
 #  rating               :integer          not null
-#  status               :integer          default("published")
+#  status               :string           default("published")
 #  value_rating         :integer
 #  vendor_responded_at  :datetime
 #  vendor_response      :text
@@ -57,7 +57,7 @@ class Review < ApplicationRecord
   has_many_attached :photos
 
   # Enums
-  enum :status, { published: 0, hidden: 1 }
+  enum :status, { published: 'published', hidden: 'hidden' }
 
   # Validations
   validates :rating, presence: true, inclusion: { in: 1..5 }

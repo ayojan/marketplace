@@ -12,7 +12,7 @@
 #  event_location           :string           not null
 #  requirements             :text
 #  special_instructions     :text
-#  status                   :integer          default("pending"), not null
+#  status                   :string           default("pending"), not null
 #  total_amount             :decimal(10, 2)   not null
 #  vendor_first_response_at :datetime
 #  created_at               :datetime         not null
@@ -76,13 +76,13 @@ RSpec.describe Booking do
 
     it 'defines the status enum' do
       expect(booking).to define_enum_for(:status).with_values(
-        pending: 0,
-        accepted: 1,
-        declined: 2,
-        completed: 3,
-        cancelled: 4,
-        counter_offered: 5
-      )
+        pending: 'pending',
+        accepted: 'accepted',
+        declined: 'declined',
+        completed: 'completed',
+        cancelled: 'cancelled',
+        counter_offered: 'counter_offered'
+      ).backed_by_column_of_type(:string)
     end
   end
 

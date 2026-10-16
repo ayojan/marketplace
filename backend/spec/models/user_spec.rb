@@ -15,7 +15,7 @@
 #  remember_created_at    :datetime
 #  reset_password_sent_at :datetime
 #  reset_password_token   :string
-#  role                   :integer          default("customer"), not null
+#  role                   :string           default("customer"), not null
 #  unconfirmed_email      :string
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
@@ -58,7 +58,12 @@ RSpec.describe User do
   end
 
   describe 'enums' do
-    it { is_expected.to define_enum_for(:role).with_values(customer: 0, vendor: 1, admin: 2).with_suffix }
+    it {
+      expect(user).to define_enum_for(:role)
+        .with_values(customer: 'customer', vendor: 'vendor', admin: 'admin')
+        .with_suffix
+        .backed_by_column_of_type(:string)
+    }
   end
 
   describe 'associations' do
