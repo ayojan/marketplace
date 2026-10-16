@@ -117,12 +117,10 @@ RSpec.describe User do
       end
     end
 
-    describe '#downcase_email' do
-      it 'downcases email before validation' do
-        mixed_case_email = 'MixedCase@Example.Com'
-        user = build(:user, email: mixed_case_email)
-        user.validate
-        expect(user.email).to eq(mixed_case_email.downcase)
+    describe 'email normalization' do
+      it 'downcases and strips whitespace from email' do
+        user = build(:user, email: '  MixedCase@Example.Com  ')
+        expect(user.email).to eq('mixedcase@example.com')
       end
     end
   end
@@ -132,6 +130,13 @@ RSpec.describe User do
       it 'returns first and last name combined' do
         user = build(:user, first_name: 'John', last_name: 'Doe')
         expect(user.full_name).to eq('John Doe')
+      end
+
+      it 'dynamically updates when attributes change without stale memoization' do
+        user = build(:user, first_name: 'John', last_name: 'Doe')
+        expect(user.full_name).to eq('John Doe')
+        user.first_name = 'Jane'
+        expect(user.full_name).to eq('Jane Doe')
       end
     end
 
