@@ -28,8 +28,8 @@ module Vendors
     def fetch_aggregated_stats
       stats = vendor.bookings.pick(
         Arel.sql('COUNT(*)'),
-        Arel.sql('COUNT(CASE WHEN status = 3 THEN 1 END)'),
-        Arel.sql('COUNT(CASE WHEN status IN (2, 3, 4) THEN 1 END)'),
+        Arel.sql("COUNT(CASE WHEN status = 'completed' THEN 1 END)"),
+        Arel.sql("COUNT(CASE WHEN status IN ('declined', 'completed', 'cancelled') THEN 1 END)"),
         Arel.sql("COUNT(DISTINCT CASE WHEN vendor_first_response_at <= created_at + INTERVAL '48 hours' THEN id END)"),
         Arel.sql('AVG(EXTRACT(EPOCH FROM (vendor_first_response_at - created_at)))'),
         Arel.sql('COUNT(DISTINCT customer_id)')

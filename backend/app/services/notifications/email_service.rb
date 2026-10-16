@@ -34,6 +34,8 @@ module Notifications
 
     def send_welcome_email(user)
       UserMailer.welcome_email(user).deliver_now
+    rescue Errno::ECONNREFUSED => e
+      Rails.logger.warn "Skipping welcome email delivery (SMTP offline): #{e.message}"
     end
 
     def send_booking_created(booking, recipient)

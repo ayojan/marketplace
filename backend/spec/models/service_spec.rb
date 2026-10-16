@@ -9,8 +9,8 @@
 #  base_price     :decimal(10, 2)
 #  description    :text
 #  name           :string
-#  pricing_type   :integer          default("hourly")
-#  status         :integer          default("draft")
+#  pricing_type   :string           default("hourly")
+#  status         :string           default("draft")
 #  total_reviews  :integer          default(0)
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
@@ -39,8 +39,19 @@ RSpec.describe Service do
   end
 
   describe 'enums' do
-    it { is_expected.to define_enum_for(:pricing_type).with_values(hourly: 0, package: 1, custom: 2) }
-    it { is_expected.to define_enum_for(:status).with_values(draft: 0, active: 1, inactive: 2, archived: 3) }
+    subject(:service) { described_class.new }
+
+    it {
+      expect(service).to define_enum_for(:pricing_type)
+        .with_values(hourly: 'hourly', package: 'package', custom: 'custom')
+        .backed_by_column_of_type(:string)
+    }
+
+    it {
+      expect(service).to define_enum_for(:status)
+        .with_values(draft: 'draft', active: 'active', inactive: 'inactive', archived: 'archived')
+        .backed_by_column_of_type(:string)
+    }
   end
 
   describe 'validations' do

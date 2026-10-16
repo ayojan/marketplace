@@ -35,11 +35,13 @@ module AvailabilitySlots
     end
 
     def booking_conflicts
+      time_overlap_sql = '(CAST(event_date AS time) < ? AND ' \
+                         'CAST(COALESCE(event_end_date, event_date + INTERVAL \'2 hours\') AS time) > ?)'
+
       Booking.where(vendor_id: vendor.id)
              .where(status: %i[pending accepted])
              .where('DATE(event_date) = ?', date)
-             .where('(TIME(event_date) < ? AND TIME(COALESCE(event_end_date, event_date + INTERVAL \'2 hours\')) > ?)',
-                    end_time, start_time)
+             .where(time_overlap_sql, end_time, start_time)
     end
   end
 end

@@ -1,5 +1,50 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: vendors
+#
+#  id                  :bigint           not null, primary key
+#  average_rating      :decimal(3, 2)    default(0.0)
+#  business_license    :string
+#  business_name       :string           not null
+#  cancellation_policy :text
+#  completion_rate     :decimal(5, 4)
+#  description         :text
+#  facebook_url        :string
+#  favorites_count     :integer          default(0), not null
+#  instagram_handle    :string
+#  latitude            :decimal(10, 6)
+#  location            :string
+#  longitude           :decimal(10, 6)
+#  metadata            :jsonb
+#  phone               :string
+#  rejection_reason    :text
+#  response_time_hours :decimal(5, 2)
+#  slug                :string           not null
+#  total_reviews       :integer          default(0)
+#  verification_status :string           default("unverified")
+#  verified_at         :datetime
+#  website             :string
+#  years_experience    :integer          default(0)
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#  user_id             :bigint           not null
+#
+# Indexes
+#
+#  index_vendors_on_business_name        (business_name)
+#  index_vendors_on_coordinates          (latitude,longitude)
+#  index_vendors_on_favorites_count      (favorites_count)
+#  index_vendors_on_location             (location)
+#  index_vendors_on_slug                 (slug) UNIQUE
+#  index_vendors_on_user_id              (user_id) UNIQUE
+#  index_vendors_on_verification_status  (verification_status)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#
 require 'rails_helper'
 
 RSpec.describe Vendor do
@@ -12,6 +57,19 @@ RSpec.describe Vendor do
     it { is_expected.to have_many(:services).dependent(:destroy) }
     it { is_expected.to have_many(:categories).through(:services) }
     it { is_expected.to have_many(:bookings).dependent(:destroy) }
+  end
+
+  describe 'enums' do
+    subject(:vendor) { vendor_user.vendor }
+
+    it {
+      expect(vendor).to define_enum_for(:verification_status).with_values(
+        unverified: 'unverified',
+        pending_verification: 'pending_verification',
+        verified: 'verified',
+        rejected: 'rejected'
+      ).with_prefix(:verification).backed_by_column_of_type(:string)
+    }
   end
 
   describe 'validations' do
@@ -98,29 +156,51 @@ RSpec.describe Vendor do
       end
     end
 
-    describe '.unverified' do
+    describe '.not_verified' do
       let!(:verified_vendor) do
-        create(:user, :vendor).vendor.tap do |vp|
-          vp.update!(verification_status: :verified)
-        end
+        create(:user, :vendor).vendor.tap { |vp| vp.update!(verification_status: :verified) }
+      end
+      let!(:pending_vendor) do
+        create(:user, :vendor).vendor.tap { |vp| vp.update!(verification_status: :pending_verification) }
+      end
+      let!(:rejected_vendor) do
+        create(:user, :vendor).vendor.tap { |vp| vp.update!(verification_status: :rejected) }
       end
       let!(:unverified_vendor) do
-        create(:user, :vendor).vendor.tap do |vp|
-          vp.update!(verification_status: :unverified)
-        end
+        create(:user, :vendor).vendor.tap { |vp| vp.update!(verification_status: :unverified) }
       end
 
-      it 'returns only unverified vendors' do
-        expect(described_class.unverified).to include(unverified_vendor)
-        expect(described_class.unverified).not_to include(verified_vendor)
+      it 'includes unverified, pending and rejected vendors' do
+        result = described_class.not_verified
+        expect(result).to include(unverified_vendor, pending_vendor, rejected_vendor)
+      end
+
+      it 'excludes verified vendors' do
+        expect(described_class.not_verified).not_to include(verified_vendor)
+      end
+
+      it 'is also accessible via the deprecated :unverified alias' do
+        expect(described_class.unverified).to match_array(described_class.not_verified)
       end
     end
 
     describe '.by_location' do
-      it 'finds vendors by location' do
-        vendor_record = create(:user, :vendor).vendor.tap { |vp| vp.update!(location: 'New York, NY') }
-        expect(described_class.by_location('New York')).to include(vendor_record)
-        expect(described_class.by_location('Los Angeles')).not_to include(vendor_record)
+      let!(:ny_vendor) { create(:user, :vendor).vendor.tap { |vp| vp.update!(location: 'New York, NY') } }
+      let!(:la_vendor) { create(:user, :vendor).vendor.tap { |vp| vp.update!(location: 'Los Angeles, CA') } }
+
+      it 'finds vendors by partial location match' do
+        expect(described_class.by_location('New York')).to include(ny_vendor)
+        expect(described_class.by_location('New York')).not_to include(la_vendor)
+      end
+
+      it 'is case-insensitive' do
+        expect(described_class.by_location('new york')).to include(ny_vendor)
+      end
+
+      it 'is safe against LIKE metacharacter injection' do
+        # '%' without escaping would match everything — it should match nothing here
+        expect(described_class.by_location('%')).not_to include(ny_vendor, la_vendor)
+        expect(described_class.by_location('_ew York')).not_to include(ny_vendor)
       end
     end
 
@@ -221,9 +301,34 @@ RSpec.describe Vendor do
         expect(complete_vendor.profile_complete?).to be false
       end
 
+      it 'returns false when location is blank' do
+        complete_vendor.location = ''
+        expect(complete_vendor.profile_complete?).to be false
+      end
+
       it 'returns false when description is too short' do
         complete_vendor.update(description: 'Short')
         expect(complete_vendor.profile_complete?).to be false
+      end
+
+      it 'returns false when description is blank' do
+        complete_vendor.update(description: '')
+        expect(complete_vendor.profile_complete?).to be false
+      end
+    end
+
+    describe '#portfolio?' do
+      it 'returns false when vendor has no portfolio items' do
+        expect(vendor.portfolio?).to be false
+      end
+
+      it 'returns true when vendor has at least one portfolio item' do
+        create(:portfolio_item, vendor: complete_vendor)
+        expect(complete_vendor.portfolio?).to be true
+      end
+
+      it 'is aliased as has_portfolio?' do
+        expect(complete_vendor.method(:has_portfolio?)).to eq(complete_vendor.method(:portfolio?))
       end
     end
 
@@ -306,7 +411,7 @@ RSpec.describe Vendor do
     end
   end
 
-  describe 'class methods' do
+  describe 'scopes (search)' do
     describe '.search_by_name_or_location' do
       let!(:amazing_photography) do
         create(:user, :vendor).vendor.tap do |vp|
@@ -345,7 +450,16 @@ RSpec.describe Vendor do
 
       it 'returns all vendors when query is blank' do
         results = described_class.search_by_name_or_location('')
-        expect(results.count).to eq(3)
+        expect(results).to include(amazing_photography, best_events, creative_studio)
+      end
+
+      it 'is safe against LIKE metacharacter injection' do
+        results = described_class.search_by_name_or_location('%')
+        expect(results).not_to include(amazing_photography, best_events, creative_studio)
+      end
+
+      it 'returns a chainable ActiveRecord::Relation' do
+        expect(described_class.search_by_name_or_location('Amazing').verified).to be_a(ActiveRecord::Relation)
       end
     end
   end

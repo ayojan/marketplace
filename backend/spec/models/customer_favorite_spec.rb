@@ -1,5 +1,26 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: customer_favorites
+#
+#  id         :bigint           not null, primary key
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  user_id    :bigint           not null
+#  vendor_id  :bigint           not null
+#
+# Indexes
+#
+#  index_customer_favorites_on_user_id                (user_id)
+#  index_customer_favorites_on_user_id_and_vendor_id  (user_id,vendor_id) UNIQUE
+#  index_customer_favorites_on_vendor_id              (vendor_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#  fk_rails_...  (vendor_id => vendors.id)
+#
 require 'rails_helper'
 
 RSpec.describe CustomerFavorite do

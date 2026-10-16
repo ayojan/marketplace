@@ -101,7 +101,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.string "event_duration"
     t.string "event_location", null: false
     t.decimal "total_amount", precision: 10, scale: 2, null: false
-    t.integer "status", default: 0, null: false
+    t.string "status", default: "pending", null: false
     t.text "requirements"
     t.text "special_instructions"
     t.datetime "booking_reminder_sent_at"
@@ -153,22 +153,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.index ["user_id", "vendor_id"], name: "index_customer_favorites_on_user_id_and_vendor_id", unique: true
     t.index ["user_id"], name: "index_customer_favorites_on_user_id"
     t.index ["vendor_id"], name: "index_customer_favorites_on_vendor_id"
-  end
-
-  create_table "customers", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.string "phone"
-    t.text "preferences"
-    t.text "event_types"
-    t.string "budget_range"
-    t.string "location"
-    t.string "company_name"
-    t.integer "total_bookings", default: 0
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["budget_range"], name: "index_customers_on_budget_range"
-    t.index ["location"], name: "index_customers_on_location"
-    t.index ["user_id"], name: "index_customers_on_user_id", unique: true
   end
 
   create_table "email_notification_preferences", force: :cascade do |t|
@@ -241,7 +225,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.integer "value_rating"
     t.integer "punctuality_rating"
     t.text "comment"
-    t.integer "status", default: 0
+    t.string "status", default: "published"
     t.text "vendor_response"
     t.datetime "vendor_responded_at"
     t.integer "helpful_votes", default: 0, null: false
@@ -290,8 +274,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.string "name"
     t.text "description"
     t.decimal "base_price", precision: 10, scale: 2
-    t.integer "pricing_type", default: 0
-    t.integer "status", default: 0
+    t.string "pricing_type", default: "hourly"
+    t.string "status", default: "draft"
     t.decimal "average_rating", precision: 3, scale: 2, default: "0.0"
     t.integer "total_reviews", default: 0
     t.datetime "created_at", null: false
@@ -462,13 +446,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
     t.string "unconfirmed_email"
-    t.integer "role", default: 0, null: false
+    t.string "role", default: "customer", null: false
     t.string "first_name"
     t.string "last_name"
+    t.string "phone"
+    t.text "preferences"
+    t.text "event_types"
+    t.string "budget_range"
+    t.string "location"
+    t.string "company_name"
+    t.integer "total_bookings", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["budget_range"], name: "index_users_on_budget_range"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["location"], name: "index_users_on_location"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -495,7 +488,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.integer "total_reviews", default: 0
     t.decimal "latitude", precision: 10, scale: 6
     t.decimal "longitude", precision: 10, scale: 6
-    t.integer "verification_status", default: 0
+    t.string "verification_status", default: "unverified"
     t.datetime "verified_at"
     t.text "rejection_reason"
     t.integer "favorites_count", default: 0, null: false
@@ -531,7 +524,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
   add_foreign_key "checklist_items", "users"
   add_foreign_key "customer_favorites", "users"
   add_foreign_key "customer_favorites", "vendors"
-  add_foreign_key "customers", "users"
   add_foreign_key "email_notification_preferences", "users"
   add_foreign_key "in_app_notifications", "users"
   add_foreign_key "portfolio_items", "vendors"

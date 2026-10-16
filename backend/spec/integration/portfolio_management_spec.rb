@@ -9,7 +9,7 @@ RSpec.describe 'Portfolio Management Integration' do
   let(:other_vendor) { create(:user, :vendor) }
 
   def auth_headers(user)
-    token = JwtService.encode(user_id: user.id)
+    token = Auth::JwtService.encode(user_id: user.id)
     { 'Authorization' => "Bearer #{token}" }
   end
 

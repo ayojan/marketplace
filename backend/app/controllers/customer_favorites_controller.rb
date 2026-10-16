@@ -23,7 +23,7 @@ class CustomerFavoritesController < ApiController
 
     authorize_favorite!(vendor)
     save_and_render_favorite(vendor)
-  rescue AuthorizationService::NotAuthorizedError => e
+  rescue Auth::AuthorizationService::NotAuthorizedError => e
     render json: { error: e.message }, status: :forbidden
   end
 
@@ -64,7 +64,7 @@ class CustomerFavoritesController < ApiController
   private
 
   def authorize_favorite!(vendor)
-    AuthorizationService.authorize!(current_user, vendor, :toggle_favorite)
+    Auth::AuthorizationService.authorize!(current_user, vendor, :toggle_favorite)
   end
 
   def save_and_render_favorite(vendor)

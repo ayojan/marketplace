@@ -21,9 +21,16 @@ class DeviseCreateUsers < ActiveRecord::Migration[8.0]
       t.string   :unconfirmed_email
 
       ## User Details & Role
-      t.integer :role, null: false, default: 0
+      t.string  :role, null: false, default: 'customer'
       t.string  :first_name
       t.string  :last_name
+      t.string  :phone
+      t.text    :preferences
+      t.text    :event_types
+      t.string  :budget_range
+      t.string  :location
+      t.string  :company_name
+      t.integer :total_bookings, default: 0
 
       t.timestamps null: false
     end
@@ -31,5 +38,7 @@ class DeviseCreateUsers < ActiveRecord::Migration[8.0]
     add_index :users, :email,                unique: true
     add_index :users, :reset_password_token, unique: true
     add_index :users, :confirmation_token,   unique: true
+    add_index :users, :budget_range
+    add_index :users, :location
   end
 end

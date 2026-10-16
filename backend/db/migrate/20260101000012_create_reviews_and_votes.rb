@@ -13,7 +13,7 @@ class CreateReviewsAndVotes < ActiveRecord::Migration[8.0]
       t.integer :value_rating
       t.integer :punctuality_rating
       t.text :comment
-      t.integer :status, default: 0
+      t.string :status, default: 'published'
       t.text :vendor_response
       t.datetime :vendor_responded_at
       t.integer :helpful_votes, default: 0, null: false

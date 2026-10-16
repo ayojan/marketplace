@@ -27,14 +27,14 @@ class ProfilesController < ApiController
     @profile = current_user.vendor
     return render json: { error: 'No profile found' }, status: :not_found unless @profile
 
-    apply_metadata(@profile)
+    result = Vendors::UpdateProfile.call(vendor: @profile, params: params)
 
-    if @profile.update(profile_params)
-      render json: profile_response(@profile)
+    if result[:success]
+      render json: profile_response(result[:vendor])
     else
       render json: {
         error: 'Profile update failed',
-        details: @profile.errors.full_messages
+        details: result[:errors]
       }, status: :unprocessable_content
     end
   end
@@ -60,14 +60,14 @@ class ProfilesController < ApiController
   end
 
   def update
-    apply_metadata(@profile)
+    result = Vendors::UpdateProfile.call(vendor: @profile, params: params)
 
-    if @profile.update(profile_params)
-      render json: profile_response(@profile)
+    if result[:success]
+      render json: profile_response(result[:vendor])
     else
       render json: {
         error: 'Profile update failed',
-        details: @profile.errors.full_messages
+        details: result[:errors]
       }, status: :unprocessable_content
     end
   end

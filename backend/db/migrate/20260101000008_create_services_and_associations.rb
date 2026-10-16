@@ -7,8 +7,8 @@ class CreateServicesAndAssociations < ActiveRecord::Migration[8.0]
       t.string :name
       t.text :description
       t.decimal :base_price, precision: 10, scale: 2
-      t.integer :pricing_type, default: 0
-      t.integer :status, default: 0
+      t.string :pricing_type, default: 'hourly'
+      t.string :status, default: 'draft'
       t.decimal :average_rating, precision: 3, scale: 2, default: 0.0
       t.integer :total_reviews, default: 0
 

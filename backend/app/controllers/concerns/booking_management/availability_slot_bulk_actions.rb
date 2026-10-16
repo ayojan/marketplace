@@ -5,7 +5,7 @@ module BookingManagement::AvailabilitySlotBulkActions
 
   def bulk_create
     slots_params = params[:availability_slots] || []
-    result = AvailabilitySlots::BulkCreate.call(
+    result = Vendors::BulkCreateAvailabilitySlots.call(
       vendor: current_user.vendor,
       slots_params: slots_params
     )
@@ -16,7 +16,7 @@ module BookingManagement::AvailabilitySlotBulkActions
   private
 
   def render_bulk_create_response(created_slots, errors)
-    presented_slots = created_slots.map { |slot| AvailabilitySlotPresenter.new(slot).as_json }
+    presented_slots = created_slots.map { |slot| BookingManagement::AvailabilitySlotPresenter.new(slot).as_json }
     if errors.empty?
       render json: {
         availability_slots: presented_slots,

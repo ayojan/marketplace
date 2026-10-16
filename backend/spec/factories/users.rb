@@ -39,9 +39,29 @@ FactoryBot.define do
 
     trait :with_customer do
       role { :customer }
-      after(:create) do |user|
-        create(:customer, user: user) unless user.customer
-      end
     end
+
+    trait :with_company do
+      company_name { Faker::Company.name }
+    end
+
+    trait :frequent_customer do
+      total_bookings { rand(5..20) }
+    end
+
+    trait :high_budget do
+      budget_range { 'over_5000' }
+    end
+
+    trait :complete_profile do
+      phone { '+1-555-987-6543' }
+      preferences { 'I prefer vendors with excellent reviews and professional portfolios.' }
+      event_types { 'Wedding, Anniversary, Corporate Event' }
+      location { 'New York, NY' }
+    end
+  end
+
+  factory :customer, parent: :user do
+    role { :customer }
   end
 end

@@ -11,7 +11,7 @@ class CreateBookingsAndMessages < ActiveRecord::Migration[8.0]
       t.string :event_duration
       t.string :event_location, null: false
       t.decimal :total_amount, precision: 10, scale: 2, null: false
-      t.integer :status, default: 0, null: false
+      t.string :status, default: 'pending', null: false
       t.text :requirements
       t.text :special_instructions
       t.datetime :booking_reminder_sent_at

@@ -1,7 +1,5 @@
-require 'solid_queue_monitor'
-
 Rails.application.routes.draw do
-  mount SolidQueueMonitor::Engine => '/solid_queue'
+  mount SolidQueueMonitor::Engine => '/solid_queue' if defined?(SolidQueueMonitor::Engine)
   # Redirect root to ActiveAdmin when accessed on admin subdomain (e.g. admin.ayoj.test or admin.ayoj.in)
   constraints subdomain: 'admin' do
     root to: redirect('/admin'), as: :admin_subdomain_root
