@@ -12,6 +12,8 @@ module Customers
       vendor = find_vendor
       return { success: false, error: 'Vendor not found' } unless vendor
 
+      return { success: false, error: 'You cannot favorite your own business profile' } if vendor.user_id == user.id
+
       # Authorization check
       authorize_favorite_action(vendor)
 

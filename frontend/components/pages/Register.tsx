@@ -111,7 +111,7 @@ const Register = () => {
 
     if (activeRole === 'vendor') {
       const bName = formData.businessName.trim() || `${formData.firstName} ${formData.lastName}'s Services`;
-      payload.vendor_profile_attributes = {
+      payload.vendor_attributes = {
         business_name: bName,
         location: 'Delhi NCR',
       };

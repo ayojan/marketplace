@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'customer' | 'vendor' | 'admin';
+  requiredRole?: 'customer' | 'vendor' | 'admin' | Array<'customer' | 'vendor' | 'admin'>;
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -22,8 +22,13 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
       if (!isAuthenticated) {
         const fromPath = typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '';
         router.push(fromPath ? `/login?from=${encodeURIComponent(fromPath)}` : '/login');
-      } else if (requiredRole && user?.role !== requiredRole) {
-        router.push('/unauthorized');
+      } else if (requiredRole) {
+        const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+        if (!allowedRoles.includes(user?.role)) {
+          router.push('/unauthorized');
+        } else {
+          setIsAuthorized(true);
+        }
       } else {
         setIsAuthorized(true);
       }

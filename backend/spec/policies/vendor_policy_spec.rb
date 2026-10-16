@@ -126,20 +126,20 @@ RSpec.describe VendorPolicy do
   end
 
   describe '#toggle_favorite?' do
-    context 'when customer toggles favorite' do
+    context 'when customer toggles favorite on vendor' do
       let(:user) { customer }
 
       it { is_expected.to permit(:toggle_favorite) }
     end
 
-    context 'when vendor toggles favorite' do
-      let(:user) { vendor_user }
+    context 'when vendor toggles favorite on another vendor' do
+      let(:user) { other_vendor }
 
-      it { is_expected.not_to permit(:toggle_favorite) }
+      it { is_expected.to permit(:toggle_favorite) }
     end
 
-    context 'when admin toggles favorite' do
-      let(:user) { admin_user }
+    context 'when vendor toggles favorite on own profile' do
+      let(:user) { vendor_user }
 
       it { is_expected.not_to permit(:toggle_favorite) }
     end

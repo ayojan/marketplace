@@ -138,19 +138,30 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
     loadVendorData();
   }, [loadVendorData]);
 
+  const isOwnProfile = user?.role === 'vendor' && (
+    (user.vendor_id && String(user.vendor_id) === String(vendor?.id)) ||
+    (user.vendor?.id && String(user.vendor.id) === String(vendor?.id)) ||
+    (user.vendor?.slug && vendor?.slug && user.vendor.slug === vendor.slug) ||
+    (user.id && vendor?.user_id && String(user.id) === String(vendor.user_id))
+  );
+
   // Check customer favorite status
   useEffect(() => {
-    if (user && vendor?.id) {
+    if (user && vendor?.id && !isOwnProfile) {
       apiService.favorites.check(vendor.id)
         .then(res => setIsFavorite(!!res.data?.is_favorite))
         .catch(() => setIsFavorite(false));
     }
-  }, [user, vendor?.id]);
+  }, [user, vendor?.id, isOwnProfile]);
 
   const handleToggleFavorite = async () => {
     if (!user) {
       toast.info('Please log in to save this vendor to your favorites.');
       router.push(`/login?redirect=/vendors/${params.id}`);
+      return;
+    }
+    if (isOwnProfile) {
+      toast.info('You cannot favorite your own business profile');
       return;
     }
     setFavoriteLoading(true);
@@ -166,7 +177,8 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
       }
       window.dispatchEvent(new CustomEvent('favorites-updated'));
     } catch (err: any) {
-      toast.error('Could not update favorites');
+      const errorMsg = err.response?.data?.error || err.message || 'Could not update favorites';
+      toast.error(errorMsg);
     } finally {
       setFavoriteLoading(false);
     }

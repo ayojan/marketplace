@@ -17,6 +17,8 @@ RSpec.describe Services::ServicePresenter do
         expect(json[:base_price]).to eq(service.base_price)
         expect(json[:formatted_price]).to eq(service.formatted_base_price)
         expect(json[:vendor][:id]).to eq(service.vendor.id)
+        expect(json[:vendor]).to have_key(:is_verified)
+        expect(json[:vendor]).to have_key(:verification_status)
         expect(json).not_to have_key(:bookings_count)
       end
     end
