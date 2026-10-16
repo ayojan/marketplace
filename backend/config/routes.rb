@@ -1,4 +1,7 @@
+require 'solid_queue_monitor'
+
 Rails.application.routes.draw do
+  mount SolidQueueMonitor::Engine => '/solid_queue'
   # Redirect root to ActiveAdmin when accessed on admin subdomain (e.g. admin.ayoj.test or admin.ayoj.in)
   constraints subdomain: 'admin' do
     root to: redirect('/admin'), as: :admin_subdomain_root
@@ -163,7 +166,6 @@ Rails.application.routes.draw do
     end
   end
 
-  # Sidekiq web interface (for development)
-  require 'sidekiq/web'
-  mount Sidekiq::Web => '/sidekiq' if Rails.env.development?
+  # Mission Control Jobs dashboard (Solid Queue)
+  mount MissionControl::Jobs::Engine, at: '/jobs' if Rails.env.development?
 end

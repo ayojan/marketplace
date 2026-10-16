@@ -15,9 +15,9 @@
 #
 # Indexes
 #
-#  index_auth_identities_on_provider_and_uid  (provider,uid) UNIQUE
-#  index_auth_identities_on_user_id           (user_id)
-#  index_auth_identities_on_user_id_provider  (user_id,provider) UNIQUE
+#  index_auth_identities_on_provider_and_uid      (provider,uid) UNIQUE
+#  index_auth_identities_on_user_id               (user_id)
+#  index_auth_identities_on_user_id_and_provider  (user_id,provider) UNIQUE
 #
 # Foreign Keys
 #
