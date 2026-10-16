@@ -21,18 +21,18 @@ module Bookings
     private
 
     def validate_vendor_availability
-      return unless booking.vendor_profile && booking.event_date
+      return unless booking.vendor && booking.event_date
 
-      return if VendorAvailabilityQuery.call(vendor_profile: booking.vendor_profile, date: booking.event_date.to_date)
+      return if VendorAvailabilityQuery.call(vendor: booking.vendor, date: booking.event_date.to_date)
 
       { field: :event_date, message: 'is not available for this vendor' }
     end
 
     def validate_no_conflicts
-      return unless booking.vendor_profile && booking.event_date
+      return unless booking.vendor && booking.event_date
 
       if BookingConflictsQuery.call(
-        vendor_profile: booking.vendor_profile,
+        vendor: booking.vendor,
         event_date: booking.event_date,
         event_end_date: booking.event_end_date
       )

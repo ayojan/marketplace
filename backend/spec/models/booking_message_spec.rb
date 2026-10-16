@@ -27,15 +27,16 @@ require 'rails_helper'
 
 RSpec.describe BookingMessage do
   let(:customer) { create(:user, :customer) }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
+  let(:service) { create(:service, vendor: vendor) }
   let(:booking) do
     create(:booking, customer: customer, vendor: vendor, service: service, event_date: 1.week.from_now.change(hour: 10))
   end
-  let(:vendor) { create(:user, :vendor) }
-  let(:service) { create(:service, vendor_profile: vendor.vendor_profile) }
 
   before do
     create(:availability_slot,
-           vendor_profile: vendor.vendor_profile,
+           vendor: vendor,
            date: 1.week.from_now.to_date,
            start_time: '09:00',
            end_time: '17:00',
@@ -70,7 +71,7 @@ RSpec.describe BookingMessage do
 
   describe 'scopes' do
     let!(:first_message) { create(:booking_message, booking: booking, sender: customer, sent_at: 2.hours.ago) }
-    let!(:second_message) { create(:booking_message, booking: booking, sender: vendor, sent_at: 1.hour.ago) }
+    let!(:second_message) { create(:booking_message, booking: booking, sender: vendor_user, sent_at: 1.hour.ago) }
     let!(:third_message) { create(:booking_message, booking: booking, sender: customer, sent_at: 30.minutes.ago) }
 
     describe '.ordered' do
@@ -91,15 +92,15 @@ RSpec.describe BookingMessage do
 
     describe '#sender_name' do
       context 'when sender is a vendor' do
-        let(:vendor_message) { create(:booking_message, booking: booking, sender: vendor) }
+        let(:vendor_message) { create(:booking_message, booking: booking, sender: vendor_user) }
 
         it 'returns business name if available' do
-          expect(vendor_message.sender_name).to eq(vendor.vendor_profile.business_name)
+          expect(vendor_message.sender_name).to eq(vendor.business_name)
         end
 
         it 'returns full name if business name is not available' do
-          vendor.vendor_profile.update(business_name: nil)
-          expect(vendor_message.sender_name).to eq("#{vendor.first_name} #{vendor.last_name}")
+          vendor.update(business_name: nil)
+          expect(vendor_message.sender_name).to eq("#{vendor_user.first_name} #{vendor_user.last_name}")
         end
       end
 
@@ -114,7 +115,7 @@ RSpec.describe BookingMessage do
       it 'returns the sender role' do
         expect(message.sender_type).to eq('customer')
 
-        vendor_message = create(:booking_message, booking: booking, sender: vendor)
+        vendor_message = create(:booking_message, booking: booking, sender: vendor_user)
         expect(vendor_message.sender_type).to eq('vendor')
       end
     end

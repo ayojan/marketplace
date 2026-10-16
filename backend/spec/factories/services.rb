@@ -30,7 +30,7 @@ FactoryBot.define do
     base_price { 150.00 }
     pricing_type { :hourly }
     status { :active }
-    vendor_profile
+    vendor
 
     # Support transient service_category parameter for creating join records
     transient do

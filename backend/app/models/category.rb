@@ -22,7 +22,7 @@ class Category < ApplicationRecord
   # Associations
   has_many :service_categories, dependent: :destroy
   has_many :services, through: :service_categories
-  has_many :vendor_profiles, through: :services, source: :vendor_profile
+  has_many :vendors, through: :services, source: :vendor
 
   # Validations
   validates :name, presence: true, uniqueness: true, length: { minimum: 2, maximum: 50 } # rubocop:disable Rails/UniqueValidationWithoutIndex
@@ -44,7 +44,7 @@ class Category < ApplicationRecord
   end
 
   delegate :count, to: :services, prefix: true
-  delegate :count, to: :vendor_profiles, prefix: true
+  delegate :count, to: :vendors, prefix: true
 
   def to_param
     slug

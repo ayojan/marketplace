@@ -4,14 +4,14 @@ require 'rails_helper'
 
 RSpec.describe Reviews::RespondToReview do
   let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
-  let(:service) { create(:service) }
+  let(:service) { create(:service, vendor: vendor) }
   let(:booking) do
-    create(:booking, vendor_profile: vendor_profile, customer: customer, service: service, status: :completed)
+    create(:booking, vendor: vendor, customer: customer, service: service, status: :completed)
   end
   let(:review) do
-    create(:review, booking: booking, vendor_profile: vendor_profile, customer: customer, service: service)
+    create(:review, booking: booking, vendor: vendor, customer: customer, service: service)
   end
 
   describe '.call' do

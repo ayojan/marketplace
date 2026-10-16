@@ -16,7 +16,7 @@ interface Service {
   formatted_price: string;
   pricing_type: string;
   images?: { id?: number | string; url?: string }[];
-  vendor_profile: {
+  vendor: {
     id: string;
     slug?: string;
     business_name: string;
@@ -135,18 +135,18 @@ const ServiceSearch = () => {
                 <div key={service.id} className="group bg-card rounded-[2rem] border border-border/50 overflow-hidden hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-500 flex flex-col">
                   {/* Entire visible photo clickable to open vendor profile */}
                   <Link 
-                    href={`/vendors/${service.vendor_profile.slug || service.vendor_profile.id}`}
+                    href={`/vendors/${service.vendor?.slug || service.vendor?.id}`}
                     className="block aspect-[4/3] bg-secondary/30 relative overflow-hidden cursor-pointer group/img"
-                    aria-label={`View ${service.vendor_profile.business_name} profile`}
+                    aria-label={`View ${service.vendor?.business_name} profile`}
                   >
                     <div className="absolute top-6 left-6 z-10">
                       <Badge className="bg-background/80 backdrop-blur-md text-primary border border-primary/20 hover:bg-background px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold">
                         {service.category.name}
                       </Badge>
                     </div>
-                    {(service.images?.[0]?.url || service.vendor_profile.profile_image_url || service.vendor_profile.image) ? (
+                    {(service.images?.[0]?.url || service.vendor?.profile_image_url || service.vendor?.image) ? (
                       <Image
-                        src={service.images?.[0]?.url || service.vendor_profile.profile_image_url || service.vendor_profile.image || ''}
+                        src={service.images?.[0]?.url || service.vendor?.profile_image_url || service.vendor?.image || ''}
                         alt={service.name}
                         fill
                         unoptimized
@@ -165,12 +165,12 @@ const ServiceSearch = () => {
                   <div className="p-8 flex-1 flex flex-col relative">
                     <div className="flex justify-between items-start mb-6">
                       <div className="space-y-1.5">
-                        <Link href={`/vendors/${service.vendor_profile.slug || service.vendor_profile.id}`} className="block">
+                        <Link href={`/vendors/${service.vendor?.slug || service.vendor?.id}`} className="block">
                           <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
-                              {service.vendor_profile.business_name}
+                              {service.vendor?.business_name}
                             </p>
-                            {service.vendor_profile.verification_status === 'verified' && (
+                            {service.vendor?.verification_status === 'verified' && (
                               <ShieldCheck size={14} className="text-blue-400 fill-blue-400/10" />
                             )}
                           </div>
@@ -181,7 +181,7 @@ const ServiceSearch = () => {
                       </div>
                       <div className="flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20">
                         <Star size={14} className="fill-primary text-primary" />
-                        <span className="text-xs font-bold text-primary">{service.vendor_profile.average_rating || '5.0'}</span>
+                        <span className="text-xs font-bold text-primary">{service.vendor?.average_rating || '5.0'}</span>
                       </div>
                     </div>
 
@@ -197,7 +197,7 @@ const ServiceSearch = () => {
                         </span>
                       </div>
                       <Link 
-                        href={`/vendors/${service.vendor_profile.slug || service.vendor_profile.id}`}
+                        href={`/vendors/${service.vendor?.slug || service.vendor?.id}`}
                         className="bg-secondary text-white px-6 py-3 rounded-full hover:bg-primary transition-all text-sm font-bold border border-border/50"
                       >
                         View Profile

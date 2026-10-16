@@ -25,8 +25,8 @@ class BookingCancelledNotificationJob < ApplicationJob
   end
 
   def create_in_app_notification(booking, recipient)
-    vendor_name = booking.vendor_profile&.business_name || booking.vendor.full_name
-    message = if recipient.vendor_profile.present?
+    vendor_name = booking.vendor&.business_name || booking.vendor&.display_name
+    message = if recipient.vendor.present?
                 "#{booking.customer.full_name} has cancelled their booking"
               else
                 "Your booking with #{vendor_name} has been cancelled"

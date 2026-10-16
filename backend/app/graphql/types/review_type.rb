@@ -29,11 +29,10 @@ class Types::ReviewType < Types::BaseObject
   field :booking, Types::NodeType, null: false, description: 'Booking that was reviewed'
   field :customer, Types::UserType, null: false, description: 'Customer who submitted the review'
   field :service, Types::ServiceType, null: false, description: 'Service that the review targets'
-  field :vendor_profile,
-        Types::VendorProfileType,
+  field :vendor,
+        Types::VendorType,
         null: false,
-        description: 'Vendor profile associated with the service'
-  # rubocop:enable GraphQL/ExtractType
+        description: 'Vendor associated with the service'
 
   def photos
     object.photos.map { |photo| Rails.application.routes.url_helpers.rails_blob_url(photo) }
@@ -51,7 +50,7 @@ class Types::ReviewType < Types::BaseObject
     dataloader.with(Sources::AssociationLoader, :service).load(object)
   end
 
-  def vendor_profile
-    dataloader.with(Sources::AssociationLoader, :vendor_profile).load(object)
+  def vendor
+    dataloader.with(Sources::AssociationLoader, :vendor).load(object)
   end
 end

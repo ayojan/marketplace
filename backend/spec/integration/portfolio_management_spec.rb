@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe 'Portfolio Management Integration' do
   let(:vendor_user) { create(:user, :vendor) }
   let(:customer_user) { create(:user, :customer) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:other_vendor) { create(:user, :vendor) }
 
   def auth_headers(user)
@@ -43,7 +43,7 @@ RSpec.describe 'Portfolio Management Integration' do
       end
 
       it 'allows vendor to view their portfolio items' do
-        create(:portfolio_item, vendor_profile: vendor_profile)
+        create(:portfolio_item, vendor: vendor)
 
         get '/portfolio_items', headers: auth_headers(vendor_user), as: :json
 
@@ -54,7 +54,7 @@ RSpec.describe 'Portfolio Management Integration' do
       end
 
       it 'allows vendor to update their portfolio item' do
-        portfolio_item = create(:portfolio_item, vendor_profile: vendor_profile)
+        portfolio_item = create(:portfolio_item, vendor: vendor)
         update_params = {
           portfolio_item: {
             title: 'Updated Title',
@@ -72,7 +72,7 @@ RSpec.describe 'Portfolio Management Integration' do
       end
 
       it 'allows vendor to delete their portfolio item' do
-        portfolio_item = create(:portfolio_item, vendor_profile: vendor_profile)
+        portfolio_item = create(:portfolio_item, vendor: vendor)
 
         delete "/portfolio_items/#{portfolio_item.id}", headers: auth_headers(vendor_user), as: :json
 
@@ -99,9 +99,9 @@ RSpec.describe 'Portfolio Management Integration' do
       end
 
       it 'allows customer to view vendor portfolio items' do
-        create(:portfolio_item, vendor_profile: vendor_profile)
+        create(:portfolio_item, vendor: vendor)
 
-        get "/vendors/#{vendor_profile.id}/portfolio_items", headers: auth_headers(customer_user), as: :json
+        get "/vendors/#{vendor.id}/portfolio_items", headers: auth_headers(customer_user), as: :json
 
         expect(response).to have_http_status(:success)
         json_response = JSON.parse(response.body)
@@ -111,13 +111,13 @@ RSpec.describe 'Portfolio Management Integration' do
   end
 
   describe 'Portfolio filtering and categorization' do
-    let!(:photo_item) { create(:portfolio_item, :photography, vendor_profile: vendor_profile) }
-    let!(:video_item) { create(:portfolio_item, :videography, vendor_profile: vendor_profile) }
-    let!(:featured_item) { create(:portfolio_item, :featured, vendor_profile: vendor_profile) }
+    let!(:photo_item) { create(:portfolio_item, :photography, vendor: vendor) }
+    let!(:video_item) { create(:portfolio_item, :videography, vendor: vendor) }
+    let!(:featured_item) { create(:portfolio_item, :featured, vendor: vendor) }
 
     it 'filters portfolio items by category' do
       # Test photography category
-      get "/vendors/#{vendor_profile.id}/portfolio_items",
+      get "/vendors/#{vendor.id}/portfolio_items",
           params: { category: 'photography' }, headers: auth_headers(customer_user), as: :json
 
       expect(response).to have_http_status(:success)
@@ -126,14 +126,14 @@ RSpec.describe 'Portfolio Management Integration' do
       expect(json_response['portfolio_items'].first['id']).to eq(photo_item.id)
 
       # Test videography category to reference video_item
-      get "/vendors/#{vendor_profile.id}/portfolio_items",
+      get "/vendors/#{vendor.id}/portfolio_items",
           params: { category: 'videography' }, headers: auth_headers(customer_user), as: :json
       json_response = JSON.parse(response.body)
       expect(json_response['portfolio_items'].first['id']).to eq(video_item.id)
     end
 
     it 'filters featured portfolio items' do
-      get "/vendors/#{vendor_profile.id}/portfolio_items",
+      get "/vendors/#{vendor.id}/portfolio_items",
           params: { featured: 'true' }, headers: auth_headers(customer_user), as: :json
 
       expect(response).to have_http_status(:success)
@@ -146,8 +146,8 @@ RSpec.describe 'Portfolio Management Integration' do
 
   describe 'Portfolio management features' do
     it 'provides portfolio summary' do
-      create_list(:portfolio_item, 3, vendor_profile: vendor_profile, is_featured: false)
-      create(:portfolio_item, :featured, vendor_profile: vendor_profile)
+      create_list(:portfolio_item, 3, vendor: vendor, is_featured: false)
+      create(:portfolio_item, :featured, vendor: vendor)
 
       get '/portfolio_items/summary', headers: auth_headers(vendor_user), as: :json
 
@@ -159,7 +159,7 @@ RSpec.describe 'Portfolio Management Integration' do
     end
 
     it 'allows setting featured status for multiple items' do
-      items = create_list(:portfolio_item, 2, vendor_profile: vendor_profile, is_featured: false)
+      items = create_list(:portfolio_item, 2, vendor: vendor, is_featured: false)
       item_ids = items.map(&:id)
 
       patch '/portfolio_items/set_featured',
@@ -172,7 +172,7 @@ RSpec.describe 'Portfolio Management Integration' do
   end
 
   describe 'Access control' do
-    let(:portfolio_item) { create(:portfolio_item, vendor_profile: vendor_profile) }
+    let(:portfolio_item) { create(:portfolio_item, vendor: vendor) }
 
     it 'prevents vendors from accessing other vendors portfolio items' do
       patch "/portfolio_items/#{portfolio_item.id}",

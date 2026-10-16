@@ -9,7 +9,7 @@ class ReviewsController < ApiController
 
   # GET /api/reviews
   def index
-    @reviews = Review.published.recent.includes(:customer, :service, :vendor_profile)
+    @reviews = Review.published.recent.includes(:customer, :service, :vendor)
     render json: { reviews: @reviews.map { |r| review_json(r) } }
   end
 
@@ -22,10 +22,10 @@ class ReviewsController < ApiController
   # GET /api/vendors/:vendor_id/reviews or /vendors/:id/reviews
   def vendor_reviews
     vendor_id = params[:vendor_id] || params[:id]
-    vendor = VendorProfile.find_by_id_or_slug(vendor_id)
+    vendor = Vendor.find_by_id_or_slug(vendor_id)
     return render json: { error: 'Vendor not found' }, status: :not_found unless vendor
 
-    @reviews = Review.published.where(vendor_profile_id: vendor.id).recent.includes(:customer, :service)
+    @reviews = Review.published.where(vendor_id: vendor.id).recent.includes(:customer, :service)
     render json: {
       reviews: @reviews.map { |r| review_json(r) },
       average_rating: vendor.average_rating,
@@ -149,7 +149,7 @@ class ReviewsController < ApiController
       ratings: detailed_ratings(review),
       customer: customer_json(review.customer),
       service: service_json(review.service),
-      vendor: vendor_json(review.vendor_profile)
+      vendor: vendor_json(review.vendor)
     }
   end
 
@@ -179,7 +179,7 @@ class ReviewsController < ApiController
       customer: current_user,
       booking: booking,
       service: booking.service,
-      vendor_profile: booking.vendor_profile,
+      vendor: booking.vendor,
       rating: review_params[:rating].to_i,
       quality_rating: review_params[:quality_rating]&.to_i,
       communication_rating: review_params[:communication_rating]&.to_i,

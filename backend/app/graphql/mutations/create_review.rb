@@ -31,7 +31,7 @@ class Mutations::CreateReview < Mutations::BaseMutation
       customer: user,
       booking: booking,
       service: booking.service,
-      vendor_profile: booking.vendor_profile,
+      vendor: booking.vendor,
       rating: review_input.rating,
       quality_rating: review_input.quality_rating,
       communication_rating: review_input.communication_rating,

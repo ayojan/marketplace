@@ -5,13 +5,13 @@ class ConflictResolutionService
   include ActiveModel::Attributes
   include Callable
 
-  attr_accessor :vendor_profile
+  attr_accessor :vendor
 
   attribute :event_date, :datetime
   attribute :event_end_date, :datetime
   attribute :exclude_booking_id, :integer
 
-  validates :vendor_profile, presence: true
+  validates :vendor, presence: true
   validates :event_date, presence: true
 
   def initialize(attributes = {})
@@ -33,7 +33,7 @@ class ConflictResolutionService
 
   def conflicting_bookings
     @conflicting_bookings ||= begin
-      bookings = Booking.where(vendor_profile: vendor_profile)
+      bookings = Booking.where(vendor: vendor)
                         .where(status: %i[pending accepted])
                         .where('DATE(event_date) = ?', event_date.to_date)
 
@@ -55,9 +55,9 @@ class ConflictResolutionService
     return [] if event_date && event_date < Date.current.beginning_of_day
 
     # Get vendor's availability for the requested date
-    availability_slots = vendor_profile.availability_slots
-                                       .available
-                                       .for_date(event_date.to_date)
+    availability_slots = vendor.availability_slots
+                               .available
+                               .for_date(event_date.to_date)
 
     return [] unless availability_slots.any?
 
@@ -105,7 +105,7 @@ module ConflictResolutionService::FreeSlotCalculator
   end
 
   def bookings_for_date(date)
-    Booking.where(vendor_profile: vendor_profile)
+    Booking.where(vendor: vendor)
            .where(status: %i[pending accepted])
            .where('DATE(event_date) = ?', date)
            .order(:event_date)

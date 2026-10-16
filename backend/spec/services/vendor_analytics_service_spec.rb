@@ -3,12 +3,12 @@
 require 'rails_helper'
 
 RSpec.describe VendorAnalyticsService, type: :service do
-  subject(:service_result) { described_class.call(vendor_profile) }
+  subject(:service_result) { described_class.call(vendor) }
 
   let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_profile) }
+  let(:service) { create(:service, vendor: vendor) }
 
   describe '#call' do
     context 'when vendor has no activity' do
@@ -26,7 +26,7 @@ RSpec.describe VendorAnalyticsService, type: :service do
       let!(:completed_booking) do
         create(:booking,
                :completed,
-               vendor_profile: vendor_profile,
+               vendor: vendor,
                service: service,
                customer: customer,
                total_amount: 500,
@@ -35,7 +35,7 @@ RSpec.describe VendorAnalyticsService, type: :service do
 
       let(:pending_booking) do
         create(:booking,
-               vendor_profile: vendor_profile,
+               vendor: vendor,
                service: service,
                customer: customer,
                status: :pending,
@@ -45,7 +45,7 @@ RSpec.describe VendorAnalyticsService, type: :service do
 
       let!(:review) do
         create(:review,
-               vendor_profile: vendor_profile,
+               vendor: vendor,
                service: service,
                customer: customer,
                booking: completed_booking,

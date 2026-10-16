@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :availability_slot do
-    vendor_profile
+    vendor
 
     date { rand(1..30).days.from_now.to_date }
     start_time { date == Date.current ? 1.hour.from_now.strftime('%H:%M') : '09:00' }

@@ -53,8 +53,8 @@ module Bookings
 
       # Calculate stats inline - this is fast enough (single optimized query)
       # In high-traffic scenarios, could be moved to async with proper error handling
-      vendor_profile = booking.vendor_profile
-      VendorProfiles::CalculatePublicStats.call(vendor_profile: vendor_profile)
+      vendor = booking.vendor
+      Vendors::CalculatePublicStats.call(vendor: vendor)
     rescue StandardError => e
       # Log the error and re-raise it
       # This is better than silent failure (swallowing error)

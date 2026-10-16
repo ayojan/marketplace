@@ -2,9 +2,9 @@
 
 module Resolvers
   class CustomerFavoritesResolver < GraphQL::Schema::Resolver
-    description 'Resolver for customer favorite vendor profiles'
+    description 'Resolver for customer favorite vendors'
 
-    type [Types::VendorProfileType], null: false
+    type [Types::VendorType], null: false
 
     argument :page, Int, required: false, default_value: 1, description: 'Page number for pagination'
     argument :per_page, Int, required: false, default_value: 12, description: 'Items per page'
@@ -23,7 +23,7 @@ module Resolvers
 
       return [] unless result[:success]
 
-      result[:vendor_profiles]
+      result[:vendors]
     end
   end
 end

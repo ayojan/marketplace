@@ -44,10 +44,10 @@ class VendorBookingMailer < ApplicationMailer
 
   def assign_booking_details(booking)
     @booking = booking
-    @vendor = booking.vendor_profile
-    @vendor_user = booking.vendor
+    @vendor = booking.vendor
+    @vendor_user = @vendor.respond_to?(:user) ? @vendor.user : @vendor
     @vendor_email = @vendor_user.email
-    @customer = booking.customer_profile || booking.customer
+    @customer = booking.customer&.customer || booking.customer
     if @customer.is_a?(User) && !@customer.respond_to?(:user)
       def @customer.user
         self

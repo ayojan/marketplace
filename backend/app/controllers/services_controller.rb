@@ -31,7 +31,7 @@ class ServicesController < ApiController
       :categories,
       :bookings,
       service_images: { image_attachment: :blob },
-      vendor_profile: { portfolio_items: { images_attachments: :blob } }
+      vendor: { portfolio_items: { images_attachments: :blob } }
     ).find(params[:id])
 
     render json: service_response(@service, include_details: true)
@@ -65,13 +65,13 @@ class ServicesController < ApiController
   end
 
   def create
-    ensure_current_vendor_profile
+    ensure_current_vendor
 
     @service = Service.new(service_params)
-    @service.vendor_profile = current_user.vendor_profile
+    @service.vendor = current_user.vendor
 
     if @service.save
-      VendorService.find_or_create_by!(vendor_profile: current_user.vendor_profile, service: @service)
+      VendorService.find_or_create_by!(vendor: current_user.vendor, service: @service)
       attach_service_category(@service)
       @service.reload
       render json: {
@@ -122,7 +122,7 @@ class ServicesController < ApiController
   end
 
   def ensure_service_owner
-    return if @service.vendor_profile.user == current_user
+    return if @service.vendor.user == current_user
 
     render json: { error: 'You can only manage your own services' }, status: :forbidden
   end
@@ -152,7 +152,7 @@ class ServicesController < ApiController
       pricing_type: service.pricing_type,
       formatted_price: service.formatted_base_price,
       status: service.status,
-      vendor: service_vendor_json(service.vendor_profile),
+      vendor: service_vendor_json(service.vendor),
       category: service_category_json(service),
       images: service_images_json(service),
       created_at: service.created_at,
@@ -161,7 +161,7 @@ class ServicesController < ApiController
   end
 
   def append_service_details(response, service)
-    vendor = service.vendor_profile
+    vendor = service.vendor
     response[:vendor][:description] = vendor&.description
     response[:vendor][:years_experience] = vendor&.years_experience
     response[:vendor][:website] = vendor&.website
@@ -209,10 +209,10 @@ class ServicesController < ApiController
     nil
   end
 
-  def ensure_current_vendor_profile
-    return if current_user.vendor_profile
+  def ensure_current_vendor
+    return if current_user.vendor
 
-    current_user.create_vendor_profile!(
+    current_user.create_vendor!(
       business_name: "#{current_user.first_name.presence || 'Vendor'}'s Services",
       location: 'Mumbai, India'
     )

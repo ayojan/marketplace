@@ -15,7 +15,7 @@ module Notifications
       customer_name = review.customer.full_name
       truncated_msg = truncate_message(review.message)
       SendNotification.call(
-        user: review.vendor_profile.user,
+        user: review.vendor.user,
         title: 'You Received a Review',
         message: "#{customer_name} left a #{review.rating}-star review: \"#{truncated_msg}\"",
         notification_type: 'review_received',

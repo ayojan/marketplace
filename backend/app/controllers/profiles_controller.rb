@@ -16,15 +16,15 @@ class ProfilesController < ApiController
   end
 
   def me
-    if current_user.vendor_profile
-      render json: profile_response(current_user.vendor_profile)
+    if current_user.vendor
+      render json: profile_response(current_user.vendor)
     else
       render json: { error: 'No profile found' }, status: :not_found
     end
   end
 
   def update_me
-    @profile = current_user.vendor_profile
+    @profile = current_user.vendor
     return render json: { error: 'No profile found' }, status: :not_found unless @profile
 
     apply_metadata(@profile)
@@ -40,12 +40,12 @@ class ProfilesController < ApiController
   end
 
   def create
-    if current_user.vendor_profile.present?
+    if current_user.vendor.present?
       render json: { error: 'Profile already exists' }, status: :unprocessable_content
       return
     end
 
-    @profile = VendorProfile.new(profile_params)
+    @profile = Vendor.new(profile_params)
     @profile.user = current_user
     apply_metadata(@profile)
 
@@ -78,7 +78,7 @@ class ProfilesController < ApiController
   end
 
   def request_verification
-    @profile = current_user.vendor_profile
+    @profile = current_user.vendor
     if @profile.request_verification!
       render json: { message: 'Verification request submitted successfully', status: @profile.verification_status }
     else
@@ -97,12 +97,12 @@ class ProfilesController < ApiController
 
   def set_profile
     @profile = if params[:id]
-                 VendorProfile.find_by_id_or_slug!(params[:id])
+                 Vendor.find_by_id_or_slug!(params[:id])
                else
-                 current_user.vendor_profile
+                 current_user.vendor
                end
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Vendor profile not found' }, status: :not_found
+    render json: { error: 'Vendor not found' }, status: :not_found
   end
 
   def ensure_vendor_role
@@ -118,7 +118,7 @@ class ProfilesController < ApiController
   end
 
   def apply_metadata(profile)
-    meta_raw = params.dig(:vendor_profile, :metadata)
+    meta_raw = params.dig(:vendor, :metadata)
     return if meta_raw.blank?
 
     parsed = parse_metadata_param(meta_raw)
@@ -146,9 +146,10 @@ class ProfilesController < ApiController
   end
 
   def profile_params
-    return {} if params[:vendor_profile].blank?
+    v_params = params[:vendor]
+    return {} if v_params.blank?
 
-    params.require(:vendor_profile).except(:metadata).permit(
+    v_params.except(:metadata).permit(
       :business_name, :description, :location, :phone, :website,
       :years_experience, :cancellation_policy, :instagram_handle,
       :business_license, service_categories_list: []

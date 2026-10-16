@@ -4,35 +4,36 @@
 #
 # Table name: services
 #
-#  id                :bigint           not null, primary key
-#  average_rating    :decimal(3, 2)    default(0.0)
-#  base_price        :decimal(10, 2)
-#  description       :text
-#  name              :string
-#  pricing_type      :integer          default("hourly")
-#  status            :integer          default("draft")
-#  total_reviews     :integer          default(0)
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  vendor_profile_id :bigint           not null
+#  id             :bigint           not null, primary key
+#  average_rating :decimal(3, 2)    default(0.0)
+#  base_price     :decimal(10, 2)
+#  description    :text
+#  name           :string
+#  pricing_type   :integer          default("hourly")
+#  status         :integer          default("draft")
+#  total_reviews  :integer          default(0)
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  vendor_id      :bigint           not null
 #
 # Indexes
 #
-#  index_services_on_average_rating                (average_rating)
-#  index_services_on_status                        (status)
-#  index_services_on_vendor_profile_id             (vendor_profile_id)
-#  index_services_on_vendor_profile_id_and_status  (vendor_profile_id,status)
+#  index_services_on_average_rating        (average_rating)
+#  index_services_on_status                (status)
+#  index_services_on_vendor_id             (vendor_id)
+#  index_services_on_vendor_id_and_status  (vendor_id,status)
 #
 # Foreign Keys
 #
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
+#  fk_rails_...  (vendor_id => vendors.id)
 #
 require 'rails_helper'
 
 RSpec.describe Service do
   describe 'associations' do
+    it { is_expected.to belong_to(:vendor) }
     it { is_expected.to have_many(:vendor_services).dependent(:destroy) }
-    it { is_expected.to have_many(:vendor_profiles).through(:vendor_services) }
+    it { is_expected.to have_many(:vendors).through(:vendor_services) }
     it { is_expected.to have_many(:service_categories).dependent(:destroy) }
     it { is_expected.to have_many(:categories).through(:service_categories) }
   end
@@ -199,24 +200,24 @@ RSpec.describe Service do
     end
 
     describe '#can_be_booked?' do
-      it 'returns true for active service with vendor profiles' do
+      it 'returns true for active service with vendors' do
         active_service = create(:service, status: :active)
-        vendor_profile = create(:vendor_profile)
-        create(:vendor_service, service: active_service, vendor_profile: vendor_profile)
+        vendor = create(:vendor)
+        create(:vendor_service, service: active_service, vendor: vendor)
 
         expect(active_service.can_be_booked?).to be true
       end
 
       it 'returns false for inactive service' do
         inactive_service = create(:service, status: :inactive)
-        vendor_profile = create(:vendor_profile)
-        create(:vendor_service, service: inactive_service, vendor_profile: vendor_profile)
+        vendor = create(:vendor)
+        create(:vendor_service, service: inactive_service, vendor: vendor)
 
         expect(inactive_service.can_be_booked?).to be false
       end
 
-      it 'returns false for active service without vendor profiles' do
-        active_service_no_vendors = create(:service, status: :active)
+      it 'returns false for active service without vendors' do
+        active_service_no_vendors = build(:service, status: :active, vendor: nil)
         expect(active_service_no_vendors.can_be_booked?).to be false
       end
     end
@@ -247,12 +248,12 @@ RSpec.describe Service do
 
       it 'returns services from verified vendors only' do
         # Associate featured_service with verified vendor
-        verified_vendor = create(:vendor_profile, verification_status: :verified, average_rating: 4.5)
-        create(:vendor_service, service: featured_service, vendor_profile: verified_vendor)
+        verified_vendor = create(:vendor, verification_status: :verified, average_rating: 4.5)
+        featured_service.update!(vendor: verified_vendor)
 
         # Associate unfeatured_service with unverified vendor
-        unverified_vendor = create(:vendor_profile, verification_status: :unverified)
-        create(:vendor_service, service: unfeatured_service, vendor_profile: unverified_vendor)
+        unverified_vendor = create(:vendor, verification_status: :unverified)
+        unfeatured_service.update!(vendor: unverified_vendor)
 
         result = described_class.featured
         expect(result).to include(featured_service)
@@ -262,9 +263,8 @@ RSpec.describe Service do
       it 'limits results to specified number' do
         # Create additional verified vendors and services
         5.times do |_i|
-          service = create(:service, status: :active, average_rating: 4.0)
-          vendor = create(:vendor_profile, verification_status: :verified, average_rating: 4.0)
-          create(:vendor_service, service: service, vendor_profile: vendor)
+          vendor = create(:vendor, verification_status: :verified, average_rating: 4.0)
+          create(:service, status: :active, average_rating: 4.0, vendor: vendor)
         end
         expect(described_class.featured(3).size).to eq(3)
       end

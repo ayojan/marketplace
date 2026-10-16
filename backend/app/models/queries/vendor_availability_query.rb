@@ -2,8 +2,8 @@
 
 # Single source of truth for vendor availability checks
 class VendorAvailabilityQuery
-  def initialize(vendor_profile:, date:)
-    @vendor_profile = vendor_profile
+  def initialize(vendor:, date:)
+    @vendor = vendor
     @date = date
   end
 
@@ -16,6 +16,6 @@ class VendorAvailabilityQuery
   end
 
   def available?
-    @vendor_profile.availability_slots.available_on(@date).exists?
+    @vendor.availability_slots.available_on(@date).exists?
   end
 end

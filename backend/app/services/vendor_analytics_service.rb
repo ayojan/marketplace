@@ -3,9 +3,9 @@
 class VendorAnalyticsService
   include Callable
 
-  def initialize(vendor_profile)
-    @vendor_profile = vendor_profile
-    @user = vendor_profile.user
+  def initialize(vendor)
+    @vendor = vendor
+    @user = vendor.user
   end
 
   def call
@@ -22,25 +22,25 @@ class VendorAnalyticsService
 
   def overview_stats
     {
-      total_bookings: @vendor_profile.bookings.count,
-      active_services: @vendor_profile.services.active.count,
-      average_rating: @vendor_profile.average_rating.to_f,
-      total_reviews: @vendor_profile.total_reviews,
-      verification_status: @vendor_profile.verification_status
+      total_bookings: @vendor.bookings.count,
+      active_services: @vendor.services.active.count,
+      average_rating: @vendor.average_rating.to_f,
+      total_reviews: @vendor.total_reviews,
+      verification_status: @vendor.verification_status
     }
   end
 
   def revenue_stats
-    completed_bookings = @vendor_profile.bookings.completed
+    completed_bookings = @vendor.bookings.completed
     {
       total_revenue: completed_bookings.sum(:total_amount).to_f,
-      pending_revenue: @vendor_profile.bookings.accepted.sum(:total_amount).to_f,
+      pending_revenue: @vendor.bookings.accepted.sum(:total_amount).to_f,
       average_booking_value: completed_bookings.average(:total_amount).to_f.round(2)
     }
   end
 
   def booking_stats
-    bookings = @vendor_profile.bookings
+    bookings = @vendor.bookings
     {
       pending: bookings.pending.count,
       accepted: bookings.accepted.count,
@@ -52,9 +52,9 @@ class VendorAnalyticsService
 
   def rating_stats
     {
-      average: @vendor_profile.average_rating.to_f,
-      distribution: @vendor_profile.rating_distribution,
-      breakdown: @vendor_profile.rating_breakdown
+      average: @vendor.average_rating.to_f,
+      distribution: @vendor.rating_distribution,
+      breakdown: @vendor.rating_breakdown
     }
   end
 
@@ -63,14 +63,14 @@ class VendorAnalyticsService
   end
 
   def recent_bookings
-    @vendor_profile.bookings.includes(:customer).order(created_at: :desc).limit(5).map do |b|
+    @vendor.bookings.includes(:customer).order(created_at: :desc).limit(5).map do |b|
       { type: 'booking', id: b.id, customer: b.customer&.full_name, date: b.event_date, status: b.status,
         amount: b.total_amount.to_f }
     end
   end
 
   def recent_reviews
-    @vendor_profile.reviews.published.includes(:customer).order(created_at: :desc).limit(5).map do |r|
+    @vendor.reviews.published.includes(:customer).order(created_at: :desc).limit(5).map do |r|
       { type: 'review', id: r.id, customer: r.customer&.full_name, rating: r.rating, date: r.created_at }
     end
   end

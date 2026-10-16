@@ -138,7 +138,7 @@ export default function GoogleSignInButton({
       const res = await loginWithGoogle({
         credential,
         role,
-        vendor_profile_attributes: vendorAttributes
+        vendor_attributes: vendorAttributes
       });
 
       if (res.success) {
@@ -148,7 +148,7 @@ export default function GoogleSignInButton({
         } else {
           // Default post-auth navigation
           if (res.user?.role === 'vendor') {
-            if (res.needs_mobile_onboarding || !res.user?.vendor_profile) {
+            if (res.needs_mobile_onboarding || !res.user?.vendor) {
               router.push('/vendor/onboarding');
             } else {
               router.push('/vendor/dashboard');

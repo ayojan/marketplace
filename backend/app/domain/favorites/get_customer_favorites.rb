@@ -20,7 +20,7 @@ module Favorites
 
       {
         success: true,
-        vendor_profiles: paginated,
+        vendors: paginated,
         total_count: total_count,
         page: page,
         per_page: per_page,
@@ -34,20 +34,20 @@ module Favorites
     private
 
     def build_query
-      query = user.customer_favorites.includes(:vendor_profile)
+      query = user.customer_favorites.includes(:vendor)
 
       case sort
       when 'rating'
-        query.joins(:vendor_profile).order('vendor_profiles.average_rating DESC')
+        query.joins(:vendor).order('vendors.average_rating DESC')
       when 'reviews'
-        query.joins(:vendor_profile).order('vendor_profiles.total_reviews DESC')
+        query.joins(:vendor).order('vendors.total_reviews DESC')
       else
         query.recent_first
       end
     end
 
     def paginate(query)
-      query.page(page).per(per_page).map(&:vendor_profile)
+      query.page(page).per(per_page).map(&:vendor)
     end
   end
 end

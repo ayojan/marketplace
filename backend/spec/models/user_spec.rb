@@ -64,15 +64,15 @@ RSpec.describe User do
   describe 'associations' do
     subject(:user_model) { create(:user) }
 
-    it { is_expected.to have_one(:vendor_profile).dependent(:destroy) }
-    it { is_expected.to have_one(:customer_profile).dependent(:destroy) }
+    it { is_expected.to have_one(:vendor).dependent(:destroy) }
+    it { is_expected.to have_one(:customer).dependent(:destroy) }
 
     it 'has many customer bookings' do
       expect(user_model).to have_many(:customer_bookings)
         .class_name('Booking').with_foreign_key('customer_id').dependent(:destroy)
     end
 
-    it { is_expected.to have_many(:vendor_bookings).through(:vendor_profile).source(:bookings) }
+    it { is_expected.to have_many(:vendor_bookings).through(:vendor).source(:bookings) }
     it { is_expected.to have_many(:booking_messages).with_foreign_key('sender_id').dependent(:destroy) }
     it { is_expected.to have_many(:reviews).with_foreign_key('customer_id').dependent(:destroy) }
   end
@@ -82,21 +82,21 @@ RSpec.describe User do
       context 'when role is vendor' do
         let(:vendor_user) { build(:user, :vendor) }
 
-        it 'creates a vendor profile' do
-          expect { vendor_user.save }.to change(VendorProfile, :count).by(1)
+        it 'creates a vendor' do
+          expect { vendor_user.save }.to change(Vendor, :count).by(1)
         end
 
         it 'sets default business name' do
           vendor_user.save
-          expect(vendor_user.vendor_profile.business_name).to eq("#{vendor_user.full_name}'s Business")
+          expect(vendor_user.vendor.business_name).to eq("#{vendor_user.full_name}'s Business")
         end
       end
 
       context 'when role is customer' do
         let(:customer_user) { build(:user, :customer) }
 
-        it 'creates a customer profile' do
-          expect { customer_user.save }.to change(CustomerProfile, :count).by(1)
+        it 'creates a customer' do
+          expect { customer_user.save }.to change(Customer, :count).by(1)
         end
       end
 
@@ -104,7 +104,7 @@ RSpec.describe User do
         let(:admin_user) { build(:user, :admin) }
 
         it 'does not create any profile' do
-          expect { admin_user.save }.not_to(change { [VendorProfile.count, CustomerProfile.count] })
+          expect { admin_user.save }.not_to(change { [Vendor.count, Customer.count] })
         end
       end
     end
@@ -242,7 +242,7 @@ RSpec.describe User do
 
   describe 'ransackable associations' do
     it 'allows searching by specific associations' do
-      associations = %w[vendor_profile customer_profile customer_bookings vendor_bookings booking_messages]
+      associations = %w[vendor customer customer_bookings vendor_bookings booking_messages]
       expect(described_class.ransackable_associations).to match_array(associations)
     end
   end
@@ -255,8 +255,8 @@ RSpec.describe User do
     it 'logs error when profile creation fails' do
       user = build(:user, :vendor)
 
-      # Mock the vendor_profile creation to fail
-      allow(user).to receive(:create_vendor_profile!).and_raise(ActiveRecord::RecordInvalid.new(user))
+      # Mock the vendor creation to fail
+      allow(user).to receive(:create_vendor!).and_raise(ActiveRecord::RecordInvalid.new(user))
 
       user.save!
       expect(Rails.logger).to have_received(:error).with(/Failed to create profile/)

@@ -5,7 +5,7 @@ class PortfolioItemsController < ApiController
   # Authentication is handled by ApiController
   before_action :authenticate_user!, except: %i[index show]
   before_action :ensure_vendor_role, only: %i[create]
-  before_action :set_vendor_profile, only: %i[index create]
+  before_action :set_vendor, only: %i[index create]
   before_action :set_portfolio_item, only: %i[show update destroy upload_images remove_image duplicate]
   before_action :ensure_vendor_access, only: %i[update destroy upload_images remove_image duplicate]
 
@@ -14,24 +14,24 @@ class PortfolioItemsController < ApiController
   # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   def index
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-    if params[:vendor_profile_id] || params[:vendor_id]
+    if params[:vendor_id]
       # Public access to view any vendor's portfolio
-      @portfolio_items = @vendor_profile.portfolio_items.with_attached_images.includes(:vendor_profile).ordered
+      @portfolio_items = @vendor.portfolio_items.with_attached_images.includes(:vendor).ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
       @portfolio_items = @portfolio_items.featured if params[:featured] == 'true'
-      categories = @vendor_profile.portfolio_categories
+      categories = @vendor.portfolio_categories
     else
       # Vendor accessing their own portfolio - requires authentication
       authenticate_user!
       ensure_vendor_role
       return if performed?
 
-      return render json: { portfolio_items: [], categories: [] } unless current_user&.vendor_profile
+      return render json: { portfolio_items: [], categories: [] } unless current_user&.vendor
 
-      @portfolio_items = current_user.vendor_profile.portfolio_items
-                                     .with_attached_images.includes(:vendor_profile).ordered
+      @portfolio_items = current_user.vendor.portfolio_items
+                                     .with_attached_images.includes(:vendor).ordered
       @portfolio_items = @portfolio_items.by_category(params[:category]) if params[:category].present?
-      categories = current_user.vendor_profile.portfolio_categories
+      categories = current_user.vendor.portfolio_categories
     end
 
     render json: {
@@ -47,9 +47,9 @@ class PortfolioItemsController < ApiController
 
   # POST /portfolio_items
   def create
-    return render json: { errors: ['Vendor profile not found'] }, status: :not_found unless current_user&.vendor_profile
+    return render json: { errors: ['Vendor not found'] }, status: :not_found unless current_user&.vendor
 
-    result = CreatePortfolioItem.call(current_user.vendor_profile, portfolio_item_params)
+    result = CreatePortfolioItem.call(current_user.vendor, portfolio_item_params)
 
     if result[:success]
       render json: {
@@ -125,7 +125,7 @@ class PortfolioItemsController < ApiController
   # GET /portfolio_items/summary
   def summary
     ensure_vendor_role
-    summary = PortfolioSummaryService.call(current_user.vendor_profile)
+    summary = PortfolioSummaryService.call(current_user.vendor)
 
     render json: { summary: summary }
   end
@@ -133,7 +133,7 @@ class PortfolioItemsController < ApiController
   # POST /portfolio_items/reorder
   def reorder
     ensure_vendor_role
-    result = ReorderPortfolioItems.call(current_user.vendor_profile, params[:category], params[:item_orders])
+    result = ReorderPortfolioItems.call(current_user.vendor, params[:category], params[:item_orders])
 
     if result[:success]
       render json: {
@@ -168,7 +168,7 @@ class PortfolioItemsController < ApiController
   def set_featured
     ensure_vendor_role
     result = SetFeaturedPortfolioItems.call(
-      current_user.vendor_profile,
+      current_user.vendor,
       params[:item_ids],
       featured_status: params[:featured]
     )
@@ -188,19 +188,19 @@ class PortfolioItemsController < ApiController
 
   private
 
-  def set_vendor_profile
-    vendor_id = params[:vendor_profile_id] || params[:vendor_id]
+  def set_vendor
+    vendor_id = params[:vendor_id]
     return unless vendor_id
 
     if vendor_id == 'me'
       authenticate_user!
-      @vendor_profile = current_user&.vendor_profile
-      render json: { errors: ['Vendor profile not found for current user'] }, status: :not_found unless @vendor_profile
+      @vendor = current_user&.vendor
+      render json: { errors: ['Vendor not found for current user'] }, status: :not_found unless @vendor
     else
-      @vendor_profile = VendorProfile.find_by_id_or_slug!(vendor_id)
+      @vendor = Vendor.find_by_id_or_slug!(vendor_id)
     end
   rescue ActiveRecord::RecordNotFound
-    render json: { errors: ['Vendor profile not found'] }, status: :not_found
+    render json: { errors: ['Vendor not found'] }, status: :not_found
   end
 
   def set_portfolio_item
@@ -210,7 +210,7 @@ class PortfolioItemsController < ApiController
   end
 
   def ensure_vendor_access
-    return if @portfolio_item.vendor_profile.user == current_user
+    return if @portfolio_item.vendor.user == current_user
 
     render json: { errors: ['Access denied'] }, status: :forbidden
   end
@@ -238,10 +238,10 @@ class PortfolioItemsController < ApiController
       primary_image_url: primary_image_url(item),
       images: item.images.attached? ? item.images.map { |image| image_json(image) } : [],
       image_count: item.image_count,
-      vendor_profile: {
-        id: item.vendor_profile.id,
-        slug: item.vendor_profile.slug,
-        business_name: item.vendor_profile.business_name
+      vendor: {
+        id: item.vendor.id,
+        slug: item.vendor.slug,
+        business_name: item.vendor.business_name
       }
     }
   end

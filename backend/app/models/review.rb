@@ -20,34 +20,35 @@
 #  booking_id           :bigint           not null
 #  customer_id          :bigint           not null
 #  service_id           :bigint           not null
-#  vendor_profile_id    :bigint           not null
+#  vendor_id            :bigint           not null
 #
 # Indexes
 #
-#  index_reviews_helpful_by_vendor_and_status                  (vendor_profile_id,status,helpful_votes DESC)
-#  index_reviews_on_booking_id                                 (booking_id) UNIQUE
-#  index_reviews_on_customer_id                                (customer_id)
-#  index_reviews_on_rating                                     (rating)
-#  index_reviews_on_service_id                                 (service_id)
-#  index_reviews_on_service_id_and_status                      (service_id,status)
-#  index_reviews_on_status                                     (status)
-#  index_reviews_on_vendor_profile_id                          (vendor_profile_id)
-#  index_reviews_on_vendor_profile_id_and_helpful_votes        (vendor_profile_id,helpful_votes DESC)
-#  index_reviews_on_vendor_profile_id_and_status               (vendor_profile_id,status)
-#  index_reviews_on_vendor_profile_id_and_vendor_responded_at  (vendor_profile_id,vendor_responded_at)
+#  index_reviews_helpful_by_vendor_and_status          (vendor_id,status,helpful_votes DESC)
+#  index_reviews_on_booking_id                         (booking_id) UNIQUE
+#  index_reviews_on_customer_id                        (customer_id)
+#  index_reviews_on_rating                             (rating)
+#  index_reviews_on_service_id                         (service_id)
+#  index_reviews_on_service_id_and_status              (service_id,status)
+#  index_reviews_on_status                             (status)
+#  index_reviews_on_vendor_id                          (vendor_id)
+#  index_reviews_on_vendor_id_and_helpful_votes        (vendor_id,helpful_votes DESC)
+#  index_reviews_on_vendor_id_and_status               (vendor_id,status)
+#  index_reviews_on_vendor_id_and_vendor_responded_at  (vendor_id,vendor_responded_at)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (booking_id => bookings.id)
 #  fk_rails_...  (customer_id => users.id)
 #  fk_rails_...  (service_id => services.id)
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
+#  fk_rails_...  (vendor_id => vendors.id)
 #
 class Review < ApplicationRecord
   # Associations
   belongs_to :booking
   belongs_to :customer, class_name: 'User'
-  belongs_to :vendor_profile
+  belongs_to :vendor
+
   belongs_to :service
   has_many :votes, class_name: 'ReviewVote', dependent: :destroy
   has_many :voters, through: :votes, source: :voter

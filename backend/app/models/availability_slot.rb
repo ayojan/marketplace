@@ -4,27 +4,27 @@
 #
 # Table name: availability_slots
 #
-#  id                :bigint           not null, primary key
-#  date              :date             not null
-#  end_time          :time             not null
-#  is_available      :boolean          default(TRUE), not null
-#  start_time        :time             not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  vendor_profile_id :bigint           not null
+#  id           :bigint           not null, primary key
+#  date         :date             not null
+#  end_time     :time             not null
+#  is_available :boolean          default(TRUE), not null
+#  start_time   :time             not null
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#  vendor_id    :bigint           not null
 #
 # Indexes
 #
-#  index_availability_slots_on_date_and_is_available       (date,is_available)
-#  index_availability_slots_on_vendor_profile_id           (vendor_profile_id)
-#  index_availability_slots_on_vendor_profile_id_and_date  (vendor_profile_id,date)
+#  index_availability_slots_on_date_and_is_available  (date,is_available)
+#  index_availability_slots_on_vendor_id              (vendor_id)
+#  index_availability_slots_on_vendor_id_and_date     (vendor_id,date)
 #
 # Foreign Keys
 #
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
+#  fk_rails_...  (vendor_id => vendors.id)
 #
 class AvailabilitySlot < ApplicationRecord
-  belongs_to :vendor_profile
+  belongs_to :vendor
 
   validates :date, presence: true
   validates :start_time, presence: true
@@ -36,7 +36,7 @@ class AvailabilitySlot < ApplicationRecord
 
   scope :available, -> { where(is_available: true) }
   scope :for_date, ->(date) { where(date: date) }
-  scope :for_vendor, ->(vendor_profile) { where(vendor_profile: vendor_profile) }
+  scope :for_vendor, ->(vendor) { where(vendor: vendor) }
   scope :upcoming, -> { where(date: Date.current..) }
 
   # Domain scopes for queries
@@ -77,7 +77,7 @@ class AvailabilitySlot < ApplicationRecord
       EXTRACT(MINUTE FROM COALESCE(bookings.event_end_date, bookings.event_date + INTERVAL '2 hours')) > ?)
     SQL
 
-    Booking.where(vendor_profile_id: vendor_profile_id)
+    Booking.where(vendor_id: vendor_id)
            .where(status: %i[pending accepted])
            .where('DATE(bookings.event_date) = ?', date)
            .exists?([conflict_sql, (end_time.hour * 60) + end_time.min, (start_time.hour * 60) + start_time.min])

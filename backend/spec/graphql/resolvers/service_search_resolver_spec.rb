@@ -16,38 +16,38 @@ RSpec.describe Resolvers::ServiceSearchResolver, type: :graphql do
   let!(:user3) { create(:user, email: 'vendor3@example.com', role: :vendor) }
 
   let!(:vendor1) do
-    user1.vendor_profile.tap do |v|
+    user1.vendor.tap do |v|
       v.update!(business_name: 'Amazing Photos', location: 'New York, NY', average_rating: 4.5,
                 latitude: 40.7128, longitude: -74.0060)
     end
   end
   let!(:vendor2) do
-    user2.vendor_profile.tap do |v|
+    user2.vendor.tap do |v|
       v.update!(business_name: 'Video Masters', location: 'Los Angeles, CA', average_rating: 4.2,
                 latitude: 34.0522, longitude: -118.2437)
     end
   end
   let!(:vendor3) do
-    user3.vendor_profile.tap do |v|
+    user3.vendor.tap do |v|
       v.update!(business_name: 'Event Specialists', location: 'Chicago, IL', average_rating: 3.8,
                 latitude: 41.8781, longitude: -87.6298)
     end
   end
 
   let(:service1) do
-    create(:service, name: 'Wedding Photography', vendor_profile: vendor1, service_category: photography_category,
+    create(:service, name: 'Wedding Photography', vendor: vendor1, service_category: photography_category,
                      base_price: 1500, status: :active)
   end
   let(:service2) do
-    create(:service, name: 'Corporate Video', vendor_profile: vendor2, service_category: videography_category,
+    create(:service, name: 'Corporate Video', vendor: vendor2, service_category: videography_category,
                      base_price: 2500, status: :active)
   end
   let(:service3) do
-    create(:service, name: 'Event Photography', vendor_profile: vendor3, service_category: photography_category,
+    create(:service, name: 'Event Photography', vendor: vendor3, service_category: photography_category,
                      base_price: 800, status: :active)
   end
   let(:service4) do
-    create(:service, name: 'Portrait Session', vendor_profile: vendor1, service_category: photography_category,
+    create(:service, name: 'Portrait Session', vendor: vendor1, service_category: photography_category,
                      base_price: 300, status: :inactive)
   end
 
@@ -386,7 +386,7 @@ RSpec.describe Resolvers::ServiceSearchResolver, type: :graphql do
             services {
               id
               name
-              vendorProfile {
+              vendor {
                 id
                 businessName
                 services {

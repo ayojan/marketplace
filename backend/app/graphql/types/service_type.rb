@@ -30,11 +30,11 @@ class Types::ServiceType < Types::BaseObject
         null: false,
         complexity: 3,
         description: 'Images showcasing the service'
-  field :vendor_profile,
-        Types::VendorProfileType,
+  field :vendor,
+        Types::VendorType,
         null: false,
         complexity: 5,
-        description: 'Vendor profile offering the service'
+        description: 'Vendor offering the service'
 
   # Computed fields
   field :bookings_count, Integer, null: false, description: 'Number of bookings tied to this service'
@@ -67,24 +67,22 @@ class Types::ServiceType < Types::BaseObject
   end
 
   def vendor_location
-    dataloader.with(Sources::AssociationLoader, :vendor_profile).load(object).then(&:location)
+    dataloader.with(Sources::AssociationLoader, :vendor).load(object).then(&:location)
   end
 
   def vendor_business_name
-    dataloader.with(Sources::AssociationLoader, :vendor_profile).load(object).then(&:business_name)
+    dataloader.with(Sources::AssociationLoader, :vendor).load(object).then(&:business_name)
   end
 
   def vendor_average_rating
-    dataloader.with(Sources::AssociationLoader, :vendor_profile).load(object).then { |vp| vp&.average_rating || 0.0 }
+    dataloader.with(Sources::AssociationLoader, :vendor).load(object).then { |v| v&.average_rating || 0.0 }
   end
 
   def vendor_total_reviews
-    dataloader.with(Sources::AssociationLoader, :vendor_profile).load(object).then { |vp| vp&.total_reviews || 0 }
+    dataloader.with(Sources::AssociationLoader, :vendor).load(object).then { |v| v&.total_reviews || 0 }
   end
 
   def service_category
     dataloader.with(Sources::AssociationLoader, :categories).load(object).then(&:first)
   end
 end
-
-# rubocop:enable GraphQL/ExtractType

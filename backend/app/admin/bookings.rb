@@ -3,11 +3,11 @@
 ActiveAdmin.register Booking do
   menu priority: 7, label: 'Bookings'
 
-  permit_params :customer_id, :vendor_profile_id, :service_id, :event_date,
+  permit_params :customer_id, :vendor_id, :service_id, :event_date,
                 :event_end_date, :event_location, :total_amount, :status,
                 :requirements, :special_instructions
 
-  includes :customer, :vendor_profile, :service
+  includes :customer, :vendor, :service
 
   scope :all, default: true
   scope :upcoming
@@ -22,8 +22,8 @@ ActiveAdmin.register Booking do
     column :customer do |b|
       link_to b.customer.full_name, admin_user_path(b.customer) if b.customer
     end
-    column :vendor_profile do |b|
-      link_to b.vendor_profile.business_name, admin_vendor_profile_path(b.vendor_profile) if b.vendor_profile
+    column :vendor do |b|
+      link_to b.vendor.business_name, admin_vendor_path(b.vendor) if b.vendor
     end
     column :service do |b|
       link_to b.service.name, admin_service_path(b.service) if b.service
@@ -51,7 +51,7 @@ ActiveAdmin.register Booking do
   end
 
   filter :customer, collection: -> { User.customers.map { |u| [u.full_name, u.id] } }
-  filter :vendor_profile, collection: -> { VendorProfile.order(:business_name).map { |vp| [vp.business_name, vp.id] } }
+  filter :vendor, collection: -> { Vendor.order(:business_name).map { |v| [v.business_name, v.id] } }
   filter :service
   filter :status, as: :select, collection: Booking.statuses
   filter :event_date
@@ -64,8 +64,8 @@ ActiveAdmin.register Booking do
       row :customer do |b|
         link_to "#{b.customer.full_name} (#{b.customer.email})", admin_user_path(b.customer) if b.customer
       end
-      row :vendor_profile do |b|
-        link_to b.vendor_profile.business_name, admin_vendor_profile_path(b.vendor_profile) if b.vendor_profile
+      row :vendor do |b|
+        link_to b.vendor.business_name, admin_vendor_path(b.vendor) if b.vendor
       end
       row :service do |b|
         link_to b.service.name, admin_service_path(b.service) if b.service
@@ -123,7 +123,7 @@ ActiveAdmin.register Booking do
   form do |f|
     f.inputs 'Booking Details' do
       f.input :customer, collection: User.customers.map { |u| [u.full_name, u.id] }
-      f.input :vendor_profile, collection: VendorProfile.order(:business_name).map { |vp| [vp.business_name, vp.id] }
+      f.input :vendor, collection: Vendor.order(:business_name).map { |v| [v.business_name, v.id] }
       f.input :service, collection: Service.order(:name).map { |s| [s.name, s.id] }
       f.input :event_date, as: :datetime_picker
       f.input :event_end_date, as: :datetime_picker
@@ -139,12 +139,12 @@ ActiveAdmin.register Booking do
   # Status transition actions
   member_action :complete, method: :put do
     resource.update(status: :completed)
-    redirect_to resource_path, notice: 'Booking marked as completed.'
+    redirect_to resource_path, notice: I18n.t('admin.bookings.completed')
   end
 
   member_action :cancel, method: :put do
     resource.update(status: :cancelled)
-    redirect_to resource_path, alert: 'Booking has been cancelled.'
+    redirect_to resource_path, alert: I18n.t('admin.bookings.cancelled')
   end
 
   action_item :complete, only: :show do

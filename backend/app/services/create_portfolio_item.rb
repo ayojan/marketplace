@@ -3,13 +3,13 @@
 class CreatePortfolioItem
   include Callable
 
-  def initialize(vendor_profile, params)
-    @vendor_profile = vendor_profile
+  def initialize(vendor, params)
+    @vendor = vendor
     @params = params
   end
 
   def call
-    portfolio_item = @vendor_profile.portfolio_items.build(@params)
+    portfolio_item = @vendor.portfolio_items.build(@params)
 
     if portfolio_item.save
       reorder_items_in_category(portfolio_item.category) if @params[:display_order].present?
@@ -22,7 +22,7 @@ class CreatePortfolioItem
   private
 
   def reorder_items_in_category(category)
-    items = @vendor_profile.portfolio_items.where(category: category).order(:display_order, :created_at)
+    items = @vendor.portfolio_items.where(category: category).order(:display_order, :created_at)
 
     items.each_with_index do |item, index|
       # rubocop:disable Rails/SkipsModelValidations

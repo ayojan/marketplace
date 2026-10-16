@@ -5,18 +5,18 @@ require 'rails_helper'
 RSpec.describe VendorBookingMailer do
   let(:vendor_user) { create(:user, :vendor) }
   let(:customer_user) { create(:user, :customer) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
-  let(:customer_profile) { customer_user.customer_profile }
-  let(:service) { create(:service, vendor_profile: vendor_profile) }
+  let(:vendor) { vendor_user.vendor }
+  let(:customer) { customer_user.customer }
+  let(:service) { create(:service, vendor: vendor) }
   let(:booking) do
     # Create availability slot for the booking date
     booking_date = 1.week.from_now
     create(:availability_slot,
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            date: booking_date.to_date,
            is_available: true)
 
-    create(:booking, service: service, vendor: vendor_user, customer: customer_user, event_date: booking_date)
+    create(:booking, service: service, vendor: vendor, customer: customer_user, event_date: booking_date)
   end
 
   describe '#new_booking_notification' do
@@ -29,7 +29,7 @@ RSpec.describe VendorBookingMailer do
     end
 
     it 'renders the body' do
-      expect(mail.body.encoded).to include(vendor_profile.business_name)
+      expect(mail.body.encoded).to include(vendor.business_name)
       expect(mail.body.encoded).to include(customer_user.name)
       expect(mail.body.encoded).to include(service.name)
     end
@@ -45,7 +45,7 @@ RSpec.describe VendorBookingMailer do
     end
 
     it 'renders the body' do
-      expect(mail.body.encoded).to include(vendor_profile.business_name)
+      expect(mail.body.encoded).to include(vendor.business_name)
       expect(mail.body.encoded).to include(customer_user.name)
       expect(mail.body.encoded).to include(service.name)
     end
@@ -61,7 +61,7 @@ RSpec.describe VendorBookingMailer do
     end
 
     it 'renders the body' do
-      expect(mail.body.encoded).to include(vendor_profile.business_name)
+      expect(mail.body.encoded).to include(vendor.business_name)
       expect(mail.body.encoded).to include(customer_user.name)
       expect(mail.body.encoded).to include(service.name)
     end

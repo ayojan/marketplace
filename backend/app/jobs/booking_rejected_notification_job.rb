@@ -15,7 +15,7 @@ class BookingRejectedNotificationJob < ApplicationJob
     Notifications::EmailService.send_booking_rejected(booking, recipient)
 
     # Create in-app notification
-    vendor_name = booking.vendor_profile&.business_name || booking.vendor.full_name
+    vendor_name = booking.vendor&.business_name || booking.vendor&.display_name
     InAppNotification.create_notification(
       user_id: recipient.id,
       title: 'Booking Declined',

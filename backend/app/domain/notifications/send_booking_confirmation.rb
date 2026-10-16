@@ -25,7 +25,7 @@ module Notifications
       SendNotification.call(
         user: booking.customer,
         title: 'Booking Confirmed',
-        message: "Your booking with #{booking.vendor_profile.display_name} for #{date_str} has been confirmed.",
+        message: "Your booking with #{booking.vendor.display_name} for #{date_str} has been confirmed.",
         notification_type: 'booking_created',
         related_type: 'Booking',
         related_id: booking.id
@@ -34,7 +34,7 @@ module Notifications
 
     def notify_vendor(date_str)
       SendNotification.call(
-        user: booking.vendor_profile.user,
+        user: booking.vendor.user,
         title: 'New Booking Request',
         message: "You have a new booking request from #{booking.customer.full_name} for #{date_str}.",
         notification_type: 'booking_created',

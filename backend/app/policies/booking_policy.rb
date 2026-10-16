@@ -47,6 +47,6 @@ class BookingPolicy < ApplicationPolicy
   end
 
   def user_is_vendor?
-    record.vendor_profile.user_id == user.id
+    record.vendor.user_id == user.id
   end
 end

@@ -3,14 +3,14 @@
 class SetFeaturedPortfolioItems
   include Callable
 
-  def initialize(vendor_profile, item_ids, featured_status: true)
-    @vendor_profile = vendor_profile
+  def initialize(vendor, item_ids, featured_status: true)
+    @vendor = vendor
     @item_ids = item_ids
     @featured_status = featured_status
   end
 
   def call
-    items = @vendor_profile.portfolio_items.where(id: @item_ids)
+    items = @vendor.portfolio_items.where(id: @item_ids)
     updated_count = 0
     errors = []
 

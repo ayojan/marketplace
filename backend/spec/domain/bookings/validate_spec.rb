@@ -4,12 +4,13 @@ require 'rails_helper'
 
 RSpec.describe Bookings::Validate do
   let(:customer) { create(:user, :customer) }
-  let(:vendor) { create(:user, :vendor) }
-  let(:service) { create(:service, vendor_profile: vendor.vendor_profile) }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
+  let(:service) { create(:service, vendor: vendor) }
 
   before do
     create(:availability_slot,
-           vendor_profile: vendor.vendor_profile,
+           vendor: vendor,
            date: 1.week.from_now.to_date,
            start_time: '09:00',
            end_time: '17:00',

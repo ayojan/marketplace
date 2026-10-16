@@ -47,7 +47,10 @@ class BookingResponseService
   private
 
   def authorized?
-    @booking.vendor == @vendor
+    return true if @booking.vendor == @vendor
+    return true if @booking.vendor&.user_id == @vendor.id
+
+    false
   end
 
   def valid_response_type?

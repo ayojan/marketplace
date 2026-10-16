@@ -28,9 +28,8 @@ module ResourceFinder
     nil
   end
 
-  # Find availability slot for vendor
   def find_availability_slot(id)
-    slot = current_user.vendor_profile&.availability_slots&.find_by(id: id)
+    slot = current_user.vendor&.availability_slots&.find_by(id: id)
 
     return slot if slot
 

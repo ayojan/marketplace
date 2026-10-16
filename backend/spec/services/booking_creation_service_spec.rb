@@ -4,14 +4,15 @@ require 'rails_helper'
 
 RSpec.describe BookingCreationService, type: :service do
   let(:customer) { create(:user, :customer) }
-  let(:vendor) { create(:user, :vendor) }
-  let(:service) { create(:service, vendor_profile: vendor.vendor_profile) }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
+  let(:service) { create(:service, vendor: vendor) }
   let(:event_date) { 1.week.from_now.change(hour: 10, min: 0) }
   let(:event_end_date) { event_date + 2.hours }
 
   let!(:availability_slot) do
     create(:availability_slot,
-           vendor_profile: vendor.vendor_profile,
+           vendor: vendor,
            date: event_date.to_date,
            start_time: '09:00',
            end_time: '17:00',
@@ -56,7 +57,7 @@ RSpec.describe BookingCreationService, type: :service do
         service_instance = described_class.new(valid_params)
         service_instance.call
 
-        expect(service_instance.booking.vendor).to eq(service.vendor_profile.user)
+        expect(service_instance.booking.vendor).to eq(service.vendor)
       end
     end
 

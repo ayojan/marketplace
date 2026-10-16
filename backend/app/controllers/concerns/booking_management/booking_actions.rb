@@ -44,7 +44,7 @@ module BookingManagement::BookingActionHelpers
     end_time = calculate_checker_end_time(params[:date], params[:start_time], params[:end_time], params[:duration])
 
     AvailabilityCheckerService.new(
-      vendor_profile: service.vendor_profile,
+      vendor: service.vendor,
       date: Date.parse(params[:date]),
       start_time: params[:start_time],
       end_time: end_time
@@ -70,19 +70,18 @@ module BookingManagement::BookingActionHelpers
     end_dt = calculate_resolver_end_datetime(start_dt, params[:duration])
 
     ConflictResolutionService.new(
-      vendor_profile: find_resolver_vendor_profile,
+      vendor: find_resolver_vendor,
       event_date: start_dt,
       event_end_date: end_dt
     )
   end
 
-  def find_resolver_vendor_profile
-    if params[:vendor_profile_id]
-      VendorProfile.find(params[:vendor_profile_id])
-    elsif params[:vendor_id]
-      User.find(params[:vendor_id]).vendor_profile
+  def find_resolver_vendor
+    if params[:vendor_id]
+      user = User.find_by(id: params[:vendor_id])
+      user&.vendor || Vendor.find_by_id_or_slug(params[:vendor_id])
     elsif params[:service_id]
-      Service.find(params[:service_id]).vendor_profile
+      Service.find_by(id: params[:service_id])&.vendor
     end
   end
 
@@ -131,7 +130,7 @@ module BookingManagement::ListingActions
                  :review,
                  :booking_messages,
                  service: :categories,
-                 vendor_profile: [:user, { portfolio_items: { images_attachments: :blob } }]
+                 vendor: [:user, { portfolio_items: { images_attachments: :blob } }]
                )
                .order(created_at: :desc)
                .page(params[:page])

@@ -51,8 +51,8 @@ RSpec.describe 'Email Confirmation Flow' do
       }, as: :json
 
       customer = User.find_by(email: 'customer@example.com')
-      expect(customer.customer_profile).to be_present
-      expect(customer.vendor_profile).to be_nil
+      expect(customer.customer).to be_present
+      expect(customer.vendor).to be_nil
 
       # Test vendor profile creation
       post '/auth/register', params: {
@@ -67,8 +67,8 @@ RSpec.describe 'Email Confirmation Flow' do
       }, as: :json
 
       vendor = User.find_by(email: 'vendor@example.com')
-      expect(vendor.vendor_profile).to be_present
-      expect(vendor.customer_profile).to be_nil
+      expect(vendor.vendor).to be_present
+      expect(vendor.customer).to be_nil
     end
   end
 end

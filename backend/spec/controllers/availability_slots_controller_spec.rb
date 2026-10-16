@@ -31,10 +31,10 @@ RSpec.describe AvailabilitySlotsController do
 
   describe 'GET #index' do
     let(:vendor_user) { create(:user, :vendor) }
-    let!(:today_slot) { create(:availability_slot, vendor_profile: vendor_user.vendor_profile, date: Date.current) }
-    let!(:future_slot) { create(:availability_slot, vendor_profile: vendor_user.vendor_profile, date: 1.week.from_now) }
+    let!(:today_slot) { create(:availability_slot, vendor: vendor_user.vendor, date: Date.current) }
+    let!(:future_slot) { create(:availability_slot, vendor: vendor_user.vendor, date: 1.week.from_now) }
     let!(:past_slot) do
-      slot = build(:availability_slot, vendor_profile: vendor_user.vendor_profile, date: 1.week.ago)
+      slot = build(:availability_slot, vendor: vendor_user.vendor, date: 1.week.ago)
       slot.save(validate: false)
       slot
     end
@@ -70,7 +70,7 @@ RSpec.describe AvailabilitySlotsController do
 
   describe 'GET #show' do
     let(:vendor_user) { create(:user, :vendor) }
-    let(:availability_slot) { create(:availability_slot, vendor_profile: vendor_user.vendor_profile) }
+    let(:availability_slot) { create(:availability_slot, vendor: vendor_user.vendor) }
 
     it 'returns the availability slot' do
       auth_as(vendor_user)
@@ -129,7 +129,7 @@ RSpec.describe AvailabilitySlotsController do
 
   describe 'PUT #update' do
     let(:vendor_user) { create(:user, :vendor) }
-    let(:availability_slot) { create(:availability_slot, vendor_profile: vendor_user.vendor_profile) }
+    let(:availability_slot) { create(:availability_slot, vendor: vendor_user.vendor) }
     let(:update_params) do
       {
         id: availability_slot.id,
@@ -243,6 +243,6 @@ RSpec.describe AvailabilitySlotsController do
   end
 
   def create_slot(vendor_user)
-    create(:availability_slot, vendor_profile: vendor_user.vendor_profile)
+    create(:availability_slot, vendor: vendor_user.vendor)
   end
 end

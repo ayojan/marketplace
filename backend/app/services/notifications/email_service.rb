@@ -37,7 +37,7 @@ module Notifications
     end
 
     def send_booking_created(booking, recipient)
-      if recipient.vendor_profile.present?
+      if recipient.vendor.present?
         VendorBookingMailer.new_booking_notification(booking).deliver_now
       else
         CustomerBookingMailer.booking_confirmation(booking).deliver_now
@@ -53,7 +53,7 @@ module Notifications
     end
 
     def send_booking_cancelled(booking, recipient)
-      mailer = if recipient.vendor_profile.blank?
+      mailer = if recipient.vendor.blank?
                  CustomerBookingMailer
                else
                  VendorBookingMailer

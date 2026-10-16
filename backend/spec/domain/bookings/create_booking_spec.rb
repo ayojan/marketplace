@@ -4,15 +4,15 @@ require 'rails_helper'
 
 RSpec.describe Bookings::CreateBooking do
   let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_profile) }
+  let(:service) { create(:service, vendor: vendor) }
 
   let(:valid_params) do
     {
       customer: customer,
       service: service,
-      vendor_profile: vendor_profile,
+      vendor: vendor,
       event_date: 7.days.from_now,
       event_location: '123 Main St, City, State',
       total_amount: BigDecimal('500.00'),
@@ -41,7 +41,7 @@ RSpec.describe Bookings::CreateBooking do
 
         expect(booking.customer_id).to eq(customer.id)
         expect(booking.service_id).to eq(service.id)
-        expect(booking.vendor_profile_id).to eq(vendor_profile.id)
+        expect(booking.vendor_id).to eq(vendor.id)
         expect(booking.event_date).to eq(valid_params[:event_date])
         expect(booking.event_location).to eq(valid_params[:event_location])
         expect(booking.total_amount).to eq(valid_params[:total_amount])

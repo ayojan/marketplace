@@ -4,12 +4,12 @@ require 'rails_helper'
 
 RSpec.describe Bookings::UpdateBookingStatus do
   let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_profile) }
+  let(:service) { create(:service, vendor: vendor) }
   let(:booking) do
     create(:booking,
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            customer: customer,
            service: service,
            status: :pending,
@@ -72,43 +72,43 @@ RSpec.describe Bookings::UpdateBookingStatus do
 
     context 'with trust stats recalculation (inline, not async)' do
       it 'calculates trust stats inline when status changes to completed' do
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call)
+        allow(Vendors::CalculatePublicStats).to receive(:call)
 
         result = described_class.call(booking: booking, new_status: 'completed')
 
-        expect(VendorProfiles::CalculatePublicStats).to have_received(:call).with(vendor_profile: vendor_profile)
+        expect(Vendors::CalculatePublicStats).to have_received(:call).with(vendor: vendor)
         expect(result[:success]).to be true
       end
 
       it 'calculates trust stats inline when status changes to declined' do
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call)
+        allow(Vendors::CalculatePublicStats).to receive(:call)
 
         result = described_class.call(booking: booking, new_status: 'declined')
 
-        expect(VendorProfiles::CalculatePublicStats).to have_received(:call).with(vendor_profile: vendor_profile)
+        expect(Vendors::CalculatePublicStats).to have_received(:call).with(vendor: vendor)
         expect(result[:success]).to be true
       end
 
       it 'calculates trust stats inline when status changes to cancelled' do
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call)
+        allow(Vendors::CalculatePublicStats).to receive(:call)
 
         result = described_class.call(booking: booking, new_status: 'cancelled')
 
-        expect(VendorProfiles::CalculatePublicStats).to have_received(:call).with(vendor_profile: vendor_profile)
+        expect(Vendors::CalculatePublicStats).to have_received(:call).with(vendor: vendor)
         expect(result[:success]).to be true
       end
 
       it 'does not calculate trust stats for non-terminal status' do
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call)
+        allow(Vendors::CalculatePublicStats).to receive(:call)
 
         described_class.call(booking: booking, new_status: 'accepted')
 
         # Stats are only calculated for completed/declined/cancelled
-        expect(VendorProfiles::CalculatePublicStats).not_to have_received(:call)
+        expect(Vendors::CalculatePublicStats).not_to have_received(:call)
       end
 
       it 'returns error response if stats calculation fails (explicit failure, not silent)' do
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call).and_raise(StandardError, 'Stats error')
+        allow(Vendors::CalculatePublicStats).to receive(:call).and_raise(StandardError, 'Stats error')
 
         result = described_class.call(booking: booking, new_status: 'completed')
 
@@ -117,7 +117,7 @@ RSpec.describe Bookings::UpdateBookingStatus do
       end
 
       it 'still updates booking even if stats calculation fails' do
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call).and_raise(StandardError, 'Stats error')
+        allow(Vendors::CalculatePublicStats).to receive(:call).and_raise(StandardError, 'Stats error')
 
         result = described_class.call(booking: booking, new_status: 'completed')
 
@@ -127,12 +127,12 @@ RSpec.describe Bookings::UpdateBookingStatus do
         expect(result[:success]).to be false
       end
 
-      it 'calculates stats for correct vendor profile' do
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call)
+      it 'calculates stats for correct vendor' do
+        allow(Vendors::CalculatePublicStats).to receive(:call)
 
         described_class.call(booking: booking, new_status: 'completed')
 
-        expect(VendorProfiles::CalculatePublicStats).to have_received(:call).with(vendor_profile: vendor_profile)
+        expect(Vendors::CalculatePublicStats).to have_received(:call).with(vendor: vendor)
       end
     end
 
@@ -158,7 +158,7 @@ RSpec.describe Bookings::UpdateBookingStatus do
         end
 
         allow(Notifications::SendBookingStatusChange).to receive(:call) { operations << :notification }
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call) { operations << :stats }
+        allow(Vendors::CalculatePublicStats).to receive(:call) { operations << :stats }
 
         # Use 'cancelled' which is both notifiable and triggers stats calculation
         described_class.call(booking: booking, new_status: 'cancelled')
@@ -178,7 +178,7 @@ RSpec.describe Bookings::UpdateBookingStatus do
         end
 
         allow(Notifications::SendBookingStatusChange).to receive(:call) { operations << :notification }
-        allow(VendorProfiles::CalculatePublicStats).to receive(:call) { operations << :stats }
+        allow(Vendors::CalculatePublicStats).to receive(:call) { operations << :stats }
 
         # Use 'completed' which triggers stats but not notification
         described_class.call(booking: booking, new_status: 'completed')

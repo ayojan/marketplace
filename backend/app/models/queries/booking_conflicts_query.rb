@@ -2,8 +2,8 @@
 
 # Single source of truth for booking conflict logic
 class BookingConflictsQuery
-  def initialize(vendor_profile:, event_date:, event_end_date: nil, exclude_id: nil)
-    @vendor_profile = vendor_profile
+  def initialize(vendor:, event_date:, event_end_date: nil, exclude_id: nil)
+    @vendor = vendor
     @event_date = event_date
     @event_end_date = event_end_date || (event_date + 2.hours)
     @exclude_id = exclude_id
@@ -19,7 +19,7 @@ class BookingConflictsQuery
 
   def bookings
     scope = Booking
-            .where(vendor_profile: @vendor_profile)
+            .where(vendor: @vendor)
             .where(status: %i[pending accepted])
             .overlapping_period(@event_date, @event_end_date)
 

@@ -3,10 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe ServiceSearchService, type: :service do
-  let!(:vendor_user) { create(:user, :with_vendor_profile) }
-  let!(:vendor_profile) do
-    vendor_user.vendor_profile.tap do |vp|
-      vp.update!(business_name: 'Test Photography', location: 'New York, NY')
+  let!(:vendor_user) { create(:user, :vendor) }
+  let!(:vendor) do
+    vendor_user.vendor.tap do |v|
+      v.update!(business_name: 'Test Photography', location: 'New York, NY')
     end
   end
   let(:photography_category) { create(:category, :photography) }
@@ -20,7 +20,7 @@ RSpec.describe ServiceSearchService, type: :service do
            base_price: 1000,
            pricing_type: 'package',
            status: 'active',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: photography_category)
   end
 
@@ -32,7 +32,7 @@ RSpec.describe ServiceSearchService, type: :service do
            base_price: 200,
            pricing_type: 'hourly',
            status: 'active',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: photography_category)
   end
 
@@ -44,7 +44,7 @@ RSpec.describe ServiceSearchService, type: :service do
            base_price: 1500,
            pricing_type: 'package',
            status: 'active',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: videography_category)
   end
 
@@ -56,7 +56,7 @@ RSpec.describe ServiceSearchService, type: :service do
            base_price: 500,
            pricing_type: 'hourly',
            status: 'inactive',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: photography_category)
   end
 
@@ -172,11 +172,11 @@ RSpec.describe ServiceSearchService, type: :service do
 
     context 'with vendor filter' do
       it 'filters by vendor' do
-        result = described_class.new(vendor_id: vendor_profile.id).call
+        result = described_class.new(vendor_id: vendor.id).call
 
         expect(result[:services].count).to eq(3)
-        expect(result[:services].all? { |s| s.vendor_profile == vendor_profile }).to be true
-        expect(result[:filters][:vendor_id]).to eq(vendor_profile.id)
+        expect(result[:services].all? { |s| s.vendor == vendor }).to be true
+        expect(result[:filters][:vendor_id]).to eq(vendor.id)
       end
     end
 

@@ -48,11 +48,11 @@ RSpec.describe 'POST /auth/google' do
       expect(json['needs_mobile_onboarding']).to be(true)
     end
 
-    it 'attaches customer profile and auth identity to the new user' do
+    it 'attaches customer and auth identity to the new user' do
       post '/auth/google', params: { id_token: 'valid-google-id-token', role: 'customer' }
       created_user = User.find_by(email: google_email)
 
-      expect(created_user.customer_profile).to be_present
+      expect(created_user.customer).to be_present
       expect(created_user.auth_identities.first.uid).to eq(google_sub)
     end
 
@@ -64,7 +64,7 @@ RSpec.describe 'POST /auth/google' do
         post '/auth/google', params: {
           id_token: 'vendor-google-token',
           role: 'vendor',
-          vendor_profile_attributes: {
+          vendor_attributes: {
             business_name: 'Priya Verma Creations',
             location: 'Mumbai'
           }
@@ -74,11 +74,11 @@ RSpec.describe 'POST /auth/google' do
       expect(response).to have_http_status(:created)
       json = response.parsed_body
       expect(json['user']['role']).to eq('vendor')
-      expect(json['user']['vendor_profile']).to be_present
-      expect(json['user']['vendor_profile']['business_name']).to eq('Priya Verma Creations')
+      expect(json['user']['vendor']).to be_present
+      expect(json['user']['vendor']['business_name']).to eq('Priya Verma Creations')
 
       created_user = User.find_by(email: 'vendor.studio@example.com')
-      expect(created_user.vendor_profile.location).to eq('Mumbai')
+      expect(created_user.vendor.location).to eq('Mumbai')
     end
   end
 
@@ -109,7 +109,7 @@ RSpec.describe 'POST /auth/google' do
     end
 
     it 'reports needs_mobile_onboarding as false if phone is set' do
-      existing_user.customer_profile.update!(phone: '+91 98765 43210')
+      existing_user.customer.update!(phone: '+91 98765 43210')
 
       post '/auth/google', params: { id_token: 'valid-google-id-token' }
 

@@ -3,9 +3,9 @@
 ActiveAdmin.register Service do
   menu priority: 6, label: 'Services'
 
-  permit_params :name, :description, :vendor_profile_id, :base_price, :pricing_type, :status, category_ids: []
+  permit_params :name, :description, :vendor_id, :base_price, :pricing_type, :status, category_ids: []
 
-  includes :vendor_profile, :categories
+  includes :vendor, :categories
 
   scope :all, default: true
   scope :active
@@ -17,8 +17,8 @@ ActiveAdmin.register Service do
     selectable_column
     id_column
     column :name
-    column :vendor_profile do |s|
-      link_to s.vendor_profile.business_name, admin_vendor_profile_path(s.vendor_profile) if s.vendor_profile
+    column :vendor do |s|
+      link_to s.vendor.business_name, admin_vendor_path(s.vendor) if s.vendor
     end
     column 'Categories' do |s|
       s.categories.map(&:name).join(', ')
@@ -43,7 +43,7 @@ ActiveAdmin.register Service do
   end
 
   filter :name
-  filter :vendor_profile, collection: -> { VendorProfile.order(:business_name).map { |vp| [vp.business_name, vp.id] } }
+  filter :vendor, collection: -> { Vendor.order(:business_name).map { |v| [v.business_name, v.id] } }
   filter :categories
   filter :pricing_type, as: :select, collection: Service.pricing_types
   filter :status, as: :select, collection: Service.statuses
@@ -55,8 +55,8 @@ ActiveAdmin.register Service do
     attributes_table do
       row :id
       row :name
-      row :vendor_profile do |s|
-        link_to s.vendor_profile.business_name, admin_vendor_profile_path(s.vendor_profile) if s.vendor_profile
+      row :vendor do |s|
+        link_to s.vendor.business_name, admin_vendor_path(s.vendor) if s.vendor
       end
       row 'Categories' do |s|
         s.categories.map(&:name).join(', ')
@@ -96,7 +96,7 @@ ActiveAdmin.register Service do
 
   form do |f|
     f.inputs 'Service Details' do
-      f.input :vendor_profile, collection: VendorProfile.order(:business_name).map { |vp| [vp.business_name, vp.id] }
+      f.input :vendor, collection: Vendor.order(:business_name).map { |v| [v.business_name, v.id] }
       f.input :name
       f.input :categories, as: :check_boxes, collection: Category.active
       f.input :pricing_type, as: :select, collection: Service.pricing_types.keys
@@ -109,12 +109,12 @@ ActiveAdmin.register Service do
 
   member_action :activate, method: :put do
     resource.update(status: :active)
-    redirect_to resource_path, notice: 'Service activated successfully'
+    redirect_to resource_path, notice: I18n.t('admin.services.activated')
   end
 
   member_action :deactivate, method: :put do
     resource.update(status: :inactive)
-    redirect_to resource_path, alert: 'Service deactivated'
+    redirect_to resource_path, alert: I18n.t('admin.services.deactivated')
   end
 
   action_item :activate, only: :show do

@@ -31,9 +31,9 @@ class Types::QueryType < Types::BaseObject
   field :service_categories, [Types::ServiceCategoryType], null: false,
                                                            description: 'List all active service categories'
 
-  # Vendor profile queries
-  field :vendor_profile, Types::VendorProfileType, null: true, description: 'Find a vendor profile by ID' do
-    argument :id, ID, required: true, description: 'ID of the vendor profile to fetch'
+  # Vendor queries
+  field :vendor, Types::VendorType, null: true, description: 'Find a vendor by ID' do
+    argument :id, ID, required: true, description: 'ID of the vendor to fetch'
   end
 
   field :review, Types::ReviewType, null: true, description: 'Find a review by ID' do
@@ -72,7 +72,7 @@ class Types::QueryType < Types::BaseObject
 
   def services(limit:)
     Service.active
-           .includes(:vendor_profile, :categories, :service_images)
+           .includes(:vendor, :categories, :service_images)
            .limit(limit)
   end
 
@@ -80,8 +80,8 @@ class Types::QueryType < Types::BaseObject
     Category.where(active: true).order(:name)
   end
 
-  def vendor_profile(id:)
-    VendorProfile.includes(:user, :portfolio_items, :reviews, :services).find_by(id: id)
+  def vendor(id:)
+    Vendor.includes(:user, :portfolio_items, :reviews, :services).find_by(id: id)
   end
 
   def review(id:)
@@ -90,17 +90,15 @@ class Types::QueryType < Types::BaseObject
 
   def reviews(limit:)
     Review.published.recent
-          .includes(:customer, :booking, :service, :vendor_profile,
+          .includes(:customer, :booking, :service, :vendor,
                     photos_attachments: :blob)
           .limit(limit)
   end
 
   def vendor_dashboard
     user = context[:current_user]
-    return nil unless user&.vendor? && user.vendor_profile
+    return nil unless user&.vendor? && user.vendor
 
-    VendorAnalyticsService.call(user.vendor_profile)
+    VendorAnalyticsService.call(user.vendor)
   end
 end
-
-# rubocop:enable GraphQL/ExtractType

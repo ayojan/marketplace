@@ -3,9 +3,9 @@
 ActiveAdmin.register PortfolioItem do
   menu priority: 9, label: 'Portfolio Items'
 
-  permit_params :vendor_profile_id, :title, :category, :description, :is_featured, :display_order
+  permit_params :vendor_id, :title, :category, :description, :is_featured, :display_order
 
-  includes :vendor_profile
+  includes :vendor
 
   scope :all, default: true
   scope :featured
@@ -14,8 +14,8 @@ ActiveAdmin.register PortfolioItem do
     selectable_column
     id_column
     column :title
-    column :vendor_profile do |p|
-      link_to p.vendor_profile.business_name, admin_vendor_profile_path(p.vendor_profile) if p.vendor_profile
+    column :vendor do |p|
+      link_to p.vendor.business_name, admin_vendor_path(p.vendor) if p.vendor
     end
     column :category
     column :is_featured do |p|
@@ -30,7 +30,7 @@ ActiveAdmin.register PortfolioItem do
   end
 
   filter :title
-  filter :vendor_profile, collection: -> { VendorProfile.order(:business_name).map { |vp| [vp.business_name, vp.id] } }
+  filter :vendor, collection: -> { Vendor.order(:business_name).map { |v| [v.business_name, v.id] } }
   filter :category
   filter :is_featured
   filter :created_at
@@ -39,8 +39,8 @@ ActiveAdmin.register PortfolioItem do
     attributes_table do
       row :id
       row :title
-      row :vendor_profile do |p|
-        link_to p.vendor_profile.business_name, admin_vendor_profile_path(p.vendor_profile) if p.vendor_profile
+      row :vendor do |p|
+        link_to p.vendor.business_name, admin_vendor_path(p.vendor) if p.vendor
       end
       row :category
       row :is_featured do |p|
@@ -58,7 +58,7 @@ ActiveAdmin.register PortfolioItem do
 
   form do |f|
     f.inputs 'Portfolio Item Details' do
-      f.input :vendor_profile, collection: VendorProfile.order(:business_name).map { |vp| [vp.business_name, vp.id] }
+      f.input :vendor, collection: Vendor.order(:business_name).map { |v| [v.business_name, v.id] }
       f.input :title
       f.input :category
       f.input :is_featured

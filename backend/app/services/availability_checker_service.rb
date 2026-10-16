@@ -5,13 +5,13 @@ class AvailabilityCheckerService
   include ActiveModel::Attributes
   include Callable
 
-  attr_accessor :vendor_profile
+  attr_accessor :vendor
 
   attribute :date, :date
   attribute :start_time, :string
   attribute :end_time, :string
 
-  validates :vendor_profile, presence: true
+  validates :vendor, presence: true
   validates :date, presence: true
   validates :start_time, presence: true
   validates :end_time, presence: true
@@ -45,9 +45,9 @@ class AvailabilityCheckerService
   attr_reader :errors
 
   def availability_slots
-    @availability_slots ||= vendor_profile.availability_slots
-                                          .available
-                                          .for_date(date)
+    @availability_slots ||= vendor.availability_slots
+                                  .available
+                                  .for_date(date)
   end
 
   def suggested_times

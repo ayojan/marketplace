@@ -4,7 +4,7 @@ FactoryBot.define do
   factory :review do
     booking { association :booking, status: :completed }
     customer { booking.customer }
-    vendor_profile { booking.vendor_profile }
+    vendor { booking.vendor }
     service { booking.service }
 
     rating { rand(1..5) }

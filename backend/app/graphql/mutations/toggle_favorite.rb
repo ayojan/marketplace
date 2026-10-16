@@ -2,32 +2,32 @@
 
 module Mutations
   class ToggleFavorite < Mutations::BaseMutation
-    description 'Toggle favorite status for a vendor profile'
+    description 'Toggle favorite status for a vendor'
 
-    argument :vendor_profile_id, ID, required: true, description: 'ID of the vendor profile to favorite or unfavorite'
+    argument :vendor_id, ID, required: true, description: 'ID of the vendor to favorite or unfavorite'
 
     field :errors, [String], null: false, description: 'List of error messages if the operation failed'
-    field :is_favorited, Boolean, null: false, description: 'Whether the vendor profile is now favorited'
-    field :vendor_profile, Types::VendorProfileType, null: true, description: 'The affected vendor profile'
+    field :is_favorited, Boolean, null: false, description: 'Whether the vendor is now favorited'
+    field :vendor, Types::VendorType, null: true, description: 'The affected vendor'
 
-    def resolve(vendor_profile_id:)
+    def resolve(vendor_id:)
       result = Favorites::ToggleFavorite.call(
         user: context[:current_user],
-        vendor_profile_id: vendor_profile_id.to_i
+        vendor_id: vendor_id.to_i
       )
 
-      handle_toggle_result(result, vendor_profile_id)
+      handle_toggle_result(result, vendor_id)
     rescue StandardError => e
       failure_response(e.message)
     end
 
     private
 
-    def handle_toggle_result(result, vendor_profile_id)
+    def handle_toggle_result(result, vendor_id)
       if result[:success]
         {
           is_favorited: result[:is_favorited],
-          vendor_profile: VendorProfile.find(vendor_profile_id),
+          vendor: Vendor.find(vendor_id),
           errors: []
         }
       else
@@ -36,7 +36,7 @@ module Mutations
     end
 
     def failure_response(messages)
-      { is_favorited: false, vendor_profile: nil, errors: Array(messages) }
+      { is_favorited: false, vendor: nil, errors: Array(messages) }
     end
   end
 end

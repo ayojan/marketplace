@@ -30,17 +30,17 @@ FactoryBot.define do
       confirmed_at { Time.current }
     end
 
-    trait :with_vendor_profile do
+    trait :with_vendor do
       role { :vendor }
       after(:create) do |user|
-        create(:vendor_profile, user: user) unless user.vendor_profile
+        create(:vendor, user: user) unless user.vendor
       end
     end
 
-    trait :with_customer_profile do
+    trait :with_customer do
       role { :customer }
       after(:create) do |user|
-        create(:customer_profile, user: user) unless user.customer_profile
+        create(:customer, user: user) unless user.customer
       end
     end
   end

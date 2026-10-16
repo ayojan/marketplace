@@ -38,7 +38,7 @@ class BookingMessage < ApplicationRecord
 
   def sender_name
     if sender.vendor?
-      sender.vendor_profile&.business_name || "#{sender.first_name} #{sender.last_name}"
+      sender.vendor&.business_name || "#{sender.first_name} #{sender.last_name}"
     else
       "#{sender.first_name} #{sender.last_name}"
     end

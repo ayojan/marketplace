@@ -11,7 +11,7 @@ module BookingManagement::AvailabilitySlotConflictActions
     end
 
     result = AvailabilitySlots::CheckConflicts.call(
-      vendor_profile: current_user.vendor_profile,
+      vendor: current_user.vendor,
       date: date,
       start_time: start_time,
       end_time: end_time,

@@ -5,7 +5,7 @@ ActiveAdmin.register Review do
 
   permit_params :status, :vendor_response, :vendor_responded_at
 
-  includes :customer, :vendor_profile, :service, :booking
+  includes :customer, :vendor, :service, :booking
 
   scope :all, default: true
   scope('Published') { |scope| scope.where(status: :published) }
@@ -29,8 +29,8 @@ ActiveAdmin.register Review do
     column :customer do |r|
       link_to r.customer.full_name, admin_user_path(r.customer) if r.customer
     end
-    column :vendor_profile do |r|
-      link_to r.vendor_profile.business_name, admin_vendor_profile_path(r.vendor_profile) if r.vendor_profile
+    column :vendor do |r|
+      link_to r.vendor.business_name, admin_vendor_path(r.vendor) if r.vendor
     end
     column :service do |r|
       link_to r.service.name, admin_service_path(r.service) if r.service
@@ -53,7 +53,7 @@ ActiveAdmin.register Review do
   end
 
   filter :customer, collection: -> { User.customers.map { |u| [u.full_name, u.id] } }
-  filter :vendor_profile, collection: -> { VendorProfile.order(:business_name).map { |vp| [vp.business_name, vp.id] } }
+  filter :vendor, collection: -> { Vendor.order(:business_name).map { |v| [v.business_name, v.id] } }
   filter :service
   filter :rating, as: :select, collection: [5, 4, 3, 2, 1]
   filter :status, as: :select, collection: Review.statuses
@@ -73,8 +73,8 @@ ActiveAdmin.register Review do
       row :customer do |r|
         link_to r.customer.full_name, admin_user_path(r.customer) if r.customer
       end
-      row :vendor_profile do |r|
-        link_to r.vendor_profile.business_name, admin_vendor_profile_path(r.vendor_profile) if r.vendor_profile
+      row :vendor do |r|
+        link_to r.vendor.business_name, admin_vendor_path(r.vendor) if r.vendor
       end
       row :service do |r|
         link_to r.service.name, admin_service_path(r.service) if r.service
@@ -104,12 +104,12 @@ ActiveAdmin.register Review do
 
   member_action :hide, method: :put do
     resource.update(status: :hidden)
-    redirect_to resource_path, alert: 'Review hidden from marketplace.'
+    redirect_to resource_path, alert: I18n.t('admin.reviews.hidden')
   end
 
   member_action :publish, method: :put do
     resource.update(status: :published)
-    redirect_to resource_path, notice: 'Review published.'
+    redirect_to resource_path, notice: I18n.t('admin.reviews.published')
   end
 
   action_item :toggle_status, only: :show do

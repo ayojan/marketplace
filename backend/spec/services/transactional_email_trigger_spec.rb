@@ -27,12 +27,12 @@ RSpec.describe Bookings::UpdateBookingStatus, 'and User transactional email trig
   describe 'Booking status change email triggers' do
     let(:vendor_user) { create(:user, :vendor) }
     let(:customer_user) { create(:user, :customer) }
-    let(:vendor_profile) { vendor_user.vendor_profile }
-    let(:service) { create(:service, vendor_profile: vendor_profile) }
+    let(:vendor) { vendor_user.vendor }
+    let(:service) { create(:service, vendor: vendor) }
     let(:booking) do
       booking_date = 2.weeks.from_now
-      create(:availability_slot, vendor_profile: vendor_profile, date: booking_date.to_date, is_available: true)
-      create(:booking, service: service, vendor: vendor_user, customer: customer_user,
+      create(:availability_slot, vendor: vendor, date: booking_date.to_date, is_available: true)
+      create(:booking, service: service, vendor: vendor, customer: customer_user,
                        event_date: booking_date, status: :pending)
     end
 

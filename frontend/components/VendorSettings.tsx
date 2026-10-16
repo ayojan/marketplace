@@ -123,7 +123,7 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
     try {
       if (profileId) {
         await apiService.profiles.update(profileId, {
-          vendor_profile: {
+          vendor: {
             business_name: formData.business_name,
             description: formData.description,
             location: formData.location,

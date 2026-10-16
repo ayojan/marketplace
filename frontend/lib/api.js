@@ -232,10 +232,10 @@ export const apiService = {
   // Customer Favorites
   favorites: {
     getAll: () => api.get('/customer_favorites'),
-    add: (vendorProfileId) => api.post('/customer_favorites', { vendor_profile_id: vendorProfileId }),
+    add: (vendorId) => api.post('/customer_favorites', { vendor_id: vendorId }),
     remove: (id) => api.delete(`/customer_favorites/${id}`),
-    removeByVendor: (vendorProfileId) => api.delete(`/customer_favorites/by_vendor/${vendorProfileId}`),
-    check: (vendorProfileId) => api.get(`/customer_favorites/check/${vendorProfileId}`),
+    removeByVendor: (vendorId) => api.delete(`/customer_favorites/by_vendor/${vendorId}`),
+    check: (vendorId) => api.get(`/customer_favorites/check/${vendorId}`),
   },
 
   // Customer Checklists
@@ -247,10 +247,10 @@ export const apiService = {
     delete: (id) => api.delete(`/checklist_items/${id}`),
   },
 
-  // Customer Profile
-  customerProfile: {
-    get: () => api.get('/customer_profile'),
-    update: (data) => api.put('/customer_profile', { customer_profile: data }),
+  // Customer Profile / Customer
+  customer: {
+    get: () => api.get('/customer'),
+    update: (data) => api.put('/customer', { customer: data }),
   },
 
   // In-App Notifications

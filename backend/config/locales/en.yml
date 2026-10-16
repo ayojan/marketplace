@@ -48,3 +48,15 @@ en:
       batch_customer: 'Selected users set as customers.'
       batch_vendor: 'Selected users set as vendors.'
       batch_confirmed: 'Selected users confirmed successfully.'
+    bookings:
+      completed: 'Booking marked as completed.'
+      cancelled: 'Booking has been cancelled.'
+    categories:
+      batch_activated: 'Selected categories activated'
+      batch_deactivated: 'Selected categories deactivated'
+    reviews:
+      hidden: 'Review hidden from marketplace.'
+      published: 'Review published.'
+    services:
+      activated: 'Service activated successfully'
+      deactivated: 'Service deactivated'
