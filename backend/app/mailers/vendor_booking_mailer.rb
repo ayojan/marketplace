@@ -3,7 +3,12 @@
 class VendorBookingMailer < ApplicationMailer
   def new_booking_notification(booking)
     assign_booking_details(booking)
-    mail(to: @vendor_email, subject: "New Booking Request - #{@service.name}") do |format|
+    mail(
+      to: @vendor_email,
+      from: bookings_sender,
+      reply_to: support_sender,
+      subject: "New Booking Request - #{@service.name}"
+    ) do |format|
       format.text
       format.html
     end
@@ -11,7 +16,12 @@ class VendorBookingMailer < ApplicationMailer
 
   def booking_cancelled_notification(booking)
     assign_booking_details(booking)
-    mail(to: @vendor_email, subject: "Booking Cancelled - #{@service.name}") do |format|
+    mail(
+      to: @vendor_email,
+      from: bookings_sender,
+      reply_to: support_sender,
+      subject: "Booking Cancelled - #{@service.name}"
+    ) do |format|
       format.text
       format.html
     end
@@ -19,7 +29,12 @@ class VendorBookingMailer < ApplicationMailer
 
   def booking_modified_notification(booking)
     assign_booking_details(booking)
-    mail(to: @vendor_email, subject: "Booking Modified - #{@service.name}") do |format|
+    mail(
+      to: @vendor_email,
+      from: bookings_sender,
+      reply_to: support_sender,
+      subject: "Booking Modified - #{@service.name}"
+    ) do |format|
       format.text
       format.html
     end

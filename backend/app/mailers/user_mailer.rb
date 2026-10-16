@@ -10,7 +10,12 @@ class UserMailer < ApplicationMailer
                        frontend_url('/explore')
                      end
 
-    mail(to: @user.email, subject: "Welcome to Ayoj, #{@user.first_name}!") do |format|
+    mail(
+      to: @user.email,
+      from: welcome_sender,
+      reply_to: support_sender,
+      subject: "Welcome to Ayoj, #{@user.first_name}!"
+    ) do |format|
       format.text
       format.html
     end

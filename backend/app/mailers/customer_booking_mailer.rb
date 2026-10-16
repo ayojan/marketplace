@@ -3,7 +3,12 @@
 class CustomerBookingMailer < ApplicationMailer
   def booking_confirmation(booking)
     assign_booking_details(booking)
-    mail(to: @customer_email, subject: "Booking Confirmation - #{@service.name}") do |format|
+    mail(
+      to: @customer_email,
+      from: bookings_sender,
+      reply_to: support_sender,
+      subject: "Booking Confirmation - #{@service.name}"
+    ) do |format|
       format.text
       format.html
     end
@@ -12,7 +17,12 @@ class CustomerBookingMailer < ApplicationMailer
 
   def booking_approved_notification(booking)
     assign_booking_details(booking)
-    mail(to: @customer_email, subject: "Booking Confirmed - #{@service.name}") do |format|
+    mail(
+      to: @customer_email,
+      from: bookings_sender,
+      reply_to: support_sender,
+      subject: "Booking Confirmed - #{@service.name}"
+    ) do |format|
       format.text
       format.html
     end
@@ -21,7 +31,12 @@ class CustomerBookingMailer < ApplicationMailer
 
   def booking_rejected_notification(booking)
     assign_booking_details(booking)
-    mail(to: @customer_email, subject: "Booking Declined - #{@service.name}") do |format|
+    mail(
+      to: @customer_email,
+      from: bookings_sender,
+      reply_to: support_sender,
+      subject: "Booking Declined - #{@service.name}"
+    ) do |format|
       format.text
       format.html
     end
@@ -30,7 +45,12 @@ class CustomerBookingMailer < ApplicationMailer
 
   def booking_cancelled_notification(booking)
     assign_booking_details(booking)
-    mail(to: @customer_email, subject: "Booking Cancelled - #{@service.name}") do |format|
+    mail(
+      to: @customer_email,
+      from: bookings_sender,
+      reply_to: support_sender,
+      subject: "Booking Cancelled - #{@service.name}"
+    ) do |format|
       format.text
       format.html
     end
@@ -38,7 +58,12 @@ class CustomerBookingMailer < ApplicationMailer
 
   def booking_reminder(booking)
     assign_booking_details(booking)
-    mail(to: @customer_email, subject: "Booking Reminder - #{@service.name} Tomorrow") do |format|
+    mail(
+      to: @customer_email,
+      from: reminders_sender,
+      reply_to: bookings_sender,
+      subject: "Booking Reminder - #{@service.name} Tomorrow"
+    ) do |format|
       format.text
       format.html
     end
