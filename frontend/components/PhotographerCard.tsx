@@ -22,6 +22,9 @@ interface Vendor {
   location?: string;
   base_price?: number;
   is_favorite?: boolean;
+  user_id?: string | number;
+  is_verified?: boolean;
+  verification_status?: string;
 }
 
 interface PhotographerCardProps {
@@ -41,6 +44,10 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   const rating = rawRating ? Number(rawRating) : null;
   const totalReviews = photographer.total_reviews ?? 0;
   const location = photographer.location || '';
+  const isVerified = Boolean(
+    photographer.is_verified === true ||
+    photographer.verification_status === 'verified'
+  );
   const hasBasePrice = typeof photographer.base_price === 'number' && Number(photographer.base_price) > 0;
   const priceRange = hasBasePrice
     ? `₹${Number(photographer.base_price).toLocaleString('en-IN')}`
@@ -49,7 +56,15 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   useEffect(() => {
     let isMounted = true;
     const isAuthed = tokenService.hasToken() && !tokenService.isTokenExpired();
-    if (id && isAuthed && photographer.is_favorite === undefined) {
+    const currentUser = tokenService.getUser();
+    const isOwnProfile = currentUser?.role === 'vendor' && (
+      (currentUser.vendor_id && String(currentUser.vendor_id) === String(id)) ||
+      (currentUser.vendor?.id && String(currentUser.vendor.id) === String(id)) ||
+      (currentUser.vendor?.slug && photographer.slug && currentUser.vendor.slug === photographer.slug) ||
+      (currentUser.id && photographer.user_id && String(currentUser.id) === String(photographer.user_id))
+    );
+
+    if (id && isAuthed && !isOwnProfile && photographer.is_favorite === undefined) {
       apiService.favorites.check(id)
         .then(res => {
           if (isMounted && res.data?.is_favorite) {
@@ -59,7 +74,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
         .catch(() => {});
     }
     return () => { isMounted = false; };
-  }, [id, photographer.is_favorite]);
+  }, [id, photographer.is_favorite, photographer.slug, photographer.user_id]);
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,6 +89,19 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           onClick: () => router.push('/login'),
         },
       });
+      return;
+    }
+
+    const currentUser = tokenService.getUser();
+    const isOwnProfile = currentUser?.role === 'vendor' && (
+      (currentUser.vendor_id && String(currentUser.vendor_id) === String(id)) ||
+      (currentUser.vendor?.id && String(currentUser.vendor.id) === String(id)) ||
+      (currentUser.vendor?.slug && photographer.slug && currentUser.vendor.slug === photographer.slug) ||
+      (currentUser.id && photographer.user_id && String(currentUser.id) === String(photographer.user_id))
+    );
+
+    if (isOwnProfile) {
+      toast.info('You cannot favorite your own business profile');
       return;
     }
 
@@ -108,7 +136,8 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           },
         });
       } else {
-        toast.error(err.extractedMessage || 'Unable to update favorites. Please try again.');
+        const errorMsg = err.response?.data?.error || err.extractedMessage || 'Unable to update favorites. Please try again.';
+        toast.error(errorMsg);
       }
     } finally {
       setIsLiking(false);
@@ -133,11 +162,13 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
 
-          {/* Verified Partner Badge */}
-          <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-white/60 text-[11px] font-semibold text-[#8E4532] shadow-xs pointer-events-none">
-            <ShieldCheck className="size-3.5 text-[#9E5338]" />
-            <span>Verified Partner</span>
-          </div>
+          {/* Verified Partner Badge - Only displayed for verified partners */}
+          {isVerified && (
+            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-white/60 text-[11px] font-semibold text-[#8E4532] shadow-xs pointer-events-none">
+              <ShieldCheck className="size-3.5 text-[#9E5338]" />
+              <span>Verified Partner</span>
+            </div>
+          )}
         </Link>
 
         {/* Favorite Heart Button - Interactive overlay */}

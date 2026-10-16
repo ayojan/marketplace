@@ -50,6 +50,22 @@ class Category < ApplicationRecord
     slug
   end
 
+  class << self
+    def find_by_id_or_slug!(id_or_slug)
+      find_by_id_or_slug(id_or_slug) ||
+        raise(ActiveRecord::RecordNotFound, "Couldn't find Category with '#{id_or_slug}'")
+    end
+
+    def find_by_id_or_slug(id_or_slug)
+      return nil if id_or_slug.blank?
+
+      found = find_by(slug: id_or_slug.to_s.downcase)
+      return found if found
+
+      find_by(id: id_or_slug) if id_or_slug.to_s.match?(/\A\d+\z/)
+    end
+  end
+
   private
 
   def generate_slug

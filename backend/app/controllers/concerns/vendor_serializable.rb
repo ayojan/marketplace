@@ -12,6 +12,7 @@ module VendorSerializable
 
     {
       id: vendor.id,
+      user_id: vendor.user_id,
       slug: vendor.slug,
       business_name: vendor.business_name,
       location: vendor.location,
@@ -19,6 +20,7 @@ module VendorSerializable
       total_reviews: vendor.total_reviews,
       years_experience: vendor.years_experience,
       is_verified: vendor.verified?,
+      verification_status: vendor.verification_status,
       service_categories: vendor.service_categories_list,
       profile_image_url: primary_image,
       image: primary_image,
@@ -40,6 +42,7 @@ module VendorSerializable
   def vendor_core_attributes(vendor, primary_image)
     {
       id: vendor.id,
+      user_id: vendor.user_id,
       slug: vendor.slug,
       business_name: vendor.business_name,
       description: vendor.description,

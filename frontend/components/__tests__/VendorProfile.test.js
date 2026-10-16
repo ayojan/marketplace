@@ -3,12 +3,23 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import VendorProfile from '../pages/VendorProfile';
 import { apiService } from '../../lib/api';
+import { toast } from 'sonner';
+
+let mockAuthUser = { id: 1, role: 'customer' };
 
 jest.mock('../../lib/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 1, role: 'customer' },
+    user: mockAuthUser,
     isAuthenticated: true,
   }),
+}));
+
+jest.mock('sonner', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
 }));
 
 // Mock the API service
@@ -197,5 +208,34 @@ describe('VendorProfile', () => {
       expect(apiService.vendors.getPortfolio).toHaveBeenCalledWith('1');
       expect(apiService.vendors.getReviews).toHaveBeenCalledWith('1');
     });
+  });
+
+  it('allows a vendor user to favorite another vendor', async () => {
+    mockAuthUser = { id: 99, role: 'vendor', vendor_id: '99' };
+    render(<VendorProfile params={mockParams} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => {
+      expect(apiService.favorites.add).toHaveBeenCalledWith('1');
+    });
+  });
+
+  it('prevents a vendor user from favoriting their own business profile', async () => {
+    mockAuthUser = { id: 1, role: 'vendor', vendor_id: '1' };
+    render(<VendorProfile params={mockParams} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(toast.info).toHaveBeenCalledWith('You cannot favorite your own business profile');
+    expect(apiService.favorites.add).not.toHaveBeenCalled();
   });
 });

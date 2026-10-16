@@ -1047,7 +1047,7 @@ function MarketplaceContent() {
 
                 <div>
                   <h2 className="text-base font-serif font-bold text-[#221F1C]">
-                    {selectedCategory !== 'all' ? activeCategoryObj?.name : 'Verified Creative Partners'}
+                    {selectedCategory !== 'all' ? activeCategoryObj?.name : 'Creative Partners'}
                     {selectedLocation !== 'all' ? ` in ${selectedLocation}` : ''}
                   </h2>
                   <p className="text-xs text-[#6B6560]">
@@ -1248,7 +1248,7 @@ function MarketplaceContent() {
                         Recommended Creative Partners You Might Like
                       </h4>
                       <p className="text-xs text-[#6B6560]">
-                        Explore these top-rated verified partners across popular categories
+                        Explore these top-rated partners across popular categories
                       </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">

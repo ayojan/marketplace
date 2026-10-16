@@ -9,6 +9,12 @@ ActiveAdmin.register Category do
   scope :active
   scope :inactive
 
+  controller do
+    def find_resource
+      scoped_collection.find_by_id_or_slug!(params[:id])
+    end
+  end
+
   index do
     selectable_column
     id_column

@@ -9,6 +9,12 @@ ActiveAdmin.register Vendor do
 
   includes :user
 
+  controller do
+    def find_resource
+      scoped_collection.find_by_id_or_slug!(params[:id])
+    end
+  end
+
   # Scopes
   scope :all, default: true
   scope('Verified', &:verification_verified)
@@ -127,12 +133,12 @@ ActiveAdmin.register Vendor do
   end
 
   # Member Actions
-  member_action :verify, method: :put do
+  member_action :verify, method: %i[get put] do
     resource.update(verification_status: :verified, verified_at: Time.current, rejection_reason: nil)
     redirect_to resource_path, notice: "Vendor '#{resource.business_name}' has been verified!"
   end
 
-  member_action :reject, method: :put do
+  member_action :reject, method: %i[get put] do
     resource.update(verification_status: :rejected, rejection_reason: params[:reason] || 'Did not meet requirements')
     redirect_to resource_path, alert: "Vendor '#{resource.business_name}' has been marked as rejected."
   end

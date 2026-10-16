@@ -21,6 +21,10 @@ class CustomerFavoritesController < ApiController
     vendor = Vendor.find_by_id_or_slug(target_id)
     return render json: { error: 'Vendor not found' }, status: :not_found unless vendor
 
+    if vendor.user_id == current_user.id
+      return render json: { error: 'You cannot favorite your own business profile' }, status: :unprocessable_content
+    end
+
     authorize_favorite!(vendor)
     save_and_render_favorite(vendor)
   rescue Auth::AuthorizationService::NotAuthorizedError => e

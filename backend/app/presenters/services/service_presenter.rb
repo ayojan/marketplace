@@ -67,11 +67,14 @@ module Services
       img_url = vendor_image_url(vendor)
       {
         id: vendor&.id,
+        user_id: vendor&.user_id,
         slug: vendor&.slug,
         business_name: vendor&.business_name,
         location: vendor&.location,
         average_rating: vendor&.average_rating,
         total_reviews: vendor&.total_reviews,
+        is_verified: vendor&.verified?,
+        verification_status: vendor&.verification_status,
         image: img_url,
         profile_image_url: img_url
       }

@@ -82,4 +82,33 @@ describe('ProtectedRoute', () => {
       expect(mockPush).not.toHaveBeenCalled();
     });
   });
+
+  it('renders children when user role matches one of allowed roles in an array', async () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      isAuthenticated: true,
+      user: { role: 'vendor' },
+    } as any);
+
+    render(<ProtectedRoute requiredRole={['customer', 'vendor']}>Child</ProtectedRoute>);
+
+    await waitFor(() => {
+      expect(screen.getByText('Child')).toBeInTheDocument();
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it('redirects to unauthorized when user role is not in allowed roles array', async () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      isAuthenticated: true,
+      user: { role: 'customer' },
+    } as any);
+
+    render(<ProtectedRoute requiredRole={['vendor', 'admin']}>Child</ProtectedRoute>);
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/unauthorized');
+    });
+  });
 });
