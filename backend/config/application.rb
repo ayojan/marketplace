@@ -62,7 +62,7 @@ module Marketplace
       url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'),
       namespace: 'marketplace_cache'
     }
-    # Configure Active Job to use Sidekiq
-    config.active_job.queue_adapter = :sidekiq
+    # Configure Active Job to use Solid Queue (PostgreSQL-backed, no Redis required)
+    config.active_job.queue_adapter = :solid_queue
   end
 end

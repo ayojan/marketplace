@@ -6,13 +6,4 @@ class ApplicationJob < ActiveJob::Base
 
   # Most jobs are safe to ignore if the underlying records are no longer available
   discard_on ActiveJob::DeserializationError
-
-  # Retry on Redis connection errors
-  retry_on Redis::CannotConnectError, wait: 10.seconds, attempts: 5
-
-  def self.sidekiq_options
-    { 'queue' => queue_name.to_s }
-  end
-
-  delegate :sidekiq_options, to: :class
 end
