@@ -5,27 +5,27 @@ module Favorites
     extend Dry::Initializer
 
     option :user, type: Types.Instance(User)
-    option :vendor_profile_id, type: Types::Coercible::Integer
+    option :vendor_id, type: Types::Coercible::Integer
 
-    def self.call(**)
-      new(**).call
+    def self.call(**params)
+      new(**params).call
     rescue Dry::Types::ConstraintError, Dry::Types::CoercionError, ArgumentError => e
       { success: false, error: e.message }
     end
 
     def call
-      vendor_profile = find_vendor_profile
-      return { success: false, error: 'Vendor not found' } unless vendor_profile
+      vendor = find_vendor
+      return { success: false, error: 'Vendor not found' } unless vendor
 
       # Authorization check
-      authorize_favorite_action(vendor_profile)
+      authorize_favorite_action(vendor)
 
-      favorite = CustomerFavorite.find_by(user_id: user.id, vendor_profile_id: vendor_profile.id)
+      favorite = CustomerFavorite.find_by(user_id: user.id, vendor_id: vendor.id)
 
       if favorite
         remove_favorite(favorite)
       else
-        add_favorite(vendor_profile)
+        add_favorite(vendor)
       end
     rescue AuthorizationService::NotAuthorizedError => e
       { success: false, error: e.message }
@@ -33,16 +33,16 @@ module Favorites
 
     private
 
-    def find_vendor_profile
-      VendorProfile.find_by(id: vendor_profile_id)
+    def find_vendor
+      Vendor.find_by(id: vendor_id)
     end
 
-    def authorize_favorite_action(vendor_profile)
-      AuthorizationService.authorize!(user, vendor_profile, :toggle_favorite)
+    def authorize_favorite_action(vendor)
+      AuthorizationService.authorize!(user, vendor, :toggle_favorite)
     end
 
-    def add_favorite(vendor_profile)
-      CustomerFavorite.create(user_id: user.id, vendor_profile_id: vendor_profile.id)
+    def add_favorite(vendor)
+      CustomerFavorite.create(user_id: user.id, vendor_id: vendor.id)
       { success: true, action: 'added', is_favorited: true }
     rescue StandardError => e
       Rails.logger.error("Failed to add favorite: #{e.message}")

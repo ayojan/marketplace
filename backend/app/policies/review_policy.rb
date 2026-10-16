@@ -5,7 +5,7 @@ class ReviewPolicy < ApplicationPolicy
   def respond?
     return false unless user&.vendor?
 
-    record.vendor_profile.user_id == user.id
+    record.vendor.user_id == user.id
   end
 
   # Allow customers to view their own reviews
@@ -37,6 +37,6 @@ class ReviewPolicy < ApplicationPolicy
   end
 
   def user_is_vendor?
-    user.present? && record.vendor_profile.user_id == user.id
+    user.present? && record.vendor.user_id == user.id
   end
 end

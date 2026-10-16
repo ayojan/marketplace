@@ -5,9 +5,9 @@ require 'rails_helper'
 RSpec.describe ProfilesController do
   let(:vendor_user) { create(:user, :vendor) }
   let(:customer_user) { create(:user, :customer) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:other_vendor_user) { create(:user, :vendor) }
-  let(:other_vendor_profile) { other_vendor_user.vendor_profile }
+  let(:other_vendor) { other_vendor_user.vendor }
 
   # Helper method to generate JWT token for authentication
   def auth_headers(user)
@@ -16,38 +16,38 @@ RSpec.describe ProfilesController do
   end
 
   describe 'GET #show' do
-    context 'when vendor profile exists' do
+    context 'when vendor exists' do
       it 'returns the vendor profile' do
         request.headers.merge!(auth_headers(vendor_user))
-        get :show, params: { id: vendor_profile.id }, format: :json
+        get :show, params: { id: vendor.id }, format: :json
 
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
-        expect(json_response['id']).to eq(vendor_profile.id)
-        expect(json_response['slug']).to eq(vendor_profile.slug)
-        expect(json_response['business_name']).to eq(vendor_profile.business_name)
+        expect(json_response['id']).to eq(vendor.id)
+        expect(json_response['slug']).to eq(vendor.slug)
+        expect(json_response['business_name']).to eq(vendor.business_name)
       end
 
       it 'returns the vendor profile when queried by slug' do
         request.headers.merge!(auth_headers(vendor_user))
-        get :show, params: { id: vendor_profile.slug }, format: :json
+        get :show, params: { id: vendor.slug }, format: :json
 
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
-        expect(json_response['id']).to eq(vendor_profile.id)
-        expect(json_response['slug']).to eq(vendor_profile.slug)
-        expect(json_response['business_name']).to eq(vendor_profile.business_name)
+        expect(json_response['id']).to eq(vendor.id)
+        expect(json_response['slug']).to eq(vendor.slug)
+        expect(json_response['business_name']).to eq(vendor.business_name)
       end
     end
 
-    context 'when vendor profile does not exist' do
+    context 'when vendor does not exist' do
       it 'returns not found' do
         request.headers.merge!(auth_headers(vendor_user))
         get :show, params: { id: 999_999 }, format: :json
 
         expect(response).to have_http_status(:not_found)
         json_response = response.parsed_body
-        expect(json_response['error']).to eq('Vendor profile not found')
+        expect(json_response['error']).to eq('Vendor not found')
       end
     end
   end
@@ -56,7 +56,7 @@ RSpec.describe ProfilesController do
     context 'when user is a vendor without existing profile' do
       let(:valid_params) do
         {
-          vendor_profile: {
+          vendor: {
             business_name: 'Test Business',
             description: 'This is a detailed test description that meets the minimum length requirement of fifty.',
             location: 'Test Location',
@@ -67,16 +67,16 @@ RSpec.describe ProfilesController do
         }
       end
 
-      it 'creates a new vendor profile' do
+      it 'creates a new vendor' do
         user_without_profile = create(:user, :vendor)
-        user_without_profile.vendor_profile.destroy!
+        user_without_profile.vendor.destroy!
         user_without_profile.reload
 
         request.headers.merge!(auth_headers(user_without_profile))
 
         expect do
           post :create, params: valid_params, format: :json
-        end.to change(VendorProfile, :count).by(1)
+        end.to change(Vendor, :count).by(1)
 
         expect(response).to have_http_status(:created)
         json_response = response.parsed_body
@@ -88,7 +88,7 @@ RSpec.describe ProfilesController do
     context 'when user already has a vendor profile' do
       let(:valid_params) do
         {
-          vendor_profile: {
+          vendor: {
             business_name: 'Another Business',
             description: 'Another Description'
           }
@@ -110,7 +110,7 @@ RSpec.describe ProfilesController do
       it 'returns forbidden' do
         request.headers.merge!(auth_headers(customer_user))
 
-        post :create, params: { vendor_profile: { business_name: 'Test' } }, format: :json
+        post :create, params: { vendor: { business_name: 'Test' } }, format: :json
 
         expect(response).to have_http_status(:forbidden)
         json_response = response.parsed_body
@@ -122,8 +122,8 @@ RSpec.describe ProfilesController do
   describe 'PUT #update' do
     let(:update_params) do
       {
-        id: vendor_profile.id,
-        vendor_profile: {
+        id: vendor.id,
+        vendor: {
           business_name: 'Updated Business Name',
           description: 'This is an updated description that meets the minimum length'
         }
@@ -131,7 +131,7 @@ RSpec.describe ProfilesController do
     end
 
     context 'when user owns the profile' do
-      it 'updates the vendor profile' do
+      it 'updates the vendor' do
         request.headers.merge!(auth_headers(vendor_user))
 
         put :update, params: update_params, format: :json
@@ -158,12 +158,12 @@ RSpec.describe ProfilesController do
 
   describe 'DELETE #destroy' do
     context 'when user owns the profile' do
-      it 'deletes the vendor profile' do
+      it 'deletes the vendor' do
         request.headers.merge!(auth_headers(vendor_user))
 
         expect do
-          delete :destroy, params: { id: vendor_profile.id }, format: :json
-        end.to change(VendorProfile, :count).by(-1)
+          delete :destroy, params: { id: vendor.id }, format: :json
+        end.to change(Vendor, :count).by(-1)
 
         expect(response).to have_http_status(:no_content)
       end
@@ -173,7 +173,7 @@ RSpec.describe ProfilesController do
       it 'returns forbidden' do
         request.headers.merge!(auth_headers(other_vendor_user))
 
-        delete :destroy, params: { id: vendor_profile.id }, format: :json
+        delete :destroy, params: { id: vendor.id }, format: :json
 
         expect(response).to have_http_status(:forbidden)
         json_response = response.parsed_body
@@ -183,24 +183,24 @@ RSpec.describe ProfilesController do
   end
 
   describe 'GET #me' do
-    context 'when user has a vendor profile' do
-      it 'returns the current user vendor profile' do
+    context 'when user has a vendor' do
+      it 'returns the current user vendor' do
         request.headers.merge!(auth_headers(vendor_user))
 
         get :me, format: :json
 
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
-        expect(json_response['id']).to eq(vendor_profile.id)
+        expect(json_response['id']).to eq(vendor.id)
         expect(json_response['user_id']).to eq(vendor_user.id)
       end
     end
 
-    context 'when user does not have a vendor profile' do
+    context 'when user does not have a vendor' do
       let(:user_without_profile) { create(:user, :vendor) }
 
       before do
-        user_without_profile.vendor_profile&.destroy
+        user_without_profile.vendor&.destroy
         user_without_profile.reload
       end
 
@@ -219,7 +219,7 @@ RSpec.describe ProfilesController do
   describe 'PUT #update_me' do
     let(:update_params) do
       {
-        vendor_profile: {
+        vendor: {
           business_name: 'Updated My Business',
           description: 'This is an updated description that meets the minimum length requirement easily.',
           metadata: {
@@ -231,9 +231,9 @@ RSpec.describe ProfilesController do
     end
 
     context 'when authenticated as vendor' do
-      it 'updates the profile and merges metadata' do
+      it 'updates the vendor and merges metadata' do
         request.headers.merge!(auth_headers(vendor_user))
-        vendor_profile.update!(metadata: { initial_key: 'initial_val' })
+        vendor.update!(metadata: { initial_key: 'initial_val' })
 
         put :update_me, params: update_params, as: :json
 

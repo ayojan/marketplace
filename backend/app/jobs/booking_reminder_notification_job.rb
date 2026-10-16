@@ -18,7 +18,7 @@ class BookingReminderNotificationJob < ApplicationJob
     InAppNotification.create_notification(
       user_id: recipient.id,
       title: 'Booking Reminder',
-      message: "Your booking with #{booking.vendor_profile&.business_name || booking.vendor.full_name} is tomorrow",
+      message: "Your booking with #{booking.vendor&.business_name || booking.vendor&.display_name} is tomorrow",
       notification_type: 'booking_reminder',
       related_type: 'Booking',
       related_id: booking.id

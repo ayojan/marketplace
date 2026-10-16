@@ -34,7 +34,7 @@ class DuplicatePortfolioItem
   private
 
   def get_next_display_order(category)
-    max_order = @portfolio_item.vendor_profile.portfolio_items.where(category: category).maximum(:display_order) || 0
+    max_order = @portfolio_item.vendor.portfolio_items.where(category: category).maximum(:display_order) || 0
     max_order + 1
   end
 end

@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe ServicesController do
   let(:vendor_user) { create(:user, role: 'vendor') }
   let(:customer_user) { create(:user, role: 'customer') }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:service_category) { create(:category, :photography) }
   let(:videography_category) { create(:category, :videography) }
 
@@ -17,7 +17,7 @@ RSpec.describe ServicesController do
            base_price: 1000,
            pricing_type: 'package',
            status: 'active',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: service_category)
   end
 
@@ -29,7 +29,7 @@ RSpec.describe ServicesController do
            base_price: 200,
            pricing_type: 'hourly',
            status: 'active',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: service_category)
   end
 
@@ -41,7 +41,7 @@ RSpec.describe ServicesController do
            base_price: 1500,
            pricing_type: 'package',
            status: 'active',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: videography_category)
   end
 
@@ -51,7 +51,7 @@ RSpec.describe ServicesController do
            description: 'This service is currently inactive and not available for booking ' \
                         'at this time',
            status: 'inactive',
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            service_category: service_category)
   end
 
@@ -66,7 +66,6 @@ RSpec.describe ServicesController do
     context 'without authentication' do
       it 'returns paginated services with default parameters' do
         get :index
-
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
 
@@ -82,18 +81,18 @@ RSpec.describe ServicesController do
 
       it 'filters by vendor_id' do
         other_vendor = create(:user, role: 'vendor')
-        create(:service, vendor_profile: other_vendor.vendor_profile, status: 'active')
+        create(:service, vendor: other_vendor.vendor, status: 'active')
 
-        get :index, params: { vendor_id: vendor_profile.id }
+        get :index, params: { vendor_id: vendor.id }
 
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
 
         expect(json_response['services'].length).to eq(3)
         json_response['services'].each do |service|
-          expect(service['vendor']['id']).to eq(vendor_profile.id)
+          expect(service['vendor']['id']).to eq(vendor.id)
         end
-        expect(json_response['filters']['vendor_id']).to eq(vendor_profile.id)
+        expect(json_response['filters']['vendor_id']).to eq(vendor.id)
       end
 
       it 'filters by category_id' do
@@ -154,8 +153,8 @@ RSpec.describe ServicesController do
 
       expect(json_response['id']).to eq(photography_service.id)
       expect(json_response['name']).to eq('Wedding Photography')
-      expect(json_response['vendor']['id']).to eq(vendor_profile.id)
-      expect(json_response['vendor']['business_name']).to eq(vendor_profile.business_name)
+      expect(json_response['vendor']['id']).to eq(vendor.id)
+      expect(json_response['vendor']['business_name']).to eq(vendor.business_name)
       expect(json_response['category']['id']).to eq(service_category.id)
     end
 
@@ -197,8 +196,8 @@ RSpec.describe ServicesController do
       end
 
       it 'filters by location' do
-        # Update vendor profile location for testing
-        vendor_profile.update!(location: 'New York, NY')
+        # Update vendor location for testing
+        vendor.update!(location: 'New York, NY')
 
         get :search, params: { location: 'New York' }
 
@@ -315,7 +314,7 @@ RSpec.describe ServicesController do
 
         expect(json_response['message']).to eq('Service created successfully')
         expect(json_response['service']['name']).to eq('New Photography Service')
-        expect(json_response['service']['vendor']['id']).to eq(vendor_profile.id)
+        expect(json_response['service']['vendor']['id']).to eq(vendor.id)
       end
 
       it 'returns validation errors for invalid service data' do
@@ -418,7 +417,7 @@ RSpec.describe ServicesController do
     end
 
     context 'when authenticated as different vendor' do
-      let(:other_vendor) { create(:user, :with_vendor_profile) }
+      let(:other_vendor) { create(:user, :vendor) }
 
       before do
         token = JwtService.encode(user_id: other_vendor.id)
@@ -441,7 +440,7 @@ RSpec.describe ServicesController do
       end
 
       it 'deletes the service successfully' do
-        service_to_delete = create(:service, vendor_profile: vendor_profile)
+        service_to_delete = create(:service, vendor: vendor)
 
         expect do
           delete :destroy, params: { id: service_to_delete.id }
@@ -460,7 +459,7 @@ RSpec.describe ServicesController do
     end
 
     context 'when authenticated as different vendor' do
-      let(:other_vendor) { create(:user, :with_vendor_profile) }
+      let(:other_vendor) { create(:user, :vendor) }
 
       before do
         token = JwtService.encode(user_id: other_vendor.id)

@@ -73,7 +73,7 @@ class CustomerBookingMailer < ApplicationMailer
 
   def assign_booking_details(booking)
     @booking = booking
-    @customer = booking.customer_profile || booking.customer
+    @customer = booking.customer&.customer || booking.customer
     if @customer.is_a?(User) && !@customer.respond_to?(:user)
       def @customer.user
         self
@@ -81,7 +81,7 @@ class CustomerBookingMailer < ApplicationMailer
     end
     @customer_user = booking.customer
     @customer_email = @customer_user.email
-    @vendor = booking.vendor_profile
+    @vendor = booking.vendor
     @service = booking.service
     @view_booking_url = frontend_url("/dashboard/bookings/#{booking.id}")
   end

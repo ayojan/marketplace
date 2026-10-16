@@ -174,7 +174,7 @@ const CustomerDashboard = () => {
       const response = await apiService.favorites.getAll().catch(() => null);
       const fetchedFavs = response?.data?.favorites || [];
       const mapped = fetchedFavs.map((f: any) => ({
-        id: String(f.vendor?.id || f.vendor_profile_id),
+        id: String(f.vendor?.id || f.vendor_id),
         slug: f.vendor?.slug,
         favorite_id: f.id,
         name: f.vendor?.business_name || 'Creative Partner',
@@ -242,15 +242,15 @@ const CustomerDashboard = () => {
     fetchBookings();
     fetchSavedVendors();
     fetchChecklist();
-    fetchCustomerProfile();
+    fetchCustomer();
     fetchRecommendedPros();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchCustomerProfile = async () => {
+  const fetchCustomer = async () => {
     try {
-      const response = await apiService.customerProfile.get().catch(() => null);
-      const profile = response?.data?.customer_profile;
+      const response = await apiService.customer.get().catch(() => null);
+      const profile = response?.data?.customer;
       if (profile) {
         let extraPrefs: any = {};
         try {
@@ -348,7 +348,7 @@ const CustomerDashboard = () => {
         }),
       };
 
-      await apiService.customerProfile.update(payload);
+      await apiService.customer.update(payload);
 
       // Immediately sync with client AuthContext & localStorage
       if (updateUser) {

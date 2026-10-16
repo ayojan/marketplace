@@ -106,8 +106,8 @@ Rails.application.routes.draw do
   # Customer favorites routes
   resources :customer_favorites, only: %i[index create destroy] do
     collection do
-      get 'check/:vendor_profile_id', action: :check
-      delete 'by_vendor/:vendor_profile_id', action: :destroy_by_vendor
+      get 'check/:vendor_id', action: :check
+      delete 'by_vendor/:vendor_id', action: :destroy_by_vendor
     end
   end
 
@@ -118,8 +118,8 @@ Rails.application.routes.draw do
     end
   end
 
-  # Customer profile route
-  resource :customer_profile, only: %i[show update]
+  # Customer route
+  resource :customer, only: %i[show update]
 
   # In-app notifications routes
   resources :in_app_notifications, only: %i[index] do

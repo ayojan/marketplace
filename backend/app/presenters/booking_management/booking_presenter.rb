@@ -23,7 +23,7 @@ class BookingManagement::BookingPresenter
 
   private
 
-  delegate :customer, :service, :vendor_profile, to: :booking
+  delegate :customer, :service, :vendor, to: :booking
 
   def base_payload
     core_payload.merge(
@@ -34,9 +34,13 @@ class BookingManagement::BookingPresenter
     )
   end
 
+  # rubocop:disable Metrics/AbcSize
   def core_payload
     {
       id: booking.id,
+      vendor_id: booking.vendor_id,
+      customer_id: booking.customer_id,
+      service_id: booking.service_id,
       status: booking.status,
       event_date: booking.event_date,
       event_end_date: booking.event_end_date,
@@ -52,6 +56,7 @@ class BookingManagement::BookingPresenter
       updated_at: booking.updated_at
     }
   end
+  # rubocop:enable Metrics/AbcSize
 
   def service_hash
     cat_names = if service.association(:categories).loaded?
@@ -77,15 +82,14 @@ class BookingManagement::BookingPresenter
 
   def vendor_hash
     {
-      id: vendor_profile.id,
-      slug: vendor_profile.slug,
-      user_id: vendor_profile.user_id,
-      name: vendor_profile.user.full_name,
-      business_name: vendor_profile.business_name,
-      location: vendor_profile.location,
-      profile_id: vendor_profile.id,
+      id: vendor.id,
+      slug: vendor.slug,
+      user_id: vendor.user_id,
+      name: vendor.user.full_name,
+      business_name: vendor.business_name,
+      location: vendor.location,
       image: vendor_primary_image,
-      category: vendor_profile.service_categories_list.first || 'Creative Partner'
+      category: vendor.service_categories_list.first || 'Creative Partner'
     }
   end
 
@@ -105,7 +109,7 @@ class BookingManagement::BookingPresenter
   end
 
   def vendor_primary_image
-    first_featured = vendor_profile.featured_portfolio_items.first
+    first_featured = vendor.featured_portfolio_items.first
     return first_featured.primary_image_url if first_featured.respond_to?(:primary_image_url)
     return unless first_featured&.images&.attached?
 

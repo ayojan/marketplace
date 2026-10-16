@@ -4,18 +4,18 @@ require 'rails_helper'
 
 RSpec.describe Favorites::ToggleFavorite do
   let(:user) { create(:user, :customer) }
-  let(:vendor) { create(:vendor_profile) }
+  let(:vendor) { create(:vendor) }
 
   describe '#call' do
     context 'when adding a favorite' do
       it 'creates a favorite relationship' do
         expect do
-          described_class.call(user: user, vendor_profile_id: vendor.id)
+          described_class.call(user: user, vendor_id: vendor.id)
         end.to change(CustomerFavorite, :count).by(1)
       end
 
       it 'returns success response with is_favorited true' do
-        result = described_class.call(user: user, vendor_profile_id: vendor.id)
+        result = described_class.call(user: user, vendor_id: vendor.id)
         expect(result[:success]).to be(true)
         expect(result[:is_favorited]).to be(true)
         expect(result[:action]).to eq('added')
@@ -24,23 +24,23 @@ RSpec.describe Favorites::ToggleFavorite do
       it 'increments vendor favorites_count' do
         vendor.reload
         initial_count = vendor.favorites_count
-        described_class.call(user: user, vendor_profile_id: vendor.id)
+        described_class.call(user: user, vendor_id: vendor.id)
         vendor.reload
         expect(vendor.favorites_count).to eq(initial_count + 1)
       end
     end
 
     context 'when removing a favorite' do
-      before { create(:customer_favorite, user: user, vendor_profile: vendor) }
+      before { create(:customer_favorite, user: user, vendor: vendor) }
 
       it 'destroys the favorite relationship' do
         expect do
-          described_class.call(user: user, vendor_profile_id: vendor.id)
+          described_class.call(user: user, vendor_id: vendor.id)
         end.to change(CustomerFavorite, :count).by(-1)
       end
 
       it 'returns success response with is_favorited false' do
-        result = described_class.call(user: user, vendor_profile_id: vendor.id)
+        result = described_class.call(user: user, vendor_id: vendor.id)
         expect(result[:success]).to be(true)
         expect(result[:is_favorited]).to be(false)
         expect(result[:action]).to eq('removed')
@@ -49,7 +49,7 @@ RSpec.describe Favorites::ToggleFavorite do
       it 'decrements vendor favorites_count' do
         vendor.reload
         initial_count = vendor.favorites_count
-        described_class.call(user: user, vendor_profile_id: vendor.id)
+        described_class.call(user: user, vendor_id: vendor.id)
         vendor.reload
         expect(vendor.favorites_count).to eq(initial_count - 1)
       end
@@ -57,7 +57,7 @@ RSpec.describe Favorites::ToggleFavorite do
 
     context 'when vendor does not exist' do
       it 'returns failure response' do
-        result = described_class.call(user: user, vendor_profile_id: -1)
+        result = described_class.call(user: user, vendor_id: -1)
         expect(result[:success]).to be(false)
         expect(result[:error]).to eq('Vendor not found')
       end
@@ -65,10 +65,10 @@ RSpec.describe Favorites::ToggleFavorite do
 
     context 'when vendor tries to favorite' do
       let(:vendor_user) { create(:user, :vendor) }
-      let(:vendor_profile) { vendor_user.vendor_profile }
+      let(:vendor_record) { vendor_user.vendor }
 
       it 'returns authorization failure' do
-        result = described_class.call(user: vendor_user, vendor_profile_id: vendor_profile.id)
+        result = described_class.call(user: vendor_user, vendor_id: vendor_record.id)
         expect(result[:success]).to be(false)
         expect(result[:error]).to include('not authorized')
       end
@@ -76,10 +76,10 @@ RSpec.describe Favorites::ToggleFavorite do
 
     context 'when user tries to favorite their own vendor' do
       let(:customer_user) { create(:user, :customer) }
-      let(:own_vendor) { create(:vendor_profile, user: customer_user) }
+      let(:own_vendor) { create(:vendor, user: customer_user) }
 
       it 'returns authorization failure' do
-        result = described_class.call(user: customer_user, vendor_profile_id: own_vendor.id)
+        result = described_class.call(user: customer_user, vendor_id: own_vendor.id)
         expect(result[:success]).to be(false)
         expect(result[:error]).to include('not authorized')
       end

@@ -5,13 +5,13 @@ class AnalyticsController < ApiController
   before_action :ensure_vendor
 
   def dashboard
-    render json: VendorAnalyticsService.call(current_user.vendor_profile)
+    render json: VendorAnalyticsService.call(current_user.vendor)
   end
 
   private
 
   def ensure_vendor
-    return if current_user&.vendor? && current_user.vendor_profile
+    return if current_user&.vendor? && current_user.vendor
 
     render json: { error: 'Only vendors with profiles can access analytics' }, status: :forbidden
   end

@@ -19,7 +19,7 @@
 #  updated_at               :datetime         not null
 #  customer_id              :bigint           not null
 #  service_id               :bigint           not null
-#  vendor_profile_id        :bigint           not null
+#  vendor_id                :bigint           not null
 #
 # Indexes
 #
@@ -30,19 +30,20 @@
 #  index_bookings_on_service_id                (service_id)
 #  index_bookings_on_service_id_and_status     (service_id,status)
 #  index_bookings_on_vendor_first_response_at  (vendor_first_response_at)
-#  index_bookings_on_vendor_profile_id         (vendor_profile_id)
-#  index_bookings_vendor_response_time         (vendor_profile_id,vendor_first_response_at,created_at)
-#  index_bookings_vendor_status_date           (vendor_profile_id,status,event_date)
+#  index_bookings_on_vendor_id                 (vendor_id)
+#  index_bookings_vendor_response_time         (vendor_id,vendor_first_response_at,created_at)
+#  index_bookings_vendor_status_date           (vendor_id,status,event_date)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (customer_id => users.id)
 #  fk_rails_...  (service_id => services.id)
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
+#  fk_rails_...  (vendor_id => vendors.id)
 #
 class Booking < ApplicationRecord
   belongs_to :customer, class_name: 'User'
-  belongs_to :vendor_profile
+  belongs_to :vendor
+
   belongs_to :service
   has_many :booking_messages, dependent: :destroy
   has_one :review, dependent: :destroy
@@ -68,7 +69,7 @@ class Booking < ApplicationRecord
   }
 
   scope :upcoming, -> { where('event_date > ?', Time.current) }
-  scope :for_vendor_profile, ->(vendor_profile) { where(vendor_profile: vendor_profile) }
+  scope :for_vendor, ->(vendor) { where(vendor: vendor) }
   scope :for_customer, ->(customer) { where(customer: customer) }
   scope :by_status, ->(status) { where(status: status) }
 
@@ -102,16 +103,9 @@ class Booking < ApplicationRecord
     (pending? || accepted?) && event_date > 24.hours.from_now
   end
 
-  def customer_profile
-    customer&.customer_profile
+  def vendor_user
+    vendor&.user
   end
-
-  def vendor
-    vendor_profile&.user
-  end
-
-  # Convenience method for accessing vendor in concerns (already have vendor_profile.user)
-  alias vendor_user vendor
 
   private
 

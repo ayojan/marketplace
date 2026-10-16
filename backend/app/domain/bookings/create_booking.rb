@@ -6,7 +6,7 @@ module Bookings
 
     option :customer, type: Types.Instance(User).optional, optional: true
     option :service, type: Types.Instance(Service).optional, optional: true
-    option :vendor_profile, type: Types.Instance(VendorProfile).optional, optional: true
+    option :vendor, type: Types.Instance(Vendor).optional, optional: true
     option :event_date, type: Types::Time.optional, optional: true
     option :event_location, type: Types::String.optional, optional: true
     option :event_end_date, type: Types::Time.optional, optional: true
@@ -17,8 +17,8 @@ module Bookings
     option :status, type: Types::String, default: proc { 'pending' }
     option :skip_notifications, type: Types::Bool, default: proc { false }
 
-    def self.call(**)
-      new(**).call
+    def self.call(**params)
+      new(**params).call
     rescue Dry::Types::ConstraintError, Dry::Types::CoercionError, ArgumentError => e
       { success: false, error: e.message }
     end
@@ -45,7 +45,7 @@ module Bookings
       Booking.new(
         customer: customer,
         service: service,
-        vendor_profile: vendor_profile,
+        vendor: vendor,
         event_date: event_date,
         event_location: event_location,
         event_end_date: event_end_date,

@@ -3,12 +3,12 @@
 class PortfolioSummaryService
   include Callable
 
-  def initialize(vendor_profile)
-    @vendor_profile = vendor_profile
+  def initialize(vendor)
+    @vendor = vendor
   end
 
   def call
-    items = @vendor_profile.portfolio_items
+    items = @vendor.portfolio_items
 
     {
       total_items: items.count,

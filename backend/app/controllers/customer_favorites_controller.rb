@@ -8,7 +8,7 @@ class CustomerFavoritesController < ApiController
   def index
     favorites = CustomerFavorite.for_user(current_user.id)
                                 .recent_first
-                                .includes(vendor_profile: { services: :categories })
+                                .includes(vendor: { services: :categories })
 
     render json: {
       favorites: favorites.map { |fav| favorite_json(fav) }
@@ -17,11 +17,12 @@ class CustomerFavoritesController < ApiController
 
   # POST /customer_favorites
   def create
-    vendor_profile = VendorProfile.find_by_id_or_slug(params[:vendor_profile_id])
-    return render json: { error: 'Vendor profile not found' }, status: :not_found unless vendor_profile
+    target_id = params[:vendor_id] || params[:id]
+    vendor = Vendor.find_by_id_or_slug(target_id)
+    return render json: { error: 'Vendor not found' }, status: :not_found unless vendor
 
-    authorize_favorite!(vendor_profile)
-    save_and_render_favorite(vendor_profile)
+    authorize_favorite!(vendor)
+    save_and_render_favorite(vendor)
   rescue AuthorizationService::NotAuthorizedError => e
     render json: { error: e.message }, status: :forbidden
   end
@@ -32,12 +33,13 @@ class CustomerFavoritesController < ApiController
     render json: { message: 'Vendor removed from favorites' }
   end
 
-  # DELETE /customer_favorites/by_vendor/:vendor_profile_id
+  # DELETE /customer_favorites/by_vendor/:vendor_id
   def destroy_by_vendor
-    vendor_profile = VendorProfile.find_by_id_or_slug(params[:vendor_profile_id])
-    return render json: { error: 'Vendor profile not found' }, status: :not_found unless vendor_profile
+    target_id = params[:vendor_id] || params[:id]
+    vendor = Vendor.find_by_id_or_slug(target_id)
+    return render json: { error: 'Vendor not found' }, status: :not_found unless vendor
 
-    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: vendor_profile.id)
+    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_id: vendor.id)
 
     if favorite
       favorite.destroy
@@ -47,10 +49,11 @@ class CustomerFavoritesController < ApiController
     end
   end
 
-  # GET /customer_favorites/check/:vendor_profile_id
+  # GET /customer_favorites/check/:vendor_id
   def check
-    vendor_profile = VendorProfile.find_by_id_or_slug(params[:vendor_profile_id])
-    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_profile_id: vendor_profile&.id)
+    target_id = params[:vendor_id] || params[:id]
+    vendor = Vendor.find_by_id_or_slug(target_id)
+    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_id: vendor&.id)
 
     render json: {
       is_favorite: favorite.present?,
@@ -60,14 +63,14 @@ class CustomerFavoritesController < ApiController
 
   private
 
-  def authorize_favorite!(vendor_profile)
-    AuthorizationService.authorize!(current_user, vendor_profile, :toggle_favorite)
+  def authorize_favorite!(vendor)
+    AuthorizationService.authorize!(current_user, vendor, :toggle_favorite)
   end
 
-  def save_and_render_favorite(vendor_profile)
+  def save_and_render_favorite(vendor)
     favorite = CustomerFavorite.find_or_initialize_by(
       user_id: current_user.id,
-      vendor_profile_id: vendor_profile.id
+      vendor_id: vendor.id
     )
 
     if favorite.save
@@ -85,10 +88,10 @@ class CustomerFavoritesController < ApiController
   end
 
   def favorite_json(favorite)
-    vendor = favorite.vendor_profile
+    vendor = favorite.vendor
     {
       id: favorite.id,
-      vendor_profile_id: vendor.id,
+      vendor_id: vendor.id,
       created_at: favorite.created_at,
       vendor: {
         id: vendor.id,

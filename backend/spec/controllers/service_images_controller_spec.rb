@@ -9,7 +9,7 @@ RSpec.describe ServiceImagesController do
 
   let(:vendor_user) { create(:user, :vendor) }
   let(:customer_user) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_user.vendor_profile) }
+  let(:service) { create(:service, vendor: vendor_user.vendor) }
   let(:other_service) { create(:service) }
 
   let(:valid_image_params) do

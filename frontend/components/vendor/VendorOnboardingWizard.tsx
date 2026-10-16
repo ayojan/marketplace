@@ -386,7 +386,7 @@ export default function VendorOnboardingWizard() {
         password: accountData.password,
         password_confirmation: accountData.passwordConfirmation,
         role: 'vendor',
-        vendor_profile_attributes: {
+        vendor_attributes: {
           business_name: `${accountData.firstName} ${accountData.lastName}'s Studio`,
           phone: accountData.phone || '+91 98765 43210',
           location: 'Delhi NCR'
@@ -419,7 +419,7 @@ export default function VendorOnboardingWizard() {
     try {
       const formattedLocation = `${profileData.city}, ${profileData.state} - ${profileData.pincode}`;
       await apiService.profiles.updateMe({
-        vendor_profile: {
+        vendor: {
           business_name: profileData.businessName.trim(),
           description: profileData.description.trim(),
           location: formattedLocation,
@@ -492,7 +492,7 @@ export default function VendorOnboardingWizard() {
     setIsSubmitting(true);
     try {
       await apiService.profiles.updateMe({
-        vendor_profile: {
+        vendor: {
           location: locationData.baseCity,
           metadata: {
             base_city: locationData.baseCity,
@@ -531,7 +531,7 @@ export default function VendorOnboardingWizard() {
 
       // Update final profile metadata and request verification
       await apiService.profiles.updateMe({
-        vendor_profile: {
+        vendor: {
           metadata: {
             packages: packages,
             min_booking_value: minBookingValue,

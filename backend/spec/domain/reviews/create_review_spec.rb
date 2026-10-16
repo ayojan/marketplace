@@ -4,11 +4,11 @@ require 'rails_helper'
 
 RSpec.describe Reviews::CreateReview do
   let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_profile) }
+  let(:service) { create(:service, vendor: vendor) }
   let(:booking) do
-    create(:booking, vendor_profile: vendor_profile, customer: customer, service: service, status: :completed)
+    create(:booking, vendor: vendor, customer: customer, service: service, status: :completed)
   end
 
   let(:valid_params) do
@@ -16,7 +16,7 @@ RSpec.describe Reviews::CreateReview do
       customer: customer,
       booking: booking,
       service: service,
-      vendor_profile: vendor_profile,
+      vendor: vendor,
       rating: 4,
       quality_rating: 4,
       communication_rating: 5,
@@ -50,7 +50,7 @@ RSpec.describe Reviews::CreateReview do
           customer_id: customer.id,
           booking_id: booking.id,
           service_id: service.id,
-          vendor_profile_id: vendor_profile.id,
+          vendor_id: vendor.id,
           rating: 4,
           quality_rating: 4,
           communication_rating: 5,
@@ -81,12 +81,12 @@ RSpec.describe Reviews::CreateReview do
     end
 
     context 'with explicit orchestration (side effects)' do
-      it 'updates vendor profile rating stats' do
-        allow(vendor_profile).to receive(:update_rating_stats!)
+      it 'updates vendor rating stats' do
+        allow(vendor).to receive(:update_rating_stats!)
 
         described_class.call(**valid_params)
 
-        expect(vendor_profile).to have_received(:update_rating_stats!)
+        expect(vendor).to have_received(:update_rating_stats!)
       end
 
       it 'updates service rating stats' do
@@ -114,7 +114,7 @@ RSpec.describe Reviews::CreateReview do
       end
 
       it 'continues if rating stats update fails' do
-        allow(vendor_profile).to receive(:update_rating_stats!).and_raise(StandardError, 'Stats error')
+        allow(vendor).to receive(:update_rating_stats!).and_raise(StandardError, 'Stats error')
 
         expect do
           result = described_class.call(**valid_params)

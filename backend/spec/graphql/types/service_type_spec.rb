@@ -8,9 +8,9 @@ RSpec.describe Types::ServiceType, type: :graphql do
 
   let(:category) { create(:category, name: 'Photography') }
   let(:user) { create(:user, email: 'type-test-vendor@example.com', role: :vendor) }
-  let(:vendor) { user.vendor_profile.tap { |v| v.update!(business_name: 'Test Vendor', average_rating: 4.5) } }
+  let(:vendor) { user.vendor.tap { |v| v.update!(business_name: 'Test Vendor', average_rating: 4.5) } }
   let(:service) do
-    create(:service, name: 'Wedding Photography', vendor_profile: vendor, service_category: category, base_price: 1500)
+    create(:service, name: 'Wedding Photography', vendor: vendor, service_category: category, base_price: 1500)
   end
   let(:query) do
     <<~GQL
@@ -31,7 +31,7 @@ RSpec.describe Types::ServiceType, type: :graphql do
           vendorBusinessName
           vendorAverageRating
           vendorTotalReviews
-          vendorProfile {
+          vendor {
             id
             businessName
             location
@@ -51,7 +51,7 @@ RSpec.describe Types::ServiceType, type: :graphql do
   end
 
   before do
-    create(:vendor_service, service: service, vendor_profile: vendor)
+    create(:vendor_service, service: service, vendor: vendor)
   end
 
   it 'returns service data correctly' do
@@ -96,7 +96,7 @@ RSpec.describe Types::ServiceType, type: :graphql do
 
     service_data = result.dig('data', 'service')
 
-    expect(service_data.dig('vendorProfile', 'businessName')).to eq('Test Vendor')
+    expect(service_data.dig('vendor', 'businessName')).to eq('Test Vendor')
     expect(service_data.dig('serviceCategory', 'name')).to eq('Photography')
   end
 

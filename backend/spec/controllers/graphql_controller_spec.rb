@@ -48,19 +48,19 @@ RSpec.describe GraphqlController do
           query {
             searchServices {
               services {
-                vendorProfile {
+                vendor {
                   services {
-                    vendorProfile {
+                    vendor {
                       services {
-                        vendorProfile {
+                        vendor {
                           services {
-                            vendorProfile {
+                            vendor {
                               services {
-                                vendorProfile {
+                                vendor {
                                   services {
-                                    vendorProfile {
+                                    vendor {
                                       services {
-                                        vendorProfile {
+                                        vendor {
                                           services {
                                             id
                                           }

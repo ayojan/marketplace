@@ -57,8 +57,8 @@ customers = customer_data.map do |c_data|
     u.confirmed_at = Time.current
   end
 
-  profile = user.customer_profile || user.create_customer_profile!
-  profile.update!(
+  customer = user.customer || user.create_customer!
+  customer.update!(
     phone: c_data[:phone],
     location: c_data[:location],
     preferences: 'Interested in candid photography and airbrush bridal makeup.'
@@ -110,7 +110,7 @@ vendors_info = [
   }
 ]
 
-vendor_profiles = []
+vendors_list = []
 
 vendors_info.each do |v_data|
   user = User.find_or_create_by!(email: v_data[:email]) do |u|
@@ -122,8 +122,8 @@ vendors_info.each do |v_data|
     u.confirmed_at = Time.current
   end
 
-  profile = user.vendor_profile || user.create_vendor_profile!(business_name: v_data[:business_name])
-  profile.update!(
+  vendor = user.vendor || user.create_vendor!(business_name: v_data[:business_name])
+  vendor.update!(
     business_name: v_data[:business_name],
     location: v_data[:location],
     description: v_data[:description],
@@ -136,7 +136,7 @@ vendors_info.each do |v_data|
   )
 
   # Create Services for vendor
-  service = Service.find_or_create_by!(name: "#{v_data[:business_name]} Signature Package", vendor_profile: profile) do |s|
+  service = Service.find_or_create_by!(name: "#{v_data[:business_name]} Signature Package", vendor: vendor) do |s|
     s.description = v_data[:description]
     s.base_price = v_data[:price]
     s.pricing_type = :package
@@ -147,7 +147,7 @@ vendors_info.each do |v_data|
   # Create Availability Slots (up to 90 days ahead)
   (0..90).each do |day_offset|
     AvailabilitySlot.find_or_create_by!(
-      vendor_profile: profile,
+      vendor: vendor,
       date: Date.current + day_offset.days
     ) do |slot|
       slot.start_time = "10:00"
@@ -157,21 +157,21 @@ vendors_info.each do |v_data|
   end
 
   # Create Portfolio Items
-  PortfolioItem.find_or_create_by!(title: "#{v_data[:business_name]} Highlights", vendor_profile: profile) do |p|
+  PortfolioItem.find_or_create_by!(title: "#{v_data[:business_name]} Highlights", vendor: vendor) do |p|
     p.category = v_data[:category].name
     p.description = "Best moments captured by #{v_data[:business_name]}."
     p.is_featured = true
     p.display_order = 1
   end
 
-  vendor_profiles << profile
+  vendors_list << vendor
 end
 
 # 5. Seed Customer Favorites
 puts "--- Creating Customer Favorites ---"
 priya_user = customers[0]
-CustomerFavorite.find_or_create_by!(user: priya_user, vendor_profile: vendor_profiles[0])
-CustomerFavorite.find_or_create_by!(user: priya_user, vendor_profile: vendor_profiles[1])
+CustomerFavorite.find_or_create_by!(user: priya_user, vendor: vendors_list[0])
+CustomerFavorite.find_or_create_by!(user: priya_user, vendor: vendors_list[1])
 
 # 6. Seed Checklist Items
 puts "--- Creating Checklist Items ---"

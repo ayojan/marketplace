@@ -4,30 +4,30 @@
 #
 # Table name: portfolio_items
 #
-#  id                :bigint           not null, primary key
-#  category          :string           not null
-#  description       :text
-#  display_order     :integer          default(0), not null
-#  is_featured       :boolean          default(FALSE), not null
-#  title             :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  vendor_profile_id :bigint           not null
+#  id            :bigint           not null, primary key
+#  category      :string           not null
+#  description   :text
+#  display_order :integer          default(0), not null
+#  is_featured   :boolean          default(FALSE), not null
+#  title         :string           not null
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  vendor_id     :bigint           not null
 #
 # Indexes
 #
-#  index_portfolio_items_on_category             (category)
-#  index_portfolio_items_on_vendor_and_category  (vendor_profile_id,category)
-#  index_portfolio_items_on_vendor_and_featured  (vendor_profile_id,is_featured)
-#  index_portfolio_items_on_vendor_and_order     (vendor_profile_id,display_order)
-#  index_portfolio_items_on_vendor_profile_id    (vendor_profile_id)
+#  index_portfolio_items_on_category                     (category)
+#  index_portfolio_items_on_vendor_id                    (vendor_id)
+#  index_portfolio_items_on_vendor_id_and_category       (vendor_id,category)
+#  index_portfolio_items_on_vendor_id_and_display_order  (vendor_id,display_order)
+#  index_portfolio_items_on_vendor_id_and_is_featured    (vendor_id,is_featured)
 #
 # Foreign Keys
 #
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
+#  fk_rails_...  (vendor_id => vendors.id)
 #
 class PortfolioItem < ApplicationRecord
-  belongs_to :vendor_profile
+  belongs_to :vendor
 
   # Active Storage for images
   has_many_attached :images
@@ -44,7 +44,7 @@ class PortfolioItem < ApplicationRecord
   scope :featured, -> { where(is_featured: true) }
   scope :by_category, ->(category) { where(category: category) }
   scope :ordered, -> { order(:display_order, :created_at) }
-  scope :for_vendor, ->(vendor_profile) { where(vendor_profile: vendor_profile) }
+  scope :for_vendor, ->(vendor) { where(vendor: vendor) }
 
   # Callbacks
   before_save :normalize_category
@@ -75,12 +75,12 @@ class PortfolioItem < ApplicationRecord
   end
 
   # Class methods
-  def self.categories_for_vendor(vendor_profile)
-    where(vendor_profile: vendor_profile).distinct.pluck(:category).compact.sort
+  def self.categories_for_vendor(vendor)
+    where(vendor: vendor).distinct.pluck(:category).compact.sort
   end
 
-  def self.featured_for_vendor(vendor_profile)
-    where(vendor_profile: vendor_profile, is_featured: true).ordered
+  def self.featured_for_vendor(vendor)
+    where(vendor: vendor, is_featured: true).ordered
   end
 
   private

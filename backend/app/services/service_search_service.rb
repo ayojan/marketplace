@@ -52,7 +52,7 @@ class ServiceSearchService
 
   def base_scope
     Service.active
-           .joins(vendor_profile: :user)
+           .joins(vendor: :user)
            .where(users: { role: 'vendor' })
            .distinct
   end
@@ -65,7 +65,7 @@ class ServiceSearchService
     # Text search
     if query.present?
       scope = scope.where(
-        'services.name ILIKE ? OR services.description ILIKE ? OR vendor_profiles.business_name ILIKE ?',
+        'services.name ILIKE ? OR services.description ILIKE ? OR vendors.business_name ILIKE ?',
         "%#{query}%", "%#{query}%", "%#{query}%"
       )
     end
@@ -76,7 +76,7 @@ class ServiceSearchService
     end
 
     # Location filter
-    scope = scope.where('vendor_profiles.location ILIKE ?', "%#{location}%") if location.present?
+    scope = scope.where('vendors.location ILIKE ?', "%#{location}%") if location.present?
 
     # Price range filter
     scope = scope.where(services: { base_price: min_price.. }) if min_price.present?
@@ -87,7 +87,7 @@ class ServiceSearchService
     scope = scope.where(pricing_type: pricing_type) if pricing_type.present? && Service.pricing_types.key?(pricing_type)
 
     # Vendor filter
-    scope = scope.where(services: { vendor_profile_id: vendor_id }) if vendor_id.present?
+    scope = scope.where(services: { vendor_id: vendor_id }) if vendor_id.present?
 
     scope
   end
@@ -115,7 +115,7 @@ class ServiceSearchService
   def paginated_services
     sorted_services
       .includes(:categories, service_images: { image_attachment: :blob },
-                             vendor_profile: { portfolio_items: { images_attachments: :blob } })
+                             vendor: { portfolio_items: { images_attachments: :blob } })
       .limit(per_page)
       .offset((page - 1) * per_page)
   end
@@ -205,7 +205,7 @@ class ServiceSearchService
 
   def location_facets
     filtered_services.except(:limit, :offset, :order)
-                     .group('vendor_profiles.location')
+                     .group('vendors.location')
                      .count
                      .map { |loc, count| { location: loc, count: count } }
   end

@@ -27,7 +27,7 @@
 #  index_users_on_reset_password_token  (reset_password_token) UNIQUE
 #
 
-#rubocop: disable Metrics/ClassLength
+# rubocop: disable Metrics/ClassLength
 class User < ApplicationRecord
   # == Devise Modules ==
   # Include default devise modules. Others available are:
@@ -40,16 +40,16 @@ class User < ApplicationRecord
   enum :role, { customer: 0, vendor: 1, admin: 2 }, suffix: true
 
   # == Associations ==
-  has_one :vendor_profile, dependent: :destroy
-  has_one :customer_profile, dependent: :destroy
+  has_one :vendor, dependent: :destroy
+  has_one :customer, dependent: :destroy
   has_many :auth_identities, dependent: :destroy
 
-  accepts_nested_attributes_for :vendor_profile
-  accepts_nested_attributes_for :customer_profile
+  accepts_nested_attributes_for :vendor
+  accepts_nested_attributes_for :customer
 
   has_many :customer_bookings, class_name: 'Booking', foreign_key: 'customer_id',
                                dependent: :destroy, inverse_of: :customer
-  has_many :vendor_bookings, through: :vendor_profile, source: :bookings
+  has_many :vendor_bookings, through: :vendor, source: :bookings
   has_many :booking_messages, foreign_key: 'sender_id', dependent: :destroy, inverse_of: :sender
   has_many :reviews, foreign_key: 'customer_id', dependent: :destroy, inverse_of: :customer
   has_many :review_votes, foreign_key: 'voter_id', dependent: :destroy, inverse_of: :voter
@@ -61,7 +61,7 @@ class User < ApplicationRecord
 
   # Favorites
   has_many :customer_favorites, dependent: :destroy
-  has_many :favorite_vendors, through: :customer_favorites, source: :vendor_profile
+  has_many :favorite_vendors, through: :customer_favorites, source: :vendor
 
   # == Validations ==
   # NOTE: Ensure DB-level constraints for email and role presence/uniqueness
@@ -96,7 +96,7 @@ class User < ApplicationRecord
   # == Ransackable Associations ==
   # Explicitly allowlist safe associations for Ransack/ActiveAdmin
   def self.ransackable_associations(_auth_object = nil)
-    %w[vendor_profile customer_profile customer_bookings vendor_bookings booking_messages]
+    %w[vendor customer customer_bookings vendor_bookings booking_messages]
   end
 
   # == Instance Methods ==
@@ -124,7 +124,7 @@ class User < ApplicationRecord
 
   # Returns primary phone / mobile number associated with user's profile
   def phone
-    vendor? ? vendor_profile&.phone : customer_profile&.phone
+    vendor? ? vendor&.phone : customer&.phone
   end
   alias mobile_number phone
 
@@ -159,9 +159,9 @@ class User < ApplicationRecord
   def create_profile
     case role
     when 'vendor'
-      vendor_profile || create_vendor_profile!(business_name: "#{full_name}'s Business", location: 'Not specified')
+      vendor || create_vendor!(business_name: "#{full_name}'s Business", location: 'Not specified')
     when 'customer'
-      customer_profile || create_customer_profile!
+      customer || create_customer!
     end
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create profile for user #{id}: #{e.message}"
@@ -193,4 +193,4 @@ class User < ApplicationRecord
     Rails.logger.error "Failed to enqueue welcome email for user #{id}: #{e.message}"
   end
 end
-#rubocop: enable Metrics/ClassLength
+# rubocop: enable Metrics/ClassLength

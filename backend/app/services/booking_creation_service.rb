@@ -86,12 +86,12 @@ class BookingCreationService
 
   def build_booking
     @service = Service.find(service_id)
-    @vendor_profile = @service.vendor_profile
+    @vendor = @service.vendor
     @final_event_date, @final_event_end_date = calculate_event_dates
 
     @booking_attributes = {
       customer: customer,
-      vendor_profile: @vendor_profile,
+      vendor: @vendor,
       service: @service,
       event_date: @final_event_date,
       event_end_date: @final_event_end_date,
@@ -130,7 +130,7 @@ class BookingCreationService
   def validate_vendor_availability!(booking_date_time)
     end_time_str = (@final_event_end_date || event_end_date || (booking_date_time + 2.hours)).strftime('%H:%M')
     checker = AvailabilityCheckerService.new(
-      vendor_profile: @vendor_profile,
+      vendor: @vendor,
       date: booking_date_time.to_date,
       start_time: booking_date_time.strftime('%H:%M'),
       end_time: end_time_str
@@ -143,7 +143,7 @@ class BookingCreationService
   def prevent_double_booking
     booking_date_time = @final_event_date || event_date
     conflict_resolver = ConflictResolutionService.new(
-      vendor_profile: @vendor_profile,
+      vendor: @vendor,
       event_date: booking_date_time,
       event_end_date: @final_event_end_date || event_end_date || (booking_date_time + 2.hours),
       exclude_booking_id: nil

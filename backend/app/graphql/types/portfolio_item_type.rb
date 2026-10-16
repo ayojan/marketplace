@@ -16,7 +16,7 @@ class Types::PortfolioItemType < Types::BaseObject
         description: 'Last updated timestamp for the portfolio item'
 
   # Associations
-  field :vendor_profile, Types::VendorProfileType, null: false, description: 'Owner of this portfolio entry'
+  field :vendor, Types::VendorType, null: false, description: 'Owner of this portfolio entry'
 
   # Computed fields
   field :featured,

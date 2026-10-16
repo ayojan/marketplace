@@ -29,15 +29,15 @@ ActiveAdmin.register_page 'Dashboard' do
         panel '🏪 Vendors & Verification' do
           div style: 'display: flex; justify-content: space-around; text-align: center; padding: 12px 0;' do
             div do
-              h2 VendorProfile.count, style: 'margin: 0; font-size: 2rem; color: #1E40AF;'
-              para 'Total Profiles', style: 'color: #64748B; margin: 0;'
+              h2 Vendor.count, style: 'margin: 0; font-size: 2rem; color: #1E40AF;'
+              para 'Total Vendors', style: 'color: #64748B; margin: 0;'
             end
             div do
-              h2 VendorProfile.verification_verified.count, style: 'margin: 0; font-size: 2rem; color: #059669;'
+              h2 Vendor.verification_verified.count, style: 'margin: 0; font-size: 2rem; color: #059669;'
               para 'Verified', style: 'color: #64748B; margin: 0;'
             end
             div do
-              h2 VendorProfile.verification_pending_verification.count,
+              h2 Vendor.verification_pending_verification.count,
                  style: 'margin: 0; font-size: 2rem; color: #DC2626;'
               para 'Pending Review', style: 'color: #64748B; margin: 0;'
             end
@@ -70,7 +70,7 @@ ActiveAdmin.register_page 'Dashboard' do
     columns do
       column do
         panel 'Recent Bookings' do
-          recent_bookings = Booking.includes(:customer, :vendor_profile, :service).order(created_at: :desc).limit(6)
+          recent_bookings = Booking.includes(:customer, :vendor, :service).order(created_at: :desc).limit(6)
           if recent_bookings.any?
             table_for recent_bookings do
               column :id do |b|
@@ -80,7 +80,7 @@ ActiveAdmin.register_page 'Dashboard' do
                 b.customer&.full_name
               end
               column :vendor do |b|
-                b.vendor_profile&.business_name
+                b.vendor&.business_name
               end
               column :amount do |b|
                 number_to_currency(b.total_amount, unit: '₹')
@@ -120,18 +120,18 @@ ActiveAdmin.register_page 'Dashboard' do
 
       column do
         panel 'Vendors Awaiting Verification' do
-          pending_vendors = VendorProfile.verification_pending_verification.includes(:user).order(created_at: :asc).limit(6)
+          pending_vendors = Vendor.verification_pending_verification.includes(:user).order(created_at: :asc).limit(6)
           if pending_vendors.any?
             table_for pending_vendors do
-              column :business_name do |vp|
-                link_to vp.business_name, admin_vendor_profile_path(vp)
+              column :business_name do |v|
+                link_to v.business_name, admin_vendor_path(v)
               end
-              column :owner do |vp|
-                vp.user&.full_name
+              column :owner do |v|
+                v.user&.full_name
               end
               column :location
-              column :actions do |vp|
-                link_to 'Review', admin_vendor_profile_path(vp), class: 'member_link'
+              column :actions do |v|
+                link_to 'Review', admin_vendor_path(v), class: 'member_link'
               end
             end
           else
@@ -140,14 +140,14 @@ ActiveAdmin.register_page 'Dashboard' do
         end
 
         panel 'Recent Customer Reviews' do
-          recent_reviews = Review.includes(:customer, :vendor_profile, :service).order(created_at: :desc).limit(6)
+          recent_reviews = Review.includes(:customer, :vendor, :service).order(created_at: :desc).limit(6)
           if recent_reviews.any?
             table_for recent_reviews do
               column :rating do |r|
                 "#{r.rating} ★"
               end
               column :vendor do |r|
-                r.vendor_profile&.business_name
+                r.vendor&.business_name
               end
               column :comment do |r|
                 truncate(r.comment, length: 45)

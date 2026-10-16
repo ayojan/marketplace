@@ -6,7 +6,7 @@ module BookingManagement::AvailabilitySlotBulkActions
   def bulk_create
     slots_params = params[:availability_slots] || []
     result = AvailabilitySlots::BulkCreate.call(
-      vendor_profile: current_user.vendor_profile,
+      vendor: current_user.vendor,
       slots_params: slots_params
     )
 

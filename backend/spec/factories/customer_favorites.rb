@@ -3,6 +3,6 @@
 FactoryBot.define do
   factory :customer_favorite do
     user
-    vendor_profile
+    vendor
   end
 end

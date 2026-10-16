@@ -5,11 +5,11 @@ class VendorsController < ApiController
   include VendorSerializable
 
   # Public endpoints don't require authentication
-  before_action :set_vendor_profile, only: %i[show services availability portfolio vendor_reviews]
+  before_action :set_vendor, only: %i[show services availability portfolio vendor_reviews]
 
   def index
     @vendors = apply_filters(
-      VendorProfile.includes(:user, services: :categories, portfolio_items: { images_attachments: :blob })
+      Vendor.includes(:user, services: :categories, portfolio_items: { images_attachments: :blob })
     )
     total_count = @vendors.count
 
@@ -22,11 +22,12 @@ class VendorsController < ApiController
   end
 
   def show
-    render json: { vendor: vendor_detail_json(@vendor_profile) }
+    data = vendor_detail_json(@vendor)
+    render json: { vendor: data }
   end
 
   def services
-    services = @vendor_profile.services.active.includes(:categories, :service_images)
+    services = @vendor.services.active.includes(:categories, :service_images)
 
     render json: {
       services: services.map { |service| service_json(service) }
@@ -40,11 +41,11 @@ class VendorsController < ApiController
     raw_end = params[:end_date]&.to_date || (start_date + 30.days)
     end_date = [raw_end, start_date].max
 
-    availability_slots = @vendor_profile.availability_slots
-                                        .where(date: start_date..end_date)
-                                        .where(is_available: true)
-                                        .order(:date, :start_time)
-                                        .reject(&:passed?)
+    availability_slots = @vendor.availability_slots
+                                .where(date: start_date..end_date)
+                                .where(is_available: true)
+                                .order(:date, :start_time)
+                                .reject(&:passed?)
 
     render json: {
       availability_slots: availability_slots.map { |slot| availability_slot_json(slot) },
@@ -56,18 +57,18 @@ class VendorsController < ApiController
   end
 
   def portfolio
-    portfolio_items = @vendor_profile.portfolio_items.ordered
+    portfolio_items = @vendor.portfolio_items.ordered
     portfolio_items = portfolio_items.by_category(params[:category]) if params[:category].present?
     portfolio_items = portfolio_items.featured if params[:featured] == 'true'
 
     render json: {
       portfolio_items: portfolio_items.map { |item| portfolio_item_json(item) },
-      categories: @vendor_profile.portfolio_categories
+      categories: @vendor.portfolio_categories
     }
   end
 
   def vendor_reviews
-    reviews = Review.published.where(vendor_profile_id: @vendor_profile.id).recent.includes(:customer, :service)
+    reviews = Review.published.where(vendor_id: @vendor.id).recent.includes(:customer, :service)
     render json: {
       reviews: reviews.map do |r|
         {
@@ -84,8 +85,8 @@ class VendorsController < ApiController
           created_at: r.created_at
         }
       end,
-      average_rating: @vendor_profile.average_rating,
-      total_reviews: @vendor_profile.total_reviews
+      average_rating: @vendor.average_rating,
+      total_reviews: @vendor.total_reviews
     }
   end
 
@@ -127,8 +128,8 @@ class VendorsController < ApiController
     }
   end
 
-  def set_vendor_profile
-    @vendor_profile = VendorProfile.find_by_id_or_slug!(params[:id])
+  def set_vendor
+    @vendor = Vendor.find_by_id_or_slug!(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Vendor not found' }, status: :not_found
   end

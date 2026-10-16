@@ -4,11 +4,12 @@ require 'rails_helper'
 
 RSpec.describe BookingsController do
   let(:customer) { create(:user, :customer) }
-  let(:vendor) { create(:user, :vendor) }
-  let(:service) { create(:service, vendor_profile: vendor.vendor_profile) }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
+  let(:service) { create(:service, vendor: vendor) }
   let!(:availability_slot) do
     create(:availability_slot,
-           vendor_profile: vendor.vendor_profile,
+           vendor: vendor,
            date: 1.week.from_now.to_date,
            start_time: '09:00',
            end_time: '17:00',
@@ -43,15 +44,15 @@ RSpec.describe BookingsController do
       it 'returns vendor bookings' do
         # Create availability slots for both vendors
         create(:availability_slot,
-               vendor_profile: vendor.vendor_profile,
+               vendor: vendor,
                date: 1.week.from_now.to_date,
                start_time: '09:00',
                end_time: '17:00',
                is_available: true)
 
-        other_vendor = create(:user, :vendor)
+        other_vendor_user = create(:user, :vendor)
         create(:availability_slot,
-               vendor_profile: other_vendor.vendor_profile,
+               vendor: other_vendor_user.vendor,
                date: 1.week.from_now.to_date,
                start_time: '09:00',
                end_time: '17:00',
@@ -59,10 +60,10 @@ RSpec.describe BookingsController do
 
         vendor_booking = create(:booking, customer: customer, vendor: vendor, service: service)
         other_customer = create(:user, :customer)
-        other_service = create(:service, vendor_profile: other_vendor.vendor_profile)
-        create(:booking, customer: other_customer, vendor: other_vendor, service: other_service)
+        other_service = create(:service, vendor: other_vendor_user.vendor)
+        create(:booking, customer: other_customer, vendor: other_vendor_user.vendor, service: other_service)
 
-        auth_as(vendor)
+        auth_as(vendor_user)
         get :index
 
         expect(response).to have_http_status(:ok)
@@ -88,7 +89,7 @@ RSpec.describe BookingsController do
 
     context 'when user is the vendor' do
       it 'returns the booking details' do
-        auth_as(vendor)
+        auth_as(vendor_user)
         get :show, params: { id: booking.id }
 
         expect(response).to have_http_status(:ok)
@@ -114,7 +115,7 @@ RSpec.describe BookingsController do
   describe 'POST #create' do
     let!(:availability_slot) do
       create(:availability_slot,
-             vendor_profile: vendor.vendor_profile,
+             vendor: vendor,
              date: 1.week.from_now.to_date,
              start_time: '09:00',
              end_time: '17:00',
@@ -145,7 +146,7 @@ RSpec.describe BookingsController do
       json_response = response.parsed_body
       expect(json_response['booking']['service']['id']).to eq(service.id)
       expect(json_response['booking']['customer']['id']).to eq(customer.id)
-      expect(json_response['booking']['vendor']['id']).to eq(vendor.vendor_profile.id)
+      expect(json_response['booking']['vendor']['id']).to eq(vendor.id)
       expect(json_response['booking']['status']).to eq('pending')
       expect(json_response['message']).to eq('Booking created successfully')
     end
@@ -265,7 +266,7 @@ RSpec.describe BookingsController do
   describe 'POST #respond' do
     context 'when accepting a booking' do
       it 'accepts the booking' do
-        auth_as(vendor)
+        auth_as(vendor_user)
         post :respond, params: { id: booking.id, response_action: 'accept' }
 
         expect(response).to have_http_status(:ok)
@@ -277,7 +278,7 @@ RSpec.describe BookingsController do
 
     context 'when declining a booking' do
       it 'declines the booking' do
-        auth_as(vendor)
+        auth_as(vendor_user)
         post :respond, params: { id: booking.id, response_action: 'decline' }
 
         expect(response).to have_http_status(:ok)
@@ -289,7 +290,7 @@ RSpec.describe BookingsController do
 
     context 'when making a counter offer' do
       it 'creates a counter offer' do
-        auth_as(vendor)
+        auth_as(vendor_user)
         post :respond, params: {
           id: booking.id,
           response_action: 'counter_offer',
@@ -307,7 +308,7 @@ RSpec.describe BookingsController do
 
     context 'with invalid response action' do
       it 'returns bad request' do
-        auth_as(vendor)
+        auth_as(vendor_user)
         post :respond, params: { id: booking.id, response_action: 'invalid' }
 
         expect(response).to have_http_status(:bad_request)
@@ -387,7 +388,7 @@ RSpec.describe BookingsController do
   describe 'POST #check_availability' do
     let!(:availability_slot) do
       create(:availability_slot,
-             vendor_profile: vendor.vendor_profile,
+             vendor: vendor,
              date: 1.week.from_now.to_date,
              start_time: '09:00',
              end_time: '17:00',
@@ -461,7 +462,7 @@ RSpec.describe BookingsController do
   describe 'POST #suggest_alternatives' do
     let!(:availability_slot) do
       create(:availability_slot,
-             vendor_profile: vendor.vendor_profile,
+             vendor: vendor,
              date: 1.week.from_now.to_date,
              start_time: '09:00',
              end_time: '17:00',

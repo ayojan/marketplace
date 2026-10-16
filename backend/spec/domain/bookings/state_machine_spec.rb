@@ -4,8 +4,9 @@ require 'rails_helper'
 
 RSpec.describe Bookings::StateMachine do
   let(:customer) { create(:user, :customer) }
-  let(:vendor) { create(:user, :vendor) }
-  let(:service) { create(:service, vendor_profile: vendor.vendor_profile) }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
+  let(:service) { create(:service, vendor: vendor) }
   let(:booking) do
     create(:booking,
            customer: customer,

@@ -35,7 +35,7 @@ class AuthController < ApplicationController
     user.skip_confirmation!
 
     if user.save
-      attach_initial_vendor_category(user.vendor_profile) if user.vendor? && user.vendor_profile.present?
+      attach_initial_vendor_category(user.vendor) if user.vendor? && user.vendor.present?
       token = generate_jwt_token(user)
       render json: {
         message: 'Registration successful',
@@ -193,7 +193,7 @@ class AuthController < ApplicationController
       email: user.email,
       metadata: { name: payload['name'], picture: payload['picture'] }
     )
-    update_vendor_profile_attributes(user) if user.vendor? && user.vendor_profile.present?
+    update_vendor_attributes(user) if user.vendor? && user.vendor.present?
 
     render json: {
       message: 'Google registration successful',
@@ -203,11 +203,11 @@ class AuthController < ApplicationController
     }, status: :created
   end
 
-  def update_vendor_profile_attributes(user)
-    attrs = params.dig(:auth, :vendor_profile_attributes) || params[:vendor_profile_attributes]
+  def update_vendor_attributes(user)
+    attrs = params.dig(:auth, :vendor_attributes) || params[:vendor_attributes]
     return unless attrs.is_a?(ActionController::Parameters) || attrs.is_a?(Hash)
 
-    user.vendor_profile.update(
+    user.vendor.update(
       business_name: attrs[:business_name].presence || "#{user.full_name}'s Business",
       location: attrs[:location].presence || 'Delhi NCR'
     )
@@ -226,8 +226,9 @@ class AuthController < ApplicationController
   def auth_params
     permitted = params.expect(
       auth: [:email, :password, :password_confirmation, :first_name, :last_name, :role,
-             { vendor_profile_attributes: %i[business_name location description phone website
-                                             category category_id service_category] }]
+             { vendor_attributes: %i[business_name location description phone website
+                                     category category_id service_category],
+               customer_attributes: %i[phone location preferences event_types budget_range company_name] }]
     )
     permitted[:role] = 'customer' unless %w[customer vendor].include?(permitted[:role].to_s)
     clean_vendor_attributes(permitted)
@@ -235,7 +236,7 @@ class AuthController < ApplicationController
   end
 
   def clean_vendor_attributes(permitted)
-    attributes = permitted[:vendor_profile_attributes]
+    attributes = permitted[:vendor_attributes]
     return unless attributes.respond_to?(:key?)
 
     attributes.delete(:category)
@@ -253,24 +254,24 @@ class AuthController < ApplicationController
     attributes[:description] = default_vendor_bio(desc, business, location)
   end
 
-  def attach_initial_vendor_category(vendor_profile)
-    cat_param = params.dig(:auth, :vendor_profile_attributes, :category) ||
-                params.dig(:auth, :vendor_profile_attributes, :category_id) ||
-                params.dig(:auth, :vendor_profile_attributes, :service_category) ||
+  def attach_initial_vendor_category(vendor)
+    cat_param = params.dig(:auth, :vendor_attributes, :category) ||
+                params.dig(:auth, :vendor_attributes, :category_id) ||
+                params.dig(:auth, :vendor_attributes, :service_category) ||
                 params.dig(:auth, :category)
     return if cat_param.blank?
 
     category = find_matching_category(cat_param)
-    create_starter_service(vendor_profile, category) if category
+    create_starter_service(vendor, category) if category
   rescue StandardError => e
-    Rails.logger.warn("Failed to attach initial category to vendor #{vendor_profile.id}: #{e.message}")
+    Rails.logger.warn("Failed to attach initial category to vendor #{vendor.id}: #{e.message}")
   end
 
-  def create_starter_service(vendor_profile, category)
-    service = vendor_profile.services.create(
-      name: "#{vendor_profile.business_name} - #{category.name}",
-      description: "Professional #{category.name} services by #{vendor_profile.business_name} in " \
-                   "#{vendor_profile.location}. Dedicated to providing exceptional experiences.",
+  def create_starter_service(vendor, category)
+    service = vendor.services.create(
+      name: "#{vendor.business_name} - #{category.name}",
+      description: "Professional #{category.name} services by #{vendor.business_name} in " \
+                   "#{vendor.location}. Dedicated to providing exceptional experiences.",
       base_price: 15_000,
       pricing_type: :package,
       status: :active
@@ -300,7 +301,8 @@ class AuthController < ApplicationController
 
   def user_response(user)
     res = base_user_response(user)
-    res.merge!(vendor_profile_data(user)) if user.vendor? && user.vendor_profile
+    res.merge!(vendor_data(user)) if user.vendor? && user.vendor
+    res.merge!(customer_data(user)) if user.customer? && user.customer
     res
   end
 
@@ -319,14 +321,26 @@ class AuthController < ApplicationController
     }
   end
 
-  def vendor_profile_data(user)
-    profile = user.vendor_profile
+  def vendor_data(user)
+    vendor = user.vendor
     {
-      vendor_profile_id: profile.id,
-      vendor_profile: {
-        id: profile.id,
-        slug: profile.slug,
-        business_name: profile.business_name
+      vendor_id: vendor.id,
+      vendor: {
+        id: vendor.id,
+        slug: vendor.slug,
+        business_name: vendor.business_name
+      }
+    }
+  end
+
+  def customer_data(user)
+    customer = user.customer
+    {
+      customer_id: customer.id,
+      customer: {
+        id: customer.id,
+        phone: customer.phone,
+        location: customer.location
       }
     }
   end

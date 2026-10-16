@@ -13,13 +13,13 @@ class RecalculateVendorTrustStatsJob
   # Requires: gem 'sidekiq-unique-jobs'
   # For now, document the intention to add this
 
-  def perform(vendor_profile_id)
-    vendor_profile = VendorProfile.find(vendor_profile_id)
-    VendorProfiles::CalculatePublicStats.call(vendor_profile: vendor_profile)
+  def perform(vendor_id)
+    vendor = Vendor.find(vendor_id)
+    Vendors::CalculatePublicStats.call(vendor: vendor)
 
-    Rails.logger.info("Recalculated trust stats for vendor #{vendor_profile_id}")
-  rescue VendorProfile::RecordNotFound
-    Rails.logger.warn("Vendor profile not found: #{vendor_profile_id}")
+    Rails.logger.info("Recalculated trust stats for vendor #{vendor_id}")
+  rescue ActiveRecord::RecordNotFound
+    Rails.logger.warn("Vendor not found: #{vendor_id}")
     # Don't retry if vendor doesn't exist
     raise
   rescue StandardError => e

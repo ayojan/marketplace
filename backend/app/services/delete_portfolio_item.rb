@@ -5,7 +5,7 @@ class DeletePortfolioItem
 
   def initialize(portfolio_item)
     @portfolio_item = portfolio_item
-    @vendor_profile = portfolio_item.vendor_profile
+    @vendor = portfolio_item.vendor
   end
 
   def call
@@ -22,7 +22,7 @@ class DeletePortfolioItem
   private
 
   def reorder_items_in_category(category)
-    items = @vendor_profile.portfolio_items.where(category: category).order(:display_order, :created_at)
+    items = @vendor.portfolio_items.where(category: category).order(:display_order, :created_at)
 
     items.each_with_index do |item, index|
       # rubocop:disable Rails/SkipsModelValidations

@@ -65,7 +65,7 @@ module Notifications
 
     def send_vendor_reminder
       SendNotification.call(
-        user: booking.vendor_profile.user,
+        user: booking.vendor.user,
         title: 'Upcoming Booking',
         message: vendor_reminder_message,
         notification_type: 'booking_reminder',
@@ -79,7 +79,7 @@ module Notifications
 
     def customer_reminder_message
       date_str = booking.event_date.strftime('%B %d, %Y at %l:%M %p')
-      "Your booking with #{booking.vendor_profile.display_name} is coming up on #{date_str}."
+      "Your booking with #{booking.vendor.display_name} is coming up on #{date_str}."
     end
 
     def vendor_reminder_message

@@ -4,19 +4,19 @@ require 'rails_helper'
 
 RSpec.describe VendorsController do
   let(:user) { create(:user, :vendor, :confirmed) }
-  let(:vendor_profile) { user.vendor_profile }
+  let(:vendor) { user.vendor }
   let(:customer_user) { create(:user, :customer, :confirmed) }
 
   describe 'GET #index' do
     let(:vendors) do
       [
-        create(:user, :vendor, :confirmed).vendor_profile.tap do |vp|
+        create(:user, :vendor, :confirmed).vendor.tap do |vp|
           vp.update!(business_name: 'Photography Pro', location: 'New York')
         end,
-        create(:user, :vendor, :confirmed).vendor_profile.tap do |vp|
+        create(:user, :vendor, :confirmed).vendor.tap do |vp|
           vp.update!(business_name: 'Video Masters', location: 'Los Angeles')
         end,
-        create(:user, :vendor, :confirmed).vendor_profile.tap do |vp|
+        create(:user, :vendor, :confirmed).vendor.tap do |vp|
           vp.update!(business_name: 'Event Planners', location: 'New York')
         end
       ]
@@ -47,7 +47,7 @@ RSpec.describe VendorsController do
       let(:photography_category) { create(:category, :photography) }
 
       before do
-        create(:service, vendor_profile: vendors.first, service_category: photography_category)
+        create(:service, vendor: vendors.first, service_category: photography_category)
         vendors.first.update!(service_categories: 'Photography, Event Planning')
       end
 
@@ -70,31 +70,31 @@ RSpec.describe VendorsController do
 
   describe 'GET #show' do
     before do
-      create(:portfolio_item, vendor_profile: vendor_profile, is_featured: true)
-      create(:portfolio_item, vendor_profile: vendor_profile, is_featured: false)
+      create(:portfolio_item, vendor: vendor, is_featured: true)
+      create(:portfolio_item, vendor: vendor, is_featured: false)
     end
 
     context 'when vendor exists' do
       it 'returns detailed vendor information' do
-        get :show, params: { id: vendor_profile.id }
+        get :show, params: { id: vendor.id }
         expect(response).to have_http_status(:ok)
         vendor_data = response.parsed_body['vendor']
         expect(vendor_data).to include(
-          'id' => vendor_profile.id,
-          'slug' => vendor_profile.slug,
-          'business_name' => vendor_profile.business_name
+          'id' => vendor.id,
+          'slug' => vendor.slug,
+          'business_name' => vendor.business_name
         )
         expect(vendor_data['portfolio_items_count']).to eq(2)
       end
 
       it 'returns detailed vendor information when looking up by slug' do
-        get :show, params: { id: vendor_profile.slug }
+        get :show, params: { id: vendor.slug }
         expect(response).to have_http_status(:ok)
         vendor_data = response.parsed_body['vendor']
         expect(vendor_data).to include(
-          'id' => vendor_profile.id,
-          'slug' => vendor_profile.slug,
-          'business_name' => vendor_profile.business_name
+          'id' => vendor.id,
+          'slug' => vendor.slug,
+          'business_name' => vendor.business_name
         )
       end
     end
@@ -115,13 +115,13 @@ RSpec.describe VendorsController do
   end
 
   describe 'GET #services' do
-    let!(:active_service) { create(:service, vendor_profile: vendor_profile, status: :active) }
+    let!(:active_service) { create(:service, vendor: vendor, status: :active) }
 
-    before { create(:service, vendor_profile: vendor_profile, status: :inactive) }
+    before { create(:service, vendor: vendor, status: :inactive) }
 
     context 'when vendor exists' do
       it 'returns only active services' do
-        get :services, params: { id: vendor_profile.id }
+        get :services, params: { id: vendor.id }
         expect(response).to have_http_status(:ok)
         services = response.parsed_body['services']
         expect(services.length).to eq(1)
@@ -132,16 +132,16 @@ RSpec.describe VendorsController do
 
   describe 'GET #availability' do
     let!(:available_slot) do
-      create(:availability_slot, vendor_profile: vendor_profile, date: Date.current + 1.day, is_available: true)
+      create(:availability_slot, vendor: vendor, date: Date.current + 1.day, is_available: true)
     end
 
     before do
-      create(:availability_slot, vendor_profile: vendor_profile, date: Date.current + 2.days, is_available: false)
+      create(:availability_slot, vendor: vendor, date: Date.current + 2.days, is_available: false)
     end
 
     context 'when vendor exists' do
       it 'returns only available slots' do
-        get :availability, params: { id: vendor_profile.id }
+        get :availability, params: { id: vendor.id }
         expect(response).to have_http_status(:ok)
         slots = response.parsed_body['availability_slots']
         expect(slots.length).to eq(1)
@@ -151,22 +151,22 @@ RSpec.describe VendorsController do
 
     context 'with date range parameters' do
       before do
-        create(:availability_slot, vendor_profile: vendor_profile, date: Date.current + 5.days, is_available: true)
-        create(:availability_slot, vendor_profile: vendor_profile, date: Date.current + 35.days, is_available: true)
+        create(:availability_slot, vendor: vendor, date: Date.current + 5.days, is_available: true)
+        create(:availability_slot, vendor: vendor, date: Date.current + 35.days, is_available: true)
       end
 
       it 'filters slots by date range' do
-        params = { id: vendor_profile.id, start_date: Date.current.to_s, end_date: (Date.current + 10.days).to_s }
+        params = { id: vendor.id, start_date: Date.current.to_s, end_date: (Date.current + 10.days).to_s }
         get :availability, params: params
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['availability_slots'].length).to eq(2)
       end
 
       it 'does not return slots in the past even when start_date is in the past' do
-        past_slot = build(:availability_slot, vendor_profile: vendor_profile, date: 2.days.ago, is_available: true)
+        past_slot = build(:availability_slot, vendor: vendor, date: 2.days.ago, is_available: true)
         past_slot.save(validate: false)
 
-        params = { id: vendor_profile.id, start_date: 5.days.ago.to_date.to_s, end_date: (Date.current + 10.days).to_s }
+        params = { id: vendor.id, start_date: 5.days.ago.to_date.to_s, end_date: (Date.current + 10.days).to_s }
         get :availability, params: params
 
         expect(response).to have_http_status(:ok)
@@ -178,13 +178,13 @@ RSpec.describe VendorsController do
 
   describe 'GET #portfolio' do
     before do
-      create(:portfolio_item, vendor_profile: vendor_profile, category: 'photography', is_featured: true)
-      create(:portfolio_item, vendor_profile: vendor_profile, category: 'videography', is_featured: false)
+      create(:portfolio_item, vendor: vendor, category: 'photography', is_featured: true)
+      create(:portfolio_item, vendor: vendor, category: 'videography', is_featured: false)
     end
 
     context 'when vendor exists' do
       it 'returns all portfolio items' do
-        get :portfolio, params: { id: vendor_profile.id }
+        get :portfolio, params: { id: vendor.id }
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json['portfolio_items'].length).to eq(2)
@@ -194,7 +194,7 @@ RSpec.describe VendorsController do
 
     context 'with category filter' do
       it 'filters portfolio items by category' do
-        get :portfolio, params: { id: vendor_profile.id, category: 'photography' }
+        get :portfolio, params: { id: vendor.id, category: 'photography' }
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['portfolio_items'].first['category']).to eq('photography')
       end
@@ -203,11 +203,11 @@ RSpec.describe VendorsController do
 
   describe 'GET #vendor_reviews' do
     it 'returns review data (placeholder for now)' do
-      get :vendor_reviews, params: { id: vendor_profile.id }
+      get :vendor_reviews, params: { id: vendor.id }
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
       expect(json['reviews']).to be_empty
-      expect(json['average_rating']).to eq(vendor_profile.average_rating.to_s)
+      expect(json['average_rating']).to eq(vendor.average_rating.to_s)
     end
   end
 end

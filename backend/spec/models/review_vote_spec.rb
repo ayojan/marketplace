@@ -28,9 +28,9 @@ RSpec.describe ReviewVote do
   let(:vendor_user) { create(:user, :vendor) }
   let(:customer) { create(:user, :customer) }
   let(:other_customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_user.vendor_profile) }
+  let(:service) { create(:service, vendor: vendor_user.vendor) }
   let(:booking) do
-    create(:booking, vendor_profile: vendor_user.vendor_profile, customer: customer, service: service,
+    create(:booking, vendor: vendor_user.vendor, customer: customer, service: service,
                      status: :completed)
   end
   let(:review) { create(:review, booking: booking, customer: customer) }

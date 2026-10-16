@@ -19,7 +19,7 @@
 #  updated_at               :datetime         not null
 #  customer_id              :bigint           not null
 #  service_id               :bigint           not null
-#  vendor_profile_id        :bigint           not null
+#  vendor_id                :bigint           not null
 #
 # Indexes
 #
@@ -30,32 +30,33 @@
 #  index_bookings_on_service_id                (service_id)
 #  index_bookings_on_service_id_and_status     (service_id,status)
 #  index_bookings_on_vendor_first_response_at  (vendor_first_response_at)
-#  index_bookings_on_vendor_profile_id         (vendor_profile_id)
-#  index_bookings_vendor_response_time         (vendor_profile_id,vendor_first_response_at,created_at)
-#  index_bookings_vendor_status_date           (vendor_profile_id,status,event_date)
+#  index_bookings_on_vendor_id                 (vendor_id)
+#  index_bookings_vendor_response_time         (vendor_id,vendor_first_response_at,created_at)
+#  index_bookings_vendor_status_date           (vendor_id,status,event_date)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (customer_id => users.id)
 #  fk_rails_...  (service_id => services.id)
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
+#  fk_rails_...  (vendor_id => vendors.id)
 #
 require 'rails_helper'
 
 RSpec.describe Booking do
   let(:customer) { create(:user, :customer) }
-  let(:vendor) { create(:user, :vendor) }
-  let(:service) { create(:service, vendor_profile: vendor.vendor_profile) }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
+  let(:service) { create(:service, vendor: vendor) }
 
   describe 'associations' do
     it { is_expected.to belong_to(:customer).class_name('User') }
-    it { is_expected.to belong_to(:vendor_profile) }
+    it { is_expected.to belong_to(:vendor) }
     it { is_expected.to belong_to(:service) }
     it { is_expected.to have_many(:booking_messages).dependent(:destroy) }
   end
 
   describe 'validations' do
-    subject { build(:booking, customer: customer, vendor_profile: vendor.vendor_profile, service: service) }
+    subject { build(:booking, customer: customer, vendor: vendor, service: service) }
 
     it { is_expected.to validate_presence_of(:event_date) }
     it { is_expected.to validate_presence_of(:event_location) }
@@ -88,7 +89,7 @@ RSpec.describe Booking do
   describe 'scopes' do
     before do
       create(:availability_slot,
-             vendor_profile: vendor.vendor_profile,
+             vendor: vendor,
              date: 1.week.from_now.to_date,
              start_time: '09:00',
              end_time: '17:00',
@@ -125,9 +126,9 @@ RSpec.describe Booking do
       end
     end
 
-    describe '.for_vendor_profile' do
+    describe '.for_vendor' do
       it 'returns bookings for specific vendor' do
-        expect(described_class.for_vendor_profile(vendor.vendor_profile)).to include(upcoming_booking, past_booking)
+        expect(described_class.for_vendor(vendor)).to include(upcoming_booking, past_booking)
       end
     end
 
@@ -194,7 +195,7 @@ RSpec.describe Booking do
   describe 'instance methods' do
     before do
       create(:availability_slot,
-             vendor_profile: vendor.vendor_profile,
+             vendor: vendor,
              date: 1.week.from_now.to_date,
              start_time: '09:00',
              end_time: '17:00',
@@ -261,15 +262,9 @@ RSpec.describe Booking do
       end
     end
 
-    describe '#vendor_profile' do
-      it 'returns the vendor profile' do
-        expect(booking.vendor_profile).to eq(vendor.vendor_profile)
-      end
-    end
-
-    describe '#customer_profile' do
-      it 'returns the customer profile' do
-        expect(booking.customer_profile).to eq(customer.customer_profile)
+    describe '#vendor' do
+      it 'returns the vendor' do
+        expect(booking.vendor).to eq(vendor)
       end
     end
   end

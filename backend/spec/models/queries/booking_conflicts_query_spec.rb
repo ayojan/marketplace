@@ -4,14 +4,15 @@ require 'rails_helper'
 
 RSpec.describe BookingConflictsQuery do
   let(:customer) { create(:user, :customer) }
-  let(:vendor) { create(:user, :vendor) }
-  let(:service) { create(:service, vendor_profile: vendor.vendor_profile) }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
+  let(:service) { create(:service, vendor: vendor) }
 
   describe '.call' do
     context 'when no conflicts exist' do
       it 'returns false' do
         result = described_class.call(
-          vendor_profile: vendor.vendor_profile,
+          vendor: vendor,
           event_date: 1.week.from_now,
           event_end_date: 1.week.from_now + 2.hours
         )
@@ -32,7 +33,7 @@ RSpec.describe BookingConflictsQuery do
 
       it 'returns true' do
         result = described_class.call(
-          vendor_profile: vendor.vendor_profile,
+          vendor: vendor,
           event_date: 1.week.from_now,
           event_end_date: 1.week.from_now + 2.hours
         )
@@ -53,7 +54,7 @@ RSpec.describe BookingConflictsQuery do
 
       it 'returns true' do
         result = described_class.call(
-          vendor_profile: vendor.vendor_profile,
+          vendor: vendor,
           event_date: 1.week.from_now.change(hour: 11),
           event_end_date: 1.week.from_now.change(hour: 13)
         )
@@ -74,7 +75,7 @@ RSpec.describe BookingConflictsQuery do
 
       it 'returns true' do
         result = described_class.call(
-          vendor_profile: vendor.vendor_profile,
+          vendor: vendor,
           event_date: 1.week.from_now.change(hour: 15),
           event_end_date: 1.week.from_now.change(hour: 17)
         )
@@ -95,7 +96,7 @@ RSpec.describe BookingConflictsQuery do
 
       it 'returns false' do
         result = described_class.call(
-          vendor_profile: vendor.vendor_profile,
+          vendor: vendor,
           event_date: 1.week.from_now.change(hour: 12),
           event_end_date: 1.week.from_now.change(hour: 14)
         )
@@ -116,7 +117,7 @@ RSpec.describe BookingConflictsQuery do
 
       it 'returns false' do
         result = described_class.call(
-          vendor_profile: vendor.vendor_profile,
+          vendor: vendor,
           event_date: 1.week.from_now.change(hour: 10),
           event_end_date: 1.week.from_now.change(hour: 12)
         )
@@ -137,7 +138,7 @@ RSpec.describe BookingConflictsQuery do
 
       it 'returns false when checking same booking' do
         result = described_class.call(
-          vendor_profile: vendor.vendor_profile,
+          vendor: vendor,
           event_date: 1.week.from_now.change(hour: 10),
           event_end_date: 1.week.from_now.change(hour: 12),
           exclude_id: existing_booking.id

@@ -32,7 +32,7 @@ module Notifications
       SendNotification.call(
         user: booking.customer,
         title: 'Booking Accepted',
-        message: "#{booking.vendor_profile.display_name} has accepted your booking request for #{date_str}.",
+        message: "#{booking.vendor.display_name} has accepted your booking request for #{date_str}.",
         notification_type: 'booking_accepted',
         related_type: 'Booking',
         related_id: booking.id
@@ -49,7 +49,7 @@ module Notifications
       SendNotification.call(
         user: booking.customer,
         title: 'Booking Declined',
-        message: "#{booking.vendor_profile.display_name} has declined your booking request for #{date_str}.",
+        message: "#{booking.vendor.display_name} has declined your booking request for #{date_str}.",
         notification_type: 'booking_rejected',
         related_type: 'Booking',
         related_id: booking.id
@@ -74,7 +74,7 @@ module Notifications
       SendNotification.call(
         user: booking.customer,
         title: 'Booking Cancelled',
-        message: "Your booking with #{booking.vendor_profile.display_name} for #{date_str} has been cancelled.",
+        message: "Your booking with #{booking.vendor.display_name} for #{date_str} has been cancelled.",
         notification_type: 'booking_cancelled',
         related_type: 'Booking',
         related_id: booking.id
@@ -83,7 +83,7 @@ module Notifications
 
     def notify_cancellation_vendor(date_str)
       SendNotification.call(
-        user: booking.vendor_profile.user,
+        user: booking.vendor.user,
         title: 'Booking Cancelled',
         message: "The booking from #{booking.customer.full_name} for #{date_str} has been cancelled.",
         notification_type: 'booking_cancelled',

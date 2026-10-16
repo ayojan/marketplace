@@ -3,8 +3,8 @@
 class ReorderPortfolioItems
   include Callable
 
-  def initialize(vendor_profile, category, item_orders)
-    @vendor_profile = vendor_profile
+  def initialize(vendor, category, item_orders)
+    @vendor = vendor
     @category = category
     @item_orders = item_orders
   end
@@ -16,7 +16,7 @@ class ReorderPortfolioItems
     errors = []
 
     @item_orders.each do |item_order|
-      portfolio_item = @vendor_profile.portfolio_items.find_by(
+      portfolio_item = @vendor.portfolio_items.find_by(
         id: item_order[:id],
         category: @category
       )

@@ -23,22 +23,22 @@ class VendorBookingMailerPreview < ActionMailer::Preview
   # rubocop:disable Metrics/MethodLength
   def build_mock_booking
     customer_user = User.new(first_name: 'Priya', last_name: 'Sharma', email: 'priya@example.com', role: :customer)
-    customer_profile = CustomerProfile.new(user: customer_user, phone: '+91 98765 43210')
-    customer_user.customer_profile = customer_profile
+    customer = Customer.new(user: customer_user, phone: '+91 98765 43210')
+    customer_user.customer = customer
 
     vendor_user = User.new(first_name: 'Rahul', last_name: 'Kapoor', email: 'rahul@example.com', role: :vendor)
-    vendor_profile = VendorProfile.new(
+    vendor = Vendor.new(
       user: vendor_user,
       business_name: 'Elite Weddings & Events',
       slug: 'elite-weddings',
       phone: '+91 91234 56789'
     )
-    service = Service.new(name: 'Full Wedding Photography & Cinematography', vendor_profile: vendor_profile)
+    service = Service.new(name: 'Full Wedding Photography & Cinematography', vendor: vendor)
 
     Booking.new(
       id: 101,
       customer: customer_user,
-      vendor_profile: vendor_profile,
+      vendor: vendor,
       service: service,
       event_date: 3.days.from_now.change(hour: 16, min: 0),
       event_end_date: 3.days.from_now.change(hour: 22, min: 0),

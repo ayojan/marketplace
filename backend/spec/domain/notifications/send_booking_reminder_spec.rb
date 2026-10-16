@@ -6,12 +6,12 @@ RSpec.describe Notifications::SendBookingReminder do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_profile) }
+  let(:service) { create(:service, vendor: vendor) }
   let(:booking) do
     create(:booking,
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            customer: customer,
            service: service,
            status: :accepted,

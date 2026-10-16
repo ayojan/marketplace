@@ -189,7 +189,7 @@ class ServiceImagesController < ApiController
   end
 
   def ensure_service_owner
-    return if @service&.vendor_profile&.user == current_user
+    return if @service&.vendor&.user == current_user
 
     render json: {
       error: 'You can only manage images for your own services'

@@ -6,7 +6,7 @@ module BookingManagement::AvailabilitySlotActions
 
   def index
     slots = AvailabilitySlots::FilterForVendor.call(
-      vendor_profile: current_user.vendor_profile,
+      vendor: current_user.vendor,
       start_date: params[:start_date],
       end_date: params[:end_date],
       date: params[:date]
@@ -25,7 +25,7 @@ module BookingManagement::AvailabilitySlotActions
   end
 
   def create
-    @slot = current_user.vendor_profile.availability_slots.build(availability_slot_params)
+    @slot = current_user.vendor.availability_slots.build(availability_slot_params)
     if @slot.save
       render json: { availability_slot: BookingManagement::AvailabilitySlotPresenter.new(@slot).as_json },
              status: :created
@@ -54,7 +54,7 @@ module BookingManagement::AvailabilitySlotActions
   private
 
   def set_availability_slot
-    @slot = current_user.vendor_profile.availability_slots.find(params[:id])
+    @slot = current_user.vendor.availability_slots.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Availability slot not found' }, status: :not_found
   end

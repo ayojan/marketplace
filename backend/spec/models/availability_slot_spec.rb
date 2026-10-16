@@ -1,40 +1,17 @@
 # frozen_string_literal: true
 
-# == Schema Information
-#
-# Table name: availability_slots
-#
-#  id                :bigint           not null, primary key
-#  date              :date             not null
-#  end_time          :time             not null
-#  is_available      :boolean          default(TRUE), not null
-#  start_time        :time             not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  vendor_profile_id :bigint           not null
-#
-# Indexes
-#
-#  index_availability_slots_on_date_and_is_available       (date,is_available)
-#  index_availability_slots_on_vendor_profile_id           (vendor_profile_id)
-#  index_availability_slots_on_vendor_profile_id_and_date  (vendor_profile_id,date)
-#
-# Foreign Keys
-#
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
-#
 require 'rails_helper'
 
 RSpec.describe AvailabilitySlot do
-  let(:vendor) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor.vendor_profile }
+  let(:vendor_user) { create(:user, :vendor) }
+  let(:vendor) { vendor_user.vendor }
 
   describe 'associations' do
-    it { is_expected.to belong_to(:vendor_profile) }
+    it { is_expected.to belong_to(:vendor) }
   end
 
   describe 'validations' do
-    subject { build(:availability_slot, vendor_profile: vendor_profile) }
+    subject { build(:availability_slot, vendor: vendor) }
 
     it { is_expected.to validate_presence_of(:date) }
     it { is_expected.to validate_presence_of(:start_time) }
@@ -43,7 +20,7 @@ RSpec.describe AvailabilitySlot do
 
     it 'validates end_time is after start_time for same-day slots' do
       slot = build(:availability_slot,
-                   vendor_profile: vendor_profile,
+                   vendor: vendor,
                    start_time: '14:00',
                    end_time: '14:00')  # Same time should be invalid
       expect(slot).not_to be_valid
@@ -52,7 +29,7 @@ RSpec.describe AvailabilitySlot do
 
     it 'allows overnight slots' do
       slot = build(:availability_slot,
-                   vendor_profile: vendor_profile,
+                   vendor: vendor,
                    start_time: '22:00',
                    end_time: '06:00')  # Overnight slot should be valid
       expect(slot).to be_valid
@@ -60,14 +37,14 @@ RSpec.describe AvailabilitySlot do
 
     it 'validates date is not in the past on create' do
       slot = build(:availability_slot,
-                   vendor_profile: vendor_profile,
+                   vendor: vendor,
                    date: 1.day.ago)
       expect(slot).not_to be_valid
       expect(slot.errors[:date]).to include('cannot be in the past')
     end
 
     it 'validates date is not in the past on update' do
-      slot = create(:availability_slot, vendor_profile: vendor_profile)
+      slot = create(:availability_slot, vendor: vendor)
       slot.date = 1.day.ago
       expect(slot).not_to be_valid
       expect(slot.errors[:date]).to include('cannot be in the past')
@@ -75,7 +52,7 @@ RSpec.describe AvailabilitySlot do
 
     it 'validates start_time is not in the past for today slots' do
       slot = build(:availability_slot,
-                   vendor_profile: vendor_profile,
+                   vendor: vendor,
                    date: Date.current,
                    start_time: 2.hours.ago.strftime('%H:%M'))
       expect(slot).not_to be_valid
@@ -84,10 +61,10 @@ RSpec.describe AvailabilitySlot do
   end
 
   describe 'scopes' do
-    let!(:available_slot) { create(:availability_slot, vendor_profile: vendor_profile, is_available: true) }
-    let!(:unavailable_slot) { create(:availability_slot, vendor_profile: vendor_profile, is_available: false) }
-    let!(:today_slot) { create(:availability_slot, vendor_profile: vendor_profile, date: Date.current) }
-    let!(:future_slot) { create(:availability_slot, vendor_profile: vendor_profile, date: 1.week.from_now) }
+    let!(:available_slot) { create(:availability_slot, vendor: vendor, is_available: true) }
+    let!(:unavailable_slot) { create(:availability_slot, vendor: vendor, is_available: false) }
+    let!(:today_slot) { create(:availability_slot, vendor: vendor, date: Date.current) }
+    let!(:future_slot) { create(:availability_slot, vendor: vendor, date: 1.week.from_now) }
 
     describe '.available' do
       it 'returns only available slots' do
@@ -104,12 +81,12 @@ RSpec.describe AvailabilitySlot do
     end
 
     describe '.for_vendor' do
-      let(:other_vendor) { create(:user, :vendor) }
-      let!(:other_slot) { create(:availability_slot, vendor_profile: other_vendor.vendor_profile) }
+      let(:other_vendor_user) { create(:user, :vendor) }
+      let!(:other_slot) { create(:availability_slot, vendor: other_vendor_user.vendor) }
 
       it 'returns slots for specific vendor' do
-        expect(described_class.for_vendor(vendor_profile)).to include(available_slot)
-        expect(described_class.for_vendor(vendor_profile)).not_to include(other_slot)
+        expect(described_class.for_vendor(vendor)).to include(available_slot)
+        expect(described_class.for_vendor(vendor)).not_to include(other_slot)
       end
     end
 
@@ -123,7 +100,7 @@ RSpec.describe AvailabilitySlot do
   describe 'instance methods' do
     let(:slot) do
       create(:availability_slot,
-             vendor_profile: vendor_profile,
+             vendor: vendor,
              start_time: '09:00',
              end_time: '17:00')
     end
@@ -135,7 +112,7 @@ RSpec.describe AvailabilitySlot do
 
       it 'handles overnight slots' do
         overnight_slot = build(:availability_slot,
-                               vendor_profile: vendor_profile,
+                               vendor: vendor,
                                start_time: '22:00',
                                end_time: '06:00')
         # Skip validation for this test since we're testing the duration calculation
@@ -153,7 +130,7 @@ RSpec.describe AvailabilitySlot do
     describe '#overlaps_with?' do
       let(:other_slot) do
         build(:availability_slot,
-              vendor_profile: vendor_profile,
+              vendor: vendor,
               date: slot.date,
               start_time: '14:00',
               end_time: '18:00')
@@ -161,7 +138,7 @@ RSpec.describe AvailabilitySlot do
 
       let(:non_overlapping_slot) do
         build(:availability_slot,
-              vendor_profile: vendor_profile,
+              vendor: vendor,
               date: slot.date,
               start_time: '18:00',
               end_time: '20:00')
@@ -187,7 +164,7 @@ RSpec.describe AvailabilitySlot do
 
     describe '#booking_conflict?' do
       let(:customer) { create(:user, :customer) }
-      let(:service) { create(:service, vendor_profile: vendor_profile) }
+      let(:service) { create(:service, vendor: vendor) }
 
       context 'when there are conflicting bookings' do
         before do
@@ -229,19 +206,19 @@ RSpec.describe AvailabilitySlot do
 
     describe '#passed?' do
       it 'returns true when date is before Date.current' do
-        past_slot = build(:availability_slot, vendor_profile: vendor_profile, date: 1.day.ago)
+        past_slot = build(:availability_slot, vendor: vendor, date: 1.day.ago)
         expect(past_slot.passed?).to be true
       end
 
       it 'returns false when date is after Date.current' do
-        future_slot = build(:availability_slot, vendor_profile: vendor_profile, date: 2.days.from_now.to_date)
+        future_slot = build(:availability_slot, vendor: vendor, date: 2.days.from_now.to_date)
         expect(future_slot.passed?).to be false
       end
 
       it 'checks start_time when date is today' do
-        slot_past_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current,
+        slot_past_today = build(:availability_slot, vendor: vendor, date: Date.current,
                                                     start_time: 2.hours.ago.strftime('%H:%M'))
-        slot_future_today = build(:availability_slot, vendor_profile: vendor_profile, date: Date.current,
+        slot_future_today = build(:availability_slot, vendor: vendor, date: Date.current,
                                                       start_time: 2.hours.from_now.strftime('%H:%M'))
 
         expect(slot_past_today.passed?).to be true

@@ -5,34 +5,35 @@
 #
 # Table name: services
 #
-#  id                :bigint           not null, primary key
-#  average_rating    :decimal(3, 2)    default(0.0)
-#  base_price        :decimal(10, 2)
-#  description       :text
-#  name              :string
-#  pricing_type      :integer          default("hourly")
-#  status            :integer          default("draft")
-#  total_reviews     :integer          default(0)
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  vendor_profile_id :bigint           not null
+#  id             :bigint           not null, primary key
+#  average_rating :decimal(3, 2)    default(0.0)
+#  base_price     :decimal(10, 2)
+#  description    :text
+#  name           :string
+#  pricing_type   :integer          default("hourly")
+#  status         :integer          default("draft")
+#  total_reviews  :integer          default(0)
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  vendor_id      :bigint           not null
 #
 # Indexes
 #
-#  index_services_on_average_rating                (average_rating)
-#  index_services_on_status                        (status)
-#  index_services_on_vendor_profile_id             (vendor_profile_id)
-#  index_services_on_vendor_profile_id_and_status  (vendor_profile_id,status)
+#  index_services_on_average_rating        (average_rating)
+#  index_services_on_status                (status)
+#  index_services_on_vendor_id             (vendor_id)
+#  index_services_on_vendor_id_and_status  (vendor_id,status)
 #
 # Foreign Keys
 #
-#  fk_rails_...  (vendor_profile_id => vendor_profiles.id)
+#  fk_rails_...  (vendor_id => vendors.id)
 #
 class Service < ApplicationRecord
   # Associations
-  belongs_to :vendor_profile
+  belongs_to :vendor
+
   has_many :vendor_services, dependent: :destroy
-  has_many :vendor_profiles, through: :vendor_services
+  has_many :vendors, through: :vendor_services
   has_many :service_categories, dependent: :destroy
   has_many :categories, through: :service_categories
   has_many :bookings, dependent: :destroy
@@ -70,7 +71,7 @@ class Service < ApplicationRecord
   scope :draft, -> { where(status: :draft) }
   scope :archived, -> { where(status: :archived) }
   scope :by_category, ->(category) { joins(:categories).where(categories: { id: category }) }
-  scope :by_vendor, ->(vendor_profile) { where(vendor_profile: vendor_profile) }
+  scope :by_vendor, ->(vendor) { where(vendor: vendor) }
   scope :by_pricing_type, ->(pricing_type) { where(pricing_type: pricing_type) }
   scope :price_range, ->(min_price, max_price) { where(base_price: min_price..max_price) }
   scope :search_by_name, ->(query) { where('name ILIKE ?', "%#{query}%") if query.present? }
@@ -121,7 +122,7 @@ class Service < ApplicationRecord
   end
 
   def can_be_booked?
-    active? && vendor_profiles.any?
+    active? && (vendor.present? || vendors.any?)
   end
 
   delegate :count, to: :bookings, prefix: true
@@ -184,8 +185,8 @@ class Service < ApplicationRecord
 
   # Class methods
   def self.featured(limit = 6)
-    active.joins(:vendor_profiles)
-          .where(vendor_profiles: { verification_status: :verified })
+    active.joins(:vendor)
+          .where(vendors: { verification_status: :verified })
           .distinct
           .order(created_at: :desc)
           .limit(limit)

@@ -11,7 +11,7 @@ RSpec.describe 'GraphQL Search Integration' do
   let!(:user_chicago) { create(:user, email: 'vendor_chicago@example.com', role: :vendor) }
 
   let(:vendor_ny) do
-    user_ny.vendor_profile.tap do |profile|
+    user_ny.vendor.tap do |profile|
       profile.update!(
         business_name: 'NYC Photography',
         location: 'New York, NY',
@@ -24,7 +24,7 @@ RSpec.describe 'GraphQL Search Integration' do
   end
 
   let(:vendor_la) do
-    user_la.vendor_profile.tap do |profile|
+    user_la.vendor.tap do |profile|
       profile.update!(
         business_name: 'LA Video Productions',
         location: 'Los Angeles, CA',
@@ -37,7 +37,7 @@ RSpec.describe 'GraphQL Search Integration' do
   end
 
   let(:vendor_chicago) do
-    user_chicago.vendor_profile.tap do |profile|
+    user_chicago.vendor.tap do |profile|
       profile.update!(
         business_name: 'Chicago Events',
         location: 'Chicago, IL',
@@ -53,7 +53,7 @@ RSpec.describe 'GraphQL Search Integration' do
     create(:service,
            name: 'Wedding Photography Package',
            description: 'Professional wedding photography with full day coverage and professional editing',
-           vendor_profile: vendor_ny,
+           vendor: vendor_ny,
            service_category: photography_category,
            base_price: 2500,
            pricing_type: :package,
@@ -64,7 +64,7 @@ RSpec.describe 'GraphQL Search Integration' do
     create(:service,
            name: 'Corporate Video Production',
            description: 'High-quality corporate video production services with professional equipment',
-           vendor_profile: vendor_la,
+           vendor: vendor_la,
            service_category: videography_category,
            base_price: 3500,
            pricing_type: :custom,
@@ -75,7 +75,7 @@ RSpec.describe 'GraphQL Search Integration' do
     create(:service,
            name: 'Portrait Photography Session',
            description: 'Individual and family portrait photography sessions with professional lighting',
-           vendor_profile: vendor_chicago,
+           vendor: vendor_chicago,
            service_category: photography_category,
            base_price: 400,
            pricing_type: :hourly,
@@ -106,7 +106,7 @@ RSpec.describe 'GraphQL Search Integration' do
                   name
                   slug
                 }
-                vendorProfile {
+                vendor {
                   isVerified
                   hasCoordinates
                   coordinates
@@ -238,7 +238,7 @@ RSpec.describe 'GraphQL Search Integration' do
         expect(search_result['totalCount']).to eq(2)
 
         search_result['services'].each do |service|
-          expect(service.dig('vendorProfile', 'isVerified')).to be true
+          expect(service.dig('vendor', 'isVerified')).to be true
         end
       end
 
@@ -450,7 +450,7 @@ RSpec.describe 'GraphQL Search Integration' do
                 serviceCategory {
                   slug
                 }
-                vendorProfile {
+                vendor {
                   isVerified
                 }
               }
@@ -472,7 +472,7 @@ RSpec.describe 'GraphQL Search Integration' do
         expect(service['basePrice']).to be >= 300
         expect(service['basePrice']).to be <= 3000
         expect(service['vendorAverageRating']).to be >= 3.5
-        expect(service.dig('vendorProfile', 'isVerified')).to be true
+        expect(service.dig('vendor', 'isVerified')).to be true
       end
 
       it 'returns empty results gracefully' do
@@ -540,21 +540,21 @@ RSpec.describe 'GraphQL Search Integration' do
           query {
             searchServices {
               services {
-                vendorProfile {
+                vendor {
                   services {
-                    vendorProfile {
+                    vendor {
                       services {
-                        vendorProfile {
+                        vendor {
                           services {
-                            vendorProfile {
+                            vendor {
                               services {
-                                vendorProfile {
+                                vendor {
                                   services {
-                                    vendorProfile {
+                                    vendor {
                                       services {
-                                        vendorProfile {
+                                        vendor {
                                           services {
-                                            vendorProfile {
+                                            vendor {
                                               services {
                                                 id
                                               }

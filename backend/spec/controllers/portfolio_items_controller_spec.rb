@@ -5,17 +5,17 @@ require 'rails_helper'
 RSpec.describe PortfolioItemsController do
   let(:vendor_user) { create(:user, :vendor) }
   let(:customer_user) { create(:user, :customer) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:other_vendor_user) { create(:user, :vendor) }
-  let(:portfolio_item) { create(:portfolio_item, vendor_profile: vendor_profile) }
+  let(:portfolio_item) { create(:portfolio_item, vendor: vendor) }
 
   describe 'GET #index' do
     context 'when accessing vendor specific portfolio' do
       let(:wedding_item) do
-        create(:portfolio_item, vendor_profile: vendor_profile, category: 'weddings', is_featured: false)
+        create(:portfolio_item, vendor: vendor, category: 'weddings', is_featured: false)
       end
       let(:event_item) do
-        create(:portfolio_item, vendor_profile: vendor_profile, category: 'events', is_featured: false)
+        create(:portfolio_item, vendor: vendor, category: 'events', is_featured: false)
       end
 
       before do
@@ -24,7 +24,7 @@ RSpec.describe PortfolioItemsController do
       end
 
       it 'returns vendor portfolio items' do
-        get :index, params: { vendor_profile_id: vendor_profile.id }
+        get :index, params: { vendor_id: vendor.id }
 
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
@@ -33,7 +33,7 @@ RSpec.describe PortfolioItemsController do
       end
 
       it 'filters by category' do
-        get :index, params: { vendor_profile_id: vendor_profile.id, category: 'weddings' }
+        get :index, params: { vendor_id: vendor.id, category: 'weddings' }
 
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
@@ -42,9 +42,9 @@ RSpec.describe PortfolioItemsController do
       end
 
       it 'filters by featured items' do
-        create(:portfolio_item, vendor_profile: vendor_profile, is_featured: true)
+        create(:portfolio_item, vendor: vendor, is_featured: true)
 
-        get :index, params: { vendor_profile_id: vendor_profile.id, featured: 'true' }
+        get :index, params: { vendor_id: vendor.id, featured: 'true' }
 
         expect(response).to have_http_status(:ok)
         json_response = response.parsed_body
@@ -56,7 +56,7 @@ RSpec.describe PortfolioItemsController do
     context 'when accessing own portfolio as vendor' do
       before { sign_in vendor_user }
 
-      let!(:own_item) { create(:portfolio_item, vendor_profile: vendor_profile) }
+      let!(:own_item) { create(:portfolio_item, vendor: vendor) }
 
       it 'returns own portfolio items' do
         get :index
@@ -68,13 +68,13 @@ RSpec.describe PortfolioItemsController do
       end
     end
 
-    context 'when vendor profile does not exist' do
+    context 'when vendor does not exist' do
       it 'returns not found' do
-        get :index, params: { vendor_profile_id: 999_999 }
+        get :index, params: { vendor_id: 999_999 }
 
         expect(response).to have_http_status(:not_found)
         json_response = response.parsed_body
-        expect(json_response['errors']).to include('Vendor profile not found')
+        expect(json_response['errors']).to include('Vendor not found')
       end
     end
   end
@@ -207,7 +207,7 @@ RSpec.describe PortfolioItemsController do
       before { sign_in vendor_user }
 
       it 'deletes the portfolio item' do
-        item_to_delete = create(:portfolio_item, vendor_profile: vendor_profile)
+        item_to_delete = create(:portfolio_item, vendor: vendor)
 
         expect do
           delete :destroy, params: { id: item_to_delete.id }
@@ -258,7 +258,7 @@ RSpec.describe PortfolioItemsController do
     before { sign_in vendor_user }
 
     let(:portfolio_item_with_image) do
-      item = create(:portfolio_item, vendor_profile: vendor_profile)
+      item = create(:portfolio_item, vendor: vendor)
       item.images.attach(
         io: Rails.root.join('spec/fixtures/files/test_image.jpg').open,
         filename: 'test_image.jpg',
@@ -298,7 +298,7 @@ RSpec.describe PortfolioItemsController do
     before { sign_in vendor_user }
 
     it 'returns portfolio summary' do
-      create_list(:portfolio_item, 3, vendor_profile: vendor_profile)
+      create_list(:portfolio_item, 3, vendor: vendor)
 
       get :summary
 
@@ -312,10 +312,10 @@ RSpec.describe PortfolioItemsController do
     before { sign_in vendor_user }
 
     let!(:first_portfolio_item) do
-      create(:portfolio_item, vendor_profile: vendor_profile, category: 'weddings', display_order: 0)
+      create(:portfolio_item, vendor: vendor, category: 'weddings', display_order: 0)
     end
     let!(:second_portfolio_item) do
-      create(:portfolio_item, vendor_profile: vendor_profile, category: 'weddings', display_order: 1)
+      create(:portfolio_item, vendor: vendor, category: 'weddings', display_order: 1)
     end
 
     it 'reorders portfolio items' do
@@ -351,8 +351,8 @@ RSpec.describe PortfolioItemsController do
   describe 'PATCH #set_featured' do
     before { sign_in vendor_user }
 
-    let!(:unfeatured_item_one) { create(:portfolio_item, vendor_profile: vendor_profile, is_featured: false) }
-    let!(:unfeatured_item_two) { create(:portfolio_item, vendor_profile: vendor_profile, is_featured: false) }
+    let!(:unfeatured_item_one) { create(:portfolio_item, vendor: vendor, is_featured: false) }
+    let!(:unfeatured_item_two) { create(:portfolio_item, vendor: vendor, is_featured: false) }
 
     it 'sets items as featured' do
       patch :set_featured, params: {

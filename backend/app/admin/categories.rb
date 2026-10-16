@@ -53,7 +53,9 @@ ActiveAdmin.register Category do
         column :name do |s|
           link_to s.name, admin_service_path(s)
         end
-        column :vendor_profile
+        column :vendor do |s|
+          link_to s.vendor.business_name, admin_vendor_path(s.vendor) if s.vendor
+        end
         column :base_price do |s|
           number_to_currency(s.base_price, unit: '₹')
         end
@@ -77,11 +79,11 @@ ActiveAdmin.register Category do
 
   batch_action :activate do |ids|
     batch_action_collection.find(ids).each { |c| c.update(active: true) }
-    redirect_to collection_path, notice: 'Selected categories activated'
+    redirect_to collection_path, notice: I18n.t('admin.categories.batch_activated')
   end
 
   batch_action :deactivate do |ids|
     batch_action_collection.find(ids).each { |c| c.update(active: false) }
-    redirect_to collection_path, alert: 'Selected categories deactivated'
+    redirect_to collection_path, alert: I18n.t('admin.categories.batch_deactivated')
   end
 end

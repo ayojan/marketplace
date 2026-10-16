@@ -4,14 +4,14 @@ require 'rails_helper'
 
 RSpec.describe BookingReminderJob do
   let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor_profile) { vendor_user.vendor_profile }
+  let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor_profile: vendor_profile) }
+  let(:service) { create(:service, vendor: vendor) }
 
   # Create a booking happening in ~24 hours
   let(:booking) do
     create(:booking,
-           vendor_profile: vendor_profile,
+           vendor: vendor,
            customer: customer,
            service: service,
            status: :accepted,
@@ -47,7 +47,7 @@ RSpec.describe BookingReminderJob do
       let(:customer2) { create(:user, :customer) }
       let(:booking2) do
         create(:booking,
-               vendor_profile: vendor_profile,
+               vendor: vendor,
                customer: customer2,
                service: service,
                status: :accepted,
@@ -72,7 +72,7 @@ RSpec.describe BookingReminderJob do
         3.times do |_i|
           customer_temp = create(:user, :customer)
           create(:booking,
-                 vendor_profile: vendor_profile,
+                 vendor: vendor,
                  customer: customer_temp,
                  service: service,
                  status: :accepted,
@@ -126,7 +126,7 @@ RSpec.describe BookingReminderJob do
       it 'continues processing other bookings even if one fails' do
         customer2 = create(:user, :customer)
         create(:booking,
-               vendor_profile: vendor_profile,
+               vendor: vendor,
                customer: customer2,
                service: service,
                status: :accepted,
@@ -152,7 +152,7 @@ RSpec.describe BookingReminderJob do
     context 'with booking outside time window' do
       let(:far_future_booking) do
         create(:booking,
-               vendor_profile: vendor_profile,
+               vendor: vendor,
                customer: customer,
                service: service,
                status: :accepted,
@@ -174,7 +174,7 @@ RSpec.describe BookingReminderJob do
     context 'with cancelled booking' do
       let(:cancelled_booking) do
         create(:booking,
-               vendor_profile: vendor_profile,
+               vendor: vendor,
                customer: customer,
                service: service,
                status: :cancelled,

@@ -96,7 +96,7 @@ const Register = () => {
       first_name: string;
       last_name: string;
       role: 'customer' | 'vendor';
-      vendor_profile_attributes?: {
+      vendor_attributes?: {
         business_name: string;
         location?: string;
       };

@@ -7,7 +7,7 @@ module Reviews
     option :customer, type: Types.Instance(User)
     option :booking, type: Types.Instance(Booking)
     option :service, type: Types.Instance(Service)
-    option :vendor_profile, type: Types.Instance(VendorProfile)
+    option :vendor, type: Types.Instance(Vendor)
     option :rating, type: Types::Coercible::Integer
     option :quality_rating, type: Types::Coercible::Integer.optional, default: proc {}
     option :communication_rating, type: Types::Coercible::Integer.optional, default: proc {}
@@ -17,8 +17,8 @@ module Reviews
     option :photos, type: Types::Array, default: proc { [] }
     option :status, type: Types::String, default: proc { 'published' }
 
-    def self.call(**)
-      new(**).call
+    def self.call(**params)
+      new(**params).call
     rescue Dry::Types::ConstraintError, Dry::Types::CoercionError, ArgumentError => e
       { success: false, error: e.message }
     end
@@ -51,7 +51,7 @@ module Reviews
         customer: customer,
         booking: booking,
         service: service,
-        vendor_profile: vendor_profile,
+        vendor: vendor,
         rating: rating,
         quality_rating: quality_rating,
         communication_rating: communication_rating,
@@ -74,8 +74,8 @@ module Reviews
     end
 
     def update_rating_statistics(_review)
-      # Update vendor profile rating stats
-      vendor_profile.update_rating_stats!
+      # Update vendor rating stats
+      vendor.update_rating_stats!
 
       # Update service rating stats if service exists
       service.update_rating_stats!

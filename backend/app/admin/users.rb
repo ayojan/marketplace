@@ -63,15 +63,15 @@ ActiveAdmin.register User do
     end
 
     panel 'Profile Details' do
-      if user.vendor? && user.vendor_profile
-        attributes_table_for user.vendor_profile do
+      if user.vendor? && user.vendor
+        attributes_table_for user.vendor do
           row :business_name
-          row :verification_status do |vp|
-            status_tag vp.verification_status
+          row :verification_status do |v|
+            status_tag v.verification_status
           end
         end
-      elsif user.customer? && user.customer_profile
-        attributes_table_for user.customer_profile do
+      elsif user.customer? && user.customer
+        attributes_table_for user.customer do
           row :location
           row :phone
         end

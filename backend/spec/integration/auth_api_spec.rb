@@ -86,19 +86,19 @@ RSpec.describe 'Authentication API' do
             first_name: 'Test',
             last_name: 'Vendor',
             role: 'vendor',
-            vendor_profile_attributes: {
+            vendor_attributes: {
               business_name: 'Jashnify',
               location: 'Delhi NCR',
               description: 'Event Planning & Coordination'
             }
           }
         }, as: :json
-      end.to change(User, :count).by(1).and change(VendorProfile, :count).by(1)
+      end.to change(User, :count).by(1).and change(Vendor, :count).by(1)
 
       expect(response).to have_http_status(:created)
       user = User.find_by(email: 'vendor_jashnify@example.com')
-      expect(user.vendor_profile.slug).to eq('jashnify')
-      expect(user.vendor_profile.description.length).to be >= 50
+      expect(user.vendor.slug).to eq('jashnify')
+      expect(user.vendor.description.length).to be >= 50
     end
 
     it 'maps the selected registration category to the database Category and creates a starter service' do
@@ -113,7 +113,7 @@ RSpec.describe 'Authentication API' do
             first_name: 'Planner',
             last_name: 'Vendor',
             role: 'vendor',
-            vendor_profile_attributes: {
+            vendor_attributes: {
               business_name: 'Delhi Event Planners',
               location: 'Delhi NCR',
               category: 'Event Planning & Coordination'
@@ -124,8 +124,8 @@ RSpec.describe 'Authentication API' do
 
       expect(response).to have_http_status(:created)
       user = User.find_by(email: 'vendor_planner@example.com')
-      expect(user.vendor_profile.slug).to eq('delhi-event-planners')
-      expect(user.vendor_profile.service_categories_list).to include('Event Management')
+      expect(user.vendor.slug).to eq('delhi-event-planners')
+      expect(user.vendor.service_categories_list).to include('Event Management')
     end
 
     it 'rejects registration with invalid data' do
