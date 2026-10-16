@@ -1,4 +1,11 @@
 #!/usr/bin/env ruby
-APP_PATH = File.expand_path("../config/application", __dir__)
-require_relative "../config/boot"
-require "rails/commands"
+# frozen_string_literal: true
+
+if RUBY_PLATFORM.include?('darwin') && ENV['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] != 'YES'
+  ENV['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+  exec(ENV, $PROGRAM_NAME, *ARGV)
+end
+
+APP_PATH = File.expand_path('../config/application', __dir__)
+require_relative '../config/boot'
+require 'rails/commands'

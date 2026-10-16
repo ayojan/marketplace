@@ -13,5 +13,7 @@ class WelcomeNotificationJob < ApplicationJob
 
     JobIdempotencyCache.mark_processed(idempotency_key)
     Rails.logger.info "Welcome notification sent to user #{user_id} (#{user.email})"
+  rescue Errno::ECONNREFUSED => e
+    Rails.logger.warn "Welcome notification skipped (SMTP offline): #{e.message}"
   end
 end
