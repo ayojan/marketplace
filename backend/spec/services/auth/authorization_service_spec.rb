@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Users::AuthorizationService do
+RSpec.describe Auth::AuthorizationService do
   let(:vendor_user) { create(:user, :vendor) }
   let(:vendor) { vendor_user.vendor }
   let(:customer) { create(:user, :customer) }
@@ -19,7 +19,7 @@ RSpec.describe Users::AuthorizationService do
       it 'raises NotAuthenticatedError' do
         expect do
           described_class.authorize!(nil, vendor, :toggle_favorite)
-        end.to raise_error(Users::AuthorizationService::NotAuthenticatedError, /not authenticated/)
+        end.to raise_error(Auth::AuthorizationService::NotAuthenticatedError, /not authenticated/)
       end
     end
 
@@ -27,7 +27,7 @@ RSpec.describe Users::AuthorizationService do
       it 'raises NotAuthorizedError' do
         expect do
           described_class.authorize!(vendor_user, vendor, :toggle_favorite)
-        end.to raise_error(Users::AuthorizationService::NotAuthorizedError, /not authorized/)
+        end.to raise_error(Auth::AuthorizationService::NotAuthorizedError, /not authorized/)
       end
     end
 
@@ -35,7 +35,7 @@ RSpec.describe Users::AuthorizationService do
       it 'checks the correct action on the policy' do
         expect do
           described_class.authorize!(other_user, vendor, :update)
-        end.to raise_error(Users::AuthorizationService::NotAuthorizedError)
+        end.to raise_error(Auth::AuthorizationService::NotAuthorizedError)
 
         expect(described_class.authorize!(vendor_user, vendor, :update)).to be true
       end

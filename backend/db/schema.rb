@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_16_171500) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -153,22 +153,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_16_171500) do
     t.index ["user_id", "vendor_id"], name: "index_customer_favorites_on_user_id_and_vendor_id", unique: true
     t.index ["user_id"], name: "index_customer_favorites_on_user_id"
     t.index ["vendor_id"], name: "index_customer_favorites_on_vendor_id"
-  end
-
-  create_table "customers", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.string "phone"
-    t.text "preferences"
-    t.text "event_types"
-    t.string "budget_range"
-    t.string "location"
-    t.string "company_name"
-    t.integer "total_bookings", default: 0
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["budget_range"], name: "index_customers_on_budget_range"
-    t.index ["location"], name: "index_customers_on_location"
-    t.index ["user_id"], name: "index_customers_on_user_id", unique: true
   end
 
   create_table "email_notification_preferences", force: :cascade do |t|
@@ -465,10 +449,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_16_171500) do
     t.string "role", default: "customer", null: false
     t.string "first_name"
     t.string "last_name"
+    t.string "phone"
+    t.text "preferences"
+    t.text "event_types"
+    t.string "budget_range"
+    t.string "location"
+    t.string "company_name"
+    t.integer "total_bookings", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["budget_range"], name: "index_users_on_budget_range"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["location"], name: "index_users_on_location"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -531,7 +524,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_16_171500) do
   add_foreign_key "checklist_items", "users"
   add_foreign_key "customer_favorites", "users"
   add_foreign_key "customer_favorites", "vendors"
-  add_foreign_key "customers", "users"
   add_foreign_key "email_notification_preferences", "users"
   add_foreign_key "in_app_notifications", "users"
   add_foreign_key "portfolio_items", "vendors"

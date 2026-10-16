@@ -5,25 +5,34 @@
 # Table name: users
 #
 #  id                     :bigint           not null, primary key
+#  budget_range           :string
+#  company_name           :string
 #  confirmation_sent_at   :datetime
 #  confirmation_token     :string
 #  confirmed_at           :datetime
 #  email                  :string           default(""), not null
 #  encrypted_password     :string           default(""), not null
+#  event_types            :text
 #  first_name             :string
 #  last_name              :string
+#  location               :string
+#  phone                  :string
+#  preferences            :text
 #  remember_created_at    :datetime
 #  reset_password_sent_at :datetime
 #  reset_password_token   :string
 #  role                   :string           default("customer"), not null
+#  total_bookings         :integer          default(0)
 #  unconfirmed_email      :string
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #
 # Indexes
 #
+#  index_users_on_budget_range          (budget_range)
 #  index_users_on_confirmation_token    (confirmation_token) UNIQUE
 #  index_users_on_email                 (email) UNIQUE
+#  index_users_on_location              (location)
 #  index_users_on_reset_password_token  (reset_password_token) UNIQUE
 #
 require 'rails_helper'
@@ -70,7 +79,6 @@ RSpec.describe User do
     subject(:user_model) { create(:user) }
 
     it { is_expected.to have_one(:vendor).dependent(:destroy) }
-    it { is_expected.to have_one(:customer).dependent(:destroy) }
 
     it 'has many customer bookings' do
       expect(user_model).to have_many(:customer_bookings)
@@ -100,8 +108,8 @@ RSpec.describe User do
       context 'when role is customer' do
         let(:customer_user) { build(:user, :customer) }
 
-        it 'creates a customer' do
-          expect { customer_user.save }.to change(Customer, :count).by(1)
+        it 'does not create a separate profile record' do
+          expect { customer_user.save }.not_to change(Vendor, :count)
         end
       end
 
@@ -109,7 +117,7 @@ RSpec.describe User do
         let(:admin_user) { build(:user, :admin) }
 
         it 'does not create any profile' do
-          expect { admin_user.save }.not_to(change { [Vendor.count, Customer.count] })
+          expect { admin_user.save }.not_to change(Vendor, :count)
         end
       end
     end
@@ -245,15 +253,62 @@ RSpec.describe User do
   describe 'ransackable attributes' do
     it 'allows searching by specific attributes' do
       expect(described_class.ransackable_attributes).to contain_exactly(
-        'id', 'email', 'first_name', 'last_name', 'role', 'confirmed_at', 'created_at', 'updated_at'
+        'id', 'email', 'first_name', 'last_name', 'role', 'phone', 'location',
+        'budget_range', 'company_name', 'total_bookings', 'confirmed_at', 'created_at', 'updated_at'
       )
     end
   end
 
   describe 'ransackable associations' do
     it 'allows searching by specific associations' do
-      associations = %w[vendor customer customer_bookings vendor_bookings booking_messages]
+      associations = %w[vendor customer_bookings vendor_bookings booking_messages]
       expect(described_class.ransackable_associations).to match_array(associations)
+    end
+  end
+
+  describe 'customer methods' do
+    let(:user) do
+      create(:user, :customer,
+             location: 'Mumbai',
+             event_types: 'Wedding, Birthday',
+             total_bookings: 5,
+             budget_range: 'between_1000_2500')
+    end
+
+    it 'returns self for #customer when role is customer' do
+      expect(user.customer).to eq(user)
+    end
+
+    it 'returns nil for #customer when role is vendor' do
+      vendor_user = create(:user, :vendor)
+      expect(vendor_user.customer).to be_nil
+    end
+
+    it 'parses event_types_list correctly' do
+      expect(user.event_types_list).to eq(%w[Wedding Birthday])
+    end
+
+    it 'sets event_types_list from array' do
+      user.event_types_list = %w[Anniversary Corporate]
+      expect(user.event_types).to eq('Anniversary, Corporate')
+    end
+
+    it 'returns budget_range_display' do
+      expect(user.budget_range_display).to eq('₹1,00,000 - ₹2,50,000')
+    end
+
+    it 'identifies profile completeness' do
+      expect(user.profile_complete?).to be true
+      user.location = nil
+      expect(user.profile_complete?).to be false
+    end
+
+    it 'identifies frequent customers' do
+      expect(user.frequent_customer?).to be true
+    end
+
+    it 'returns customer_tier' do
+      expect(user.customer_tier).to eq('Valued Customer')
     end
   end
 

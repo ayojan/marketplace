@@ -286,7 +286,7 @@ RSpec.describe ServicesController do
   describe 'POST #create' do
     context 'when authenticated as vendor' do
       before do
-        token = Users::JwtService.encode(user_id: vendor_user.id)
+        token = Auth::JwtService.encode(user_id: vendor_user.id)
         request.headers['Authorization'] = "Bearer #{token}"
       end
 
@@ -340,7 +340,7 @@ RSpec.describe ServicesController do
 
     context 'when authenticated as customer' do
       before do
-        token = Users::JwtService.encode(user_id: customer_user.id)
+        token = Auth::JwtService.encode(user_id: customer_user.id)
         request.headers['Authorization'] = "Bearer #{token}"
       end
 
@@ -365,7 +365,7 @@ RSpec.describe ServicesController do
   describe 'PUT #update' do
     context 'when authenticated as vendor' do
       before do
-        token = Users::JwtService.encode(user_id: vendor_user.id)
+        token = Auth::JwtService.encode(user_id: vendor_user.id)
         request.headers['Authorization'] = "Bearer #{token}"
       end
 
@@ -420,7 +420,7 @@ RSpec.describe ServicesController do
       let(:other_vendor) { create(:user, :vendor) }
 
       before do
-        token = Users::JwtService.encode(user_id: other_vendor.id)
+        token = Auth::JwtService.encode(user_id: other_vendor.id)
         request.headers['Authorization'] = "Bearer #{token}"
       end
 
@@ -435,7 +435,7 @@ RSpec.describe ServicesController do
   describe 'DELETE #destroy' do
     context 'when authenticated as vendor' do
       before do
-        token = Users::JwtService.encode(user_id: vendor_user.id)
+        token = Auth::JwtService.encode(user_id: vendor_user.id)
         request.headers['Authorization'] = "Bearer #{token}"
       end
 
@@ -462,7 +462,7 @@ RSpec.describe ServicesController do
       let(:other_vendor) { create(:user, :vendor) }
 
       before do
-        token = Users::JwtService.encode(user_id: other_vendor.id)
+        token = Auth::JwtService.encode(user_id: other_vendor.id)
         request.headers['Authorization'] = "Bearer #{token}"
       end
 

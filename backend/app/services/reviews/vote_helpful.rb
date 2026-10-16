@@ -20,7 +20,7 @@ module Reviews
 
       review.reload
       { success: true, helpful_votes: review.helpful_votes }
-    rescue Users::AuthorizationService::NotAuthorizedError => e
+    rescue Auth::AuthorizationService::NotAuthorizedError => e
       { success: false, error: e.message }
     rescue ActiveRecord::RecordNotUnique
       # Vote already exists - this is idempotent, so return success
@@ -34,7 +34,7 @@ module Reviews
     private
 
     def authorize_vote!
-      Users::AuthorizationService.authorize!(voter, review, :vote_helpful)
+      Auth::AuthorizationService.authorize!(voter, review, :vote_helpful)
     end
 
     def create_or_find_vote

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Users
+module Auth
   class JwtService
     ALGORITHM = 'HS256'
 

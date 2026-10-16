@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Users
+module Auth
   class AuthorizationService
     def self.authorize!(user, record, action)
       new(user, record, action).authorize!

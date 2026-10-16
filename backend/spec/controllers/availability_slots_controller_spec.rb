@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe AvailabilitySlotsController do
   def auth_as(user)
-    token = Users::JwtService.encode(user_id: user.id)
+    token = Auth::JwtService.encode(user_id: user.id)
     request.headers['Authorization'] = "Bearer #{token}"
   end
 
@@ -127,6 +127,64 @@ RSpec.describe AvailabilitySlotsController do
     end
   end
 
+  describe 'POST #bulk_create' do
+    let(:vendor_user) { create(:user, :vendor) }
+    let(:valid_slots) do
+      [
+        {
+          date: 2.weeks.from_now.to_date,
+          start_time: '09:00',
+          end_time: '12:00',
+          is_available: true
+        },
+        {
+          date: 2.weeks.from_now.to_date + 1.day,
+          start_time: '13:00',
+          end_time: '17:00',
+          is_available: true
+        }
+      ]
+    end
+
+    it 'creates multiple slots and returns created status' do
+      auth_as(vendor_user)
+      expect do
+        post :bulk_create, params: { availability_slots: valid_slots }
+      end.to change(AvailabilitySlot, :count).by(2)
+      expect(response).to have_http_status(:created)
+      expect(parsed_response['availability_slots'].size).to eq(2)
+      expect(parsed_response['message']).to eq('2 slots created successfully')
+    end
+
+    context 'with partial failure' do
+      let(:mixed_slots) do
+        [
+          {
+            date: 2.weeks.from_now.to_date,
+            start_time: '09:00',
+            end_time: '12:00',
+            is_available: true
+          },
+          {
+            date: nil,
+            start_time: '13:00',
+            end_time: '11:00'
+          }
+        ]
+      end
+
+      it 'returns partial content status with created and error lists' do
+        auth_as(vendor_user)
+        expect do
+          post :bulk_create, params: { availability_slots: mixed_slots }
+        end.to change(AvailabilitySlot, :count).by(1)
+        expect(response).to have_http_status(:partial_content)
+        expect(parsed_response['created_slots'].size).to eq(1)
+        expect(parsed_response['errors'].size).to eq(1)
+      end
+    end
+  end
+
   describe 'PUT #update' do
     let(:vendor_user) { create(:user, :vendor) }
     let(:availability_slot) { create(:availability_slot, vendor: vendor_user.vendor) }
@@ -170,6 +228,49 @@ RSpec.describe AvailabilitySlotsController do
         expect { delete_slot(slot_to_delete) }.not_to(change(AvailabilitySlot, :count))
         expect(response).to have_http_status(:unprocessable_content)
         expect(parsed_response['error']).to eq('Cannot delete availability slot with existing bookings')
+      end
+    end
+  end
+
+  describe 'GET #check_conflicts' do
+    let(:vendor_user) { create(:user, :vendor) }
+    let(:future_date) { 2.weeks.from_now.to_date }
+
+    context 'with missing parameters' do
+      it 'returns bad request' do
+        auth_as(vendor_user)
+        get :check_conflicts, params: { date: future_date }
+        expect(response).to have_http_status(:bad_request)
+        expect(parsed_response['error']).to eq('Missing required parameters')
+      end
+    end
+
+    context 'when no conflicts exist' do
+      it 'returns has_conflicts false' do
+        auth_as(vendor_user)
+        get :check_conflicts, params: { date: future_date, start_time: '09:00', end_time: '12:00' }
+        expect(response).to have_http_status(:ok)
+        expect(parsed_response['has_conflicts']).to be false
+        expect(parsed_response['overlapping_slots']).to be_empty
+      end
+    end
+
+    context 'when overlapping slots exist' do
+      let!(:existing_slot) do
+        create(:availability_slot,
+               vendor: vendor_user.vendor,
+               date: future_date,
+               start_time: '09:00',
+               end_time: '12:00')
+      end
+
+      it 'returns has_conflicts true and lists overlapping slot' do
+        auth_as(vendor_user)
+        get :check_conflicts, params: { date: future_date, start_time: '10:00', end_time: '14:00' }
+        expect(response).to have_http_status(:ok)
+        expect(parsed_response['has_conflicts']).to be true
+        expect(parsed_response['overlapping_slots'].size).to eq(1)
+        expect(parsed_response['overlapping_slots'].first['id']).to eq(existing_slot.id)
       end
     end
   end

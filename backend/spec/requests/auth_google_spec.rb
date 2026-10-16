@@ -22,12 +22,12 @@ RSpec.describe 'POST /auth/google' do
   end
 
   before do
-    allow(Users::GoogleTokenVerifier).to receive(:expected_client_id).and_return(valid_client_id)
-    Users::GoogleTokenVerifier.mock_verifier = ->(_token, _aud) { google_payload }
+    allow(Auth::GoogleTokenVerifier).to receive(:expected_client_id).and_return(valid_client_id)
+    Auth::GoogleTokenVerifier.mock_verifier = ->(_token, _aud) { google_payload }
   end
 
   after do
-    Users::GoogleTokenVerifier.mock_verifier = nil
+    Auth::GoogleTokenVerifier.mock_verifier = nil
   end
 
   describe 'first-time user registration' do
@@ -58,7 +58,7 @@ RSpec.describe 'POST /auth/google' do
 
     it 'creates a vendor user when role is vendor' do
       vendor_payload = google_payload.merge('email' => 'vendor.studio@example.com', 'sub' => 'sub-vendor-99')
-      Users::GoogleTokenVerifier.mock_verifier = ->(_token, _aud) { vendor_payload }
+      Auth::GoogleTokenVerifier.mock_verifier = ->(_token, _aud) { vendor_payload }
 
       expect do
         post '/auth/google', params: {
@@ -193,8 +193,8 @@ RSpec.describe 'POST /auth/google' do
     end
 
     it 'returns unauthorized when token verification fails' do
-      Users::GoogleTokenVerifier.mock_verifier = lambda { |_token, _aud|
-        raise Users::GoogleTokenVerifier::VerificationError, 'Invalid Google ID token: signature mismatch'
+      Auth::GoogleTokenVerifier.mock_verifier = lambda { |_token, _aud|
+        raise Auth::GoogleTokenVerifier::VerificationError, 'Invalid Google ID token: signature mismatch'
       }
 
       post '/auth/google', params: { id_token: 'bad-token' }

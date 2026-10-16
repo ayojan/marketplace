@@ -36,12 +36,12 @@ RSpec.describe 'Sidekiq Queue Assignments' do
 
     describe 'Default Queue (Standard Priority)' do
       it 'NotificationJob is assigned to default queue' do
-        expect(NotificationJob.new.sidekiq_options['queue']).to eq('default')
+        expect(NotificationJob.new.queue_name).to eq('default')
       end
 
       it 'allows quick notification processing' do
         job = NotificationJob.new
-        expect(job.sidekiq_options['queue']).to eq('default')
+        expect(job.queue_name).to eq('default')
       end
     end
 
@@ -55,15 +55,13 @@ RSpec.describe 'Sidekiq Queue Assignments' do
       end
 
       it 'ImageProcessingJob is assigned to low queue' do
-        expect(ImageProcessingJob.new.sidekiq_options['queue']).to eq('low')
+        expect(ImageProcessingJob.new.queue_name).to eq('low')
       end
 
       it 'background jobs can wait without blocking critical operations' do
-        low_jobs = [BookingReminderJob, RecalculateVendorTrustStatsJob, ImageProcessingJob]
-        low_jobs.each do |job_class|
-          job = job_class.new
-          expect(job.sidekiq_options['queue']).to eq('low')
-        end
+        expect(BookingReminderJob.new.sidekiq_options['queue']).to eq('low')
+        expect(RecalculateVendorTrustStatsJob.new.sidekiq_options['queue']).to eq('low')
+        expect(ImageProcessingJob.new.queue_name).to eq('low')
       end
     end
   end

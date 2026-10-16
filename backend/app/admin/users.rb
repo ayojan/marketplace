@@ -2,7 +2,8 @@
 
 ActiveAdmin.register User do
   menu priority: 2
-  permit_params :email, :password, :password_confirmation, :first_name, :last_name, :role, :confirmed_at
+  permit_params :email, :password, :password_confirmation, :first_name, :last_name, :role,
+                :confirmed_at, :phone, :location, :company_name, :budget_range
 
   # Use local methods to keep the block length under control
   controller do
@@ -15,6 +16,8 @@ ActiveAdmin.register User do
       table.column :role do |user|
         table.status_tag user.role
       end
+      table.column :phone
+      table.column :location
       table.column :confirmed_at
       table.column :created_at
       table.actions defaults: true do |user|
@@ -31,6 +34,9 @@ ActiveAdmin.register User do
   filter :first_name
   filter :last_name
   filter :role, as: :select, collection: User.roles
+  filter :phone
+  filter :location
+  filter :company_name
   filter :confirmed_at
   filter :created_at
 
@@ -40,6 +46,10 @@ ActiveAdmin.register User do
       f.input :first_name
       f.input :last_name
       f.input :role, as: :select, collection: User.roles.keys
+      f.input :phone
+      f.input :location
+      f.input :company_name
+      f.input :budget_range, as: :select, collection: User.budget_ranges.keys
       if f.object.new_record?
         f.input :password
         f.input :password_confirmation
@@ -57,6 +67,11 @@ ActiveAdmin.register User do
       row :role do |user|
         status_tag user.role
       end
+      row :phone
+      row :location
+      row :company_name
+      row :budget_range
+      row :total_bookings
       row :confirmed_at
       row :created_at
       row :updated_at
@@ -70,13 +85,8 @@ ActiveAdmin.register User do
             status_tag v.verification_status
           end
         end
-      elsif user.customer? && user.customer
-        attributes_table_for user.customer do
-          row :location
-          row :phone
-        end
       else
-        'No profile created yet'
+        'Standard User Account'
       end
     end
   end

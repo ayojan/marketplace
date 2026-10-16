@@ -23,7 +23,7 @@ module Reviews
       end
 
       { success: true, review: review }
-    rescue Users::AuthorizationService::NotAuthorizedError, ActiveRecord::RecordInvalid => e
+    rescue Auth::AuthorizationService::NotAuthorizedError, ActiveRecord::RecordInvalid => e
       { success: false, error: e.message }
     rescue StandardError => e
       # Unexpected error - log and return generic message
@@ -34,7 +34,7 @@ module Reviews
     private
 
     def authorize_vendor!
-      Users::AuthorizationService.authorize!(vendor, review, :respond)
+      Auth::AuthorizationService.authorize!(vendor, review, :respond)
     end
   end
 end

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
 # == Schema Information
 #
 # Table name: services
@@ -29,208 +28,24 @@
 #  fk_rails_...  (vendor_id => vendors.id)
 #
 class Service < ApplicationRecord
-  # Associations
+  # ── Concerns ──────────────────────────────────────────────────────────────────
+  include Service::Pricing     # pricing_type enum, price validations, formatted price & price scopes
+  include Service::Media       # service_images, active storage images, primary image helpers
+  include Service::RatingStats # average_rating, total_reviews, update_rating_stats!, rating_distribution
+  include Service::Bookable    # status enum, status predicates & scopes, can_be_booked?
+  include Service::Searchable  # category & text search scopes, featured, filter_by_category
+
+  # ── Associations ──────────────────────────────────────────────────────────────
   belongs_to :vendor
 
-  has_many :vendor_services, dependent: :destroy
-  has_many :vendors, through: :vendor_services
+  has_many :vendor_services,    dependent: :destroy
+  has_many :vendors,            through: :vendor_services
   has_many :service_categories, dependent: :destroy
-  has_many :categories, through: :service_categories
-  has_many :bookings, dependent: :destroy
-  has_many :service_images, dependent: :destroy
-  has_many :reviews, dependent: :destroy
-  has_many_attached :images
+  has_many :categories,         through: :service_categories
+  has_many :bookings,           dependent: :destroy
+  has_many :reviews,            dependent: :destroy
 
-  # Enums
-  enum :pricing_type, {
-    hourly: 'hourly',
-    package: 'package',
-    custom: 'custom'
-  }
-
-  enum :status, {
-    draft: 'draft',
-    active: 'active',
-    inactive: 'inactive',
-    archived: 'archived'
-  }
-
-  # Validations
-  validates :name, presence: true, length: { minimum: 3, maximum: 100 }
+  # ── Validations ───────────────────────────────────────────────────────────────
+  validates :name,        presence: true, length: { minimum: 3, maximum: 100 }
   validates :description, presence: true, length: { minimum: 50, maximum: 2000 }
-  validates :base_price, numericality: { greater_than: 0, less_than: 1_000_000 }, allow_nil: true
-  validates :pricing_type, presence: true
-  validates :status, presence: true
-
-  # Custom validations
-  validate :base_price_required_for_non_custom_pricing
-
-  # Scopes
-  scope :active, -> { where(status: :active) }
-  scope :inactive, -> { where(status: :inactive) }
-  scope :draft, -> { where(status: :draft) }
-  scope :archived, -> { where(status: :archived) }
-  scope :by_category, ->(category) { joins(:categories).where(categories: { id: category }) }
-  scope :by_vendor, ->(vendor) { where(vendor: vendor) }
-  scope :by_pricing_type, ->(pricing_type) { where(pricing_type: pricing_type) }
-  scope :price_range, ->(min_price, max_price) { where(base_price: min_price..max_price) }
-  scope :search_by_name, ->(query) { where('name ILIKE ?', "%#{query}%") if query.present? }
-  scope :search_by_description, ->(query) { where('description ILIKE ?', "%#{query}%") if query.present? }
-  scope :ordered_by_name, -> { order(:name) }
-  scope :ordered_by_price, -> { order(:base_price) }
-  scope :ordered_by_created, -> { order(created_at: :desc) }
-
-  # Convenience accessor for category (through join table)
-  def service_category
-    categories.first
-  end
-
-  # Instance methods
-  def active?
-    status == 'active'
-  end
-
-  def draft?
-    status == 'draft'
-  end
-
-  def inactive?
-    status == 'inactive'
-  end
-
-  def archived?
-    status == 'archived'
-  end
-
-  def hourly_pricing?
-    pricing_type == 'hourly'
-  end
-
-  def package_pricing?
-    pricing_type == 'package'
-  end
-
-  def custom_pricing?
-    pricing_type == 'custom'
-  end
-
-  def formatted_base_price
-    return 'Custom Quote' if custom_pricing?
-    return "#{base_price.to_f}/hour" if hourly_pricing?
-
-    base_price.to_f.to_s
-  end
-
-  def can_be_booked?
-    active? && (vendor.present? || vendors.any?)
-  end
-
-  delegate :count, to: :bookings, prefix: true
-
-  def images?
-    images.attached? || service_images.any?
-  end
-
-  def primary_image
-    service_images.primary.first&.image || images.first
-  end
-
-  def primary_service_image
-    service_images.primary.first
-  end
-
-  def ordered_service_images
-    service_images.ordered
-  end
-
-  delegate :count, to: :service_images, prefix: true
-
-  def display_name
-    name
-  end
-
-  def short_description(limit = 100)
-    return description if description.length <= limit
-
-    "#{description.truncate(limit)}..."
-  end
-
-  def update_rating_stats!
-    stats = reviews.published.pick('COUNT(id)', 'AVG(rating)')
-    count = stats[0].to_i
-    avg = stats[1].to_f.round(2)
-
-    # rubocop:disable Rails/SkipsModelValidations
-    update_columns(average_rating: avg, total_reviews: count)
-    # rubocop:enable Rails/SkipsModelValidations
-  end
-
-  def rating_distribution
-    stats = reviews.published.pick(
-      Arel.sql('COUNT(CASE WHEN rating = 5 THEN 1 END)'),
-      Arel.sql('COUNT(CASE WHEN rating = 4 THEN 1 END)'),
-      Arel.sql('COUNT(CASE WHEN rating = 3 THEN 1 END)'),
-      Arel.sql('COUNT(CASE WHEN rating = 2 THEN 1 END)'),
-      Arel.sql('COUNT(CASE WHEN rating = 1 THEN 1 END)')
-    )&.map(&:to_i) || [0, 0, 0, 0, 0]
-
-    {
-      5 => stats[0],
-      4 => stats[1],
-      3 => stats[2],
-      2 => stats[3],
-      1 => stats[4]
-    }
-  end
-
-  # Class methods
-  def self.featured(limit = 6)
-    active.joins(:vendor)
-          .where(vendors: { verification_status: :verified })
-          .distinct
-          .order(created_at: :desc)
-          .limit(limit)
-  end
-
-  def self.search(query)
-    return all if query.blank?
-
-    where(
-      'services.name ILIKE ? OR services.description ILIKE ?',
-      "%#{query}%", "%#{query}%"
-    )
-  end
-
-  def self.filter_by_category(category_id)
-    return all if category_id.blank?
-
-    joins(:categories).where(categories: { id: category_id })
-  end
-
-  def self.filter_by_price_range(min_price, max_price)
-    return all if min_price.blank? && max_price.blank?
-
-    scope = all
-    scope = scope.where(base_price: min_price..) if min_price.present?
-    scope = scope.where(base_price: ..max_price) if max_price.present?
-    scope
-  end
-
-  def self.available_pricing_types
-    pricing_types.keys.map { |key| [key.humanize, key] }
-  end
-
-  def self.available_statuses
-    statuses.keys.map { |key| [key.humanize, key] }
-  end
-
-  private
-
-  def base_price_required_for_non_custom_pricing
-    return if custom_pricing?
-    return if base_price.present? && base_price.positive?
-
-    errors.add(:base_price, 'must be present and greater than 0 for non-custom pricing')
-  end
 end
-# rubocop:enable Metrics/ClassLength

@@ -69,8 +69,8 @@ RSpec.describe Customers::ToggleFavorite do
       let(:unauthorized_user) { create(:user, :vendor) }
 
       before do
-        allow(Users::AuthorizationService).to receive(:authorize!)
-          .and_raise(Users::AuthorizationService::NotAuthorizedError, 'Not authorized to favorite this vendor')
+        allow(Auth::AuthorizationService).to receive(:authorize!)
+          .and_raise(Auth::AuthorizationService::NotAuthorizedError, 'Not authorized to favorite this vendor')
       end
 
       it 'returns failure with authorization error message' do

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
 class ServicesController < ApiController
   before_action :authenticate_user!, except: %i[index show search]
   before_action :set_service, only: %i[update destroy]
@@ -8,19 +7,10 @@ class ServicesController < ApiController
   before_action :ensure_service_owner, only: %i[update destroy]
 
   def index
-    search_params = {
-      vendor_id: params[:vendor_id],
-      category_id: params[:category_id],
-      page: params[:page] || 1,
-      per_page: params[:per_page] || 20,
-      sort_by: params[:sort_by] || 'created_at',
-      sort_direction: params[:sort_direction] || 'desc'
-    }
-
-    result = ServiceSearchService.call(search_params)
+    result = Services::SearchService.call(index_search_params)
 
     render json: {
-      services: result[:services].map { |service| service_response(service) },
+      services: result[:services].map { |service| present_service(service) },
       pagination: result[:pagination],
       filters: result[:filters]
     }
@@ -34,30 +24,14 @@ class ServicesController < ApiController
       vendor: { portfolio_items: { images_attachments: :blob } }
     ).find(params[:id])
 
-    render json: service_response(@service, include_details: true)
+    render json: present_service(@service, include_details: true)
   end
 
-  # rubocop:disable Metrics/AbcSize
   def search
-    # rubocop:enable Metrics/AbcSize
-    search_params = {
-      query: params[:q] || params[:query],
-      location: params[:location],
-      category_id: params[:category_id],
-      min_price: params[:min_price],
-      max_price: params[:max_price],
-      pricing_type: params[:pricing_type],
-      vendor_id: params[:vendor_id],
-      page: params[:page] || 1,
-      per_page: params[:per_page] || 20,
-      sort_by: params[:sort_by] || 'created_at',
-      sort_direction: params[:sort_direction] || 'desc'
-    }
-
-    result = ServiceSearchService.call(search_params)
+    result = Services::SearchService.call(search_params)
 
     render json: {
-      services: result[:services].map { |service| service_response(service) },
+      services: result[:services].map { |service| present_service(service) },
       pagination: result[:pagination],
       filters: result[:filters],
       total_count: result[:total_count]
@@ -65,47 +39,33 @@ class ServicesController < ApiController
   end
 
   def create
-    ensure_current_vendor
+    result = Services::CreateService.call(user: current_user, params: params)
 
-    @service = Service.new(service_params)
-    @service.vendor = current_user.vendor
-
-    if @service.save
-      VendorService.find_or_create_by!(vendor: current_user.vendor, service: @service)
-      attach_service_category(@service)
-      @service.reload
+    if result[:success]
       render json: {
         message: 'Service created successfully',
-        service: service_response(@service, include_details: true)
+        service: present_service(result[:service], include_details: true)
       }, status: :created
     else
       render json: {
         error: 'Service creation failed',
-        details: @service.errors.full_messages
+        details: result[:errors]
       }, status: :unprocessable_content
     end
   end
 
   def update
-    if @service.update(service_params)
-      cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
-      if cat_id.present?
-        category = Category.find_by(id: cat_id)
-        if category && @service.categories.exclude?(category)
-          @service.categories.clear
-          @service.categories << category
-        end
-      end
+    result = Services::UpdateService.call(service: @service, params: params)
 
-      @service.reload
+    if result[:success]
       render json: {
         message: 'Service updated successfully',
-        service: service_response(@service, include_details: true)
+        service: present_service(result[:service], include_details: true)
       }
     else
       render json: {
         error: 'Service update failed',
-        details: @service.errors.full_messages
+        details: result[:errors]
       }, status: :unprocessable_content
     end
   end
@@ -133,97 +93,27 @@ class ServicesController < ApiController
     render json: { error: 'Only vendors can manage services' }, status: :forbidden
   end
 
-  def service_params
-    params.expect(service: %i[name description base_price pricing_type status])
+  def present_service(service, include_details: false)
+    Services::ServicePresenter.new(service, include_details: include_details, url_helper: self).as_json
   end
 
-  def service_response(service, include_details: false)
-    response = build_base_service_response(service)
-    append_service_details(response, service) if include_details
-    response
+  def index_search_params
+    search_params.slice(:vendor_id, :category_id, :page, :per_page, :sort_by, :sort_direction)
   end
 
-  def build_base_service_response(service)
+  def search_params
     {
-      id: service.id,
-      name: service.name,
-      description: service.description,
-      base_price: service.base_price,
-      pricing_type: service.pricing_type,
-      formatted_price: service.formatted_base_price,
-      status: service.status,
-      vendor: service_vendor_json(service.vendor),
-      category: service_category_json(service),
-      images: service_images_json(service),
-      created_at: service.created_at,
-      updated_at: service.updated_at
+      query: params[:q] || params[:query],
+      location: params[:location],
+      category_id: params[:category_id],
+      min_price: params[:min_price],
+      max_price: params[:max_price],
+      pricing_type: params[:pricing_type],
+      vendor_id: params[:vendor_id],
+      page: params[:page] || 1,
+      per_page: params[:per_page] || 20,
+      sort_by: params[:sort_by] || 'created_at',
+      sort_direction: params[:sort_direction] || 'desc'
     }
-  end
-
-  def append_service_details(response, service)
-    vendor = service.vendor
-    response[:vendor][:description] = vendor&.description
-    response[:vendor][:years_experience] = vendor&.years_experience
-    response[:vendor][:website] = vendor&.website
-    response[:bookings_count] = service.bookings_count
-    response[:can_be_booked] = service.can_be_booked?
-  end
-
-  def service_images_json(service)
-    service.service_images.map do |img|
-      {
-        id: img.id,
-        url: img.image.attached? ? url_for(img.image) : nil,
-        is_primary: img.is_primary
-      }
-    end
-  end
-
-  def service_category_json(service)
-    cat = service.service_category
-    return unless cat
-
-    { id: cat.id, name: cat.name }
-  end
-
-  def service_vendor_json(vendor)
-    img_url = vendor_image_url(vendor)
-    {
-      id: vendor&.id,
-      slug: vendor&.slug,
-      business_name: vendor&.business_name,
-      location: vendor&.location,
-      average_rating: vendor&.average_rating,
-      total_reviews: vendor&.total_reviews,
-      image: img_url,
-      profile_image_url: img_url
-    }
-  end
-
-  def vendor_image_url(vendor)
-    item = vendor&.featured_portfolio_items&.first
-    return unless item&.images&.attached?
-
-    url_for(item.images.first)
-  rescue StandardError
-    nil
-  end
-
-  def ensure_current_vendor
-    return if current_user.vendor
-
-    current_user.create_vendor!(
-      business_name: "#{current_user.first_name.presence || 'Vendor'}'s Services",
-      location: 'Mumbai, India'
-    )
-  end
-
-  def attach_service_category(service)
-    cat_id = params.dig(:service, :service_category_id) || params.dig(:service, :category_id)
-    return if cat_id.blank?
-
-    category = Category.find_by(id: cat_id)
-    service.categories << category if category && service.categories.exclude?(category)
   end
 end
-# rubocop:enable Metrics/ClassLength

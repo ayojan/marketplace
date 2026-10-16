@@ -6,7 +6,8 @@ RSpec.describe User::Ransackable do
   describe '.ransackable_attributes' do
     it 'returns the allowlist of searchable attributes' do
       expect(User.ransackable_attributes).to contain_exactly(
-        'id', 'email', 'first_name', 'last_name', 'role', 'confirmed_at', 'created_at', 'updated_at'
+        'id', 'email', 'first_name', 'last_name', 'role', 'phone', 'location',
+        'budget_range', 'company_name', 'total_bookings', 'confirmed_at', 'created_at', 'updated_at'
       )
     end
   end
@@ -14,7 +15,7 @@ RSpec.describe User::Ransackable do
   describe '.ransackable_associations' do
     it 'returns the allowlist of searchable associations' do
       expect(User.ransackable_associations).to contain_exactly(
-        'vendor', 'customer', 'customer_bookings', 'vendor_bookings', 'booking_messages'
+        'vendor', 'customer_bookings', 'vendor_bookings', 'booking_messages'
       )
     end
   end

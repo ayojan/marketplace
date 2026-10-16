@@ -5,7 +5,7 @@ class ApiController < ActionController::API
 
   # API controllers can selectively require authentication
   def authenticate_user!
-    @current_user = Users::AuthorizeApiRequest.call(request.headers)[:user]
+    @current_user = Auth::AuthorizeApiRequest.call(request.headers)[:user]
     render json: { message: 'Missing token' }, status: :unauthorized unless @current_user
   end
 

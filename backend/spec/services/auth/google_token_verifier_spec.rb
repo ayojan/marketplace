@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Users::GoogleTokenVerifier do
+RSpec.describe Auth::GoogleTokenVerifier do
   let(:valid_aud) { 'test-google-client-id.apps.googleusercontent.com' }
   let(:valid_payload) do
     {

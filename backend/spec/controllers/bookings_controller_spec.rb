@@ -20,7 +20,7 @@ RSpec.describe BookingsController do
   end
 
   def auth_as(user)
-    token = Users::JwtService.encode(user_id: user.id)
+    token = Auth::JwtService.encode(user_id: user.id)
     request.headers['Authorization'] = "Bearer #{token}"
   end
 

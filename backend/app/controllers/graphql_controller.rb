@@ -30,7 +30,7 @@ class GraphqlController < ApplicationController
   def set_current_user_optional
     return if request.headers['Authorization'].blank?
 
-    @current_user = Users::AuthorizeApiRequest.new(request.headers).call[:user]
+    @current_user = Auth::AuthorizeApiRequest.call(request.headers)[:user]
   rescue StandardError
     @current_user = nil
   end

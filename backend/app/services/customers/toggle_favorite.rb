@@ -22,7 +22,7 @@ module Customers
       else
         add_favorite(vendor)
       end
-    rescue Users::AuthorizationService::NotAuthorizedError => e
+    rescue Auth::AuthorizationService::NotAuthorizedError => e
       { success: false, error: e.message }
     end
 
@@ -33,7 +33,7 @@ module Customers
     end
 
     def authorize_favorite_action(vendor)
-      Users::AuthorizationService.authorize!(user, vendor, :toggle_favorite)
+      Auth::AuthorizationService.authorize!(user, vendor, :toggle_favorite)
     end
 
     def add_favorite(vendor)

@@ -12,7 +12,7 @@ require 'rspec/rails'
 # Helper module for JWT authentication in controller tests
 module JWTAuthenticationHelper
   def sign_in(user)
-    token = Users::JwtService.encode(user_id: user.id)
+    token = Auth::JwtService.encode(user_id: user.id)
     request.headers['Authorization'] = "Bearer #{token}"
   end
 end

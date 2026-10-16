@@ -4,7 +4,7 @@ require 'googleauth'
 require 'googleauth/id_tokens'
 require 'digest'
 
-module Users
+module Auth
   class GoogleTokenVerifier
     class VerificationError < StandardError; end
 

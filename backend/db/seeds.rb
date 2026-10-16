@@ -48,22 +48,17 @@ customer_data = [
 ]
 
 customers = customer_data.map do |c_data|
-  user = User.find_or_create_by!(email: c_data[:email]) do |u|
+  User.find_or_create_by!(email: c_data[:email]) do |u|
     u.first_name = c_data[:first_name]
     u.last_name = c_data[:last_name]
     u.password = 'password123'
     u.password_confirmation = 'password123'
     u.role = :customer
     u.confirmed_at = Time.current
+    u.phone = c_data[:phone]
+    u.location = c_data[:location]
+    u.preferences = 'Interested in candid photography and airbrush bridal makeup.'
   end
-
-  customer = user.customer || user.create_customer!
-  customer.update!(
-    phone: c_data[:phone],
-    location: c_data[:location],
-    preferences: 'Interested in candid photography and airbrush bridal makeup.'
-  )
-  user
 end
 
 # 4. Seed Vendors
@@ -145,7 +140,7 @@ vendors_info.each do |v_data|
   service.categories << v_data[:category] unless service.categories.include?(v_data[:category])
 
   # Create Availability Slots (up to 90 days ahead)
-  (0..90).each do |day_offset|
+  (1..90).each do |day_offset|
     AvailabilitySlot.find_or_create_by!(
       vendor: vendor,
       date: Date.current + day_offset.days
