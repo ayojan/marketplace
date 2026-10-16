@@ -73,8 +73,8 @@ class AuthController < ApplicationController
   end
 
   def verify_google_id_token(id_token)
-    GoogleTokenVerifier.verify(id_token)
-  rescue GoogleTokenVerifier::VerificationError => e
+    Users::GoogleTokenVerifier.verify(id_token)
+  rescue Users::GoogleTokenVerifier::VerificationError => e
     render json: { error: e.message }, status: :unauthorized
     nil
   end
@@ -346,7 +346,7 @@ class AuthController < ApplicationController
   end
 
   def generate_jwt_token(user)
-    JwtService.encode(user_id: user.id, email: user.email, role: user.role)
+    Users::JwtService.encode(user_id: user.id, email: user.email, role: user.role)
   end
 end
 # rubocop:enable Metrics/ClassLength

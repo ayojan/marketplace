@@ -8,7 +8,7 @@ RSpec.describe 'Vendor Management API' do
   let(:vendor) { vendor_user.vendor }
 
   def auth_headers(user)
-    token = JwtService.encode(user_id: user.id)
+    token = Users::JwtService.encode(user_id: user.id)
     { 'Authorization' => "Bearer #{token}" }
   end
 

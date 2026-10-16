@@ -99,6 +99,6 @@ class Types::QueryType < Types::BaseObject
     user = context[:current_user]
     return nil unless user&.vendor? && user.vendor
 
-    VendorAnalyticsService.call(user.vendor)
+    Vendors::VendorAnalyticsService.call(user.vendor)
   end
 end

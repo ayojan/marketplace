@@ -11,7 +11,7 @@ module Mutations
     field :vendor, Types::VendorType, null: true, description: 'The affected vendor'
 
     def resolve(vendor_id:)
-      result = Favorites::ToggleFavorite.call(
+      result = Customers::ToggleFavorite.call(
         user: context[:current_user],
         vendor_id: vendor_id.to_i
       )

@@ -5,7 +5,7 @@ class AnalyticsController < ApiController
   before_action :ensure_vendor
 
   def dashboard
-    render json: VendorAnalyticsService.call(current_user.vendor)
+    render json: Vendors::VendorAnalyticsService.call(current_user.vendor)
   end
 
   private

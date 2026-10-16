@@ -4,20 +4,20 @@ require 'rails_helper'
 
 RSpec.describe 'JWT Authentication Integration' do
   let(:user) { create(:user, confirmed_at: Time.current) }
-  let(:token) { JwtService.encode(user_id: user.id) }
+  let(:token) { Users::JwtService.encode(user_id: user.id) }
   let(:headers) { { 'Authorization' => "Bearer #{token}" } }
 
   describe 'JWT token generation and validation' do
     it 'generates a valid JWT token for a user' do
-      token = JwtService.encode(user_id: user.id)
+      token = Users::JwtService.encode(user_id: user.id)
       expect(token).to be_present
       expect(token).to be_a(String)
       expect(token.split('.').length).to eq(3) # JWT has 3 parts
     end
 
     it 'decodes a valid JWT token' do
-      token = JwtService.encode(user_id: user.id)
-      decoded = JwtService.decode(token)
+      token = Users::JwtService.encode(user_id: user.id)
+      decoded = Users::JwtService.decode(token)
 
       expect(decoded[:user_id]).to eq(user.id)
       expect(decoded[:exp]).to be_present
@@ -25,33 +25,33 @@ RSpec.describe 'JWT Authentication Integration' do
 
     it 'raises error for invalid token' do
       expect do
-        JwtService.decode('invalid.token.here')
+        Users::JwtService.decode('invalid.token.here')
       end.to raise_error(ExceptionHandler::InvalidToken)
     end
   end
 
   describe 'AuthorizeApiRequest service' do
     it 'returns user for valid token' do
-      result = AuthorizeApiRequest.new({ 'Authorization' => "Bearer #{token}" }).call
+      result = Users::AuthorizeApiRequest.new({ 'Authorization' => "Bearer #{token}" }).call
       expect(result[:user]).to eq(user)
     end
 
     it 'raises error for missing token' do
       expect do
-        AuthorizeApiRequest.new({}).call
+        Users::AuthorizeApiRequest.new({}).call
       end.to raise_error(ExceptionHandler::MissingToken)
     end
 
     it 'raises error for invalid token format' do
       expect do
-        AuthorizeApiRequest.new({ 'Authorization' => 'InvalidFormat' }).call
+        Users::AuthorizeApiRequest.new({ 'Authorization' => 'InvalidFormat' }).call
       end.to raise_error(ExceptionHandler::InvalidToken)
     end
 
     it 'raises error for non-existent user' do
-      invalid_token = JwtService.encode(user_id: 99_999)
+      invalid_token = Users::JwtService.encode(user_id: 99_999)
       expect do
-        AuthorizeApiRequest.new({ 'Authorization' => "Bearer #{invalid_token}" }).call
+        Users::AuthorizeApiRequest.new({ 'Authorization' => "Bearer #{invalid_token}" }).call
       end.to raise_error(ExceptionHandler::InvalidToken)
     end
   end
@@ -65,7 +65,7 @@ RSpec.describe 'JWT Authentication Integration' do
       expect(token).to be_present
 
       # Verify the token can be used to find the user
-      result = AuthorizeApiRequest.new(headers).call
+      result = Users::AuthorizeApiRequest.new(headers).call
       expect(result[:user]).to eq(user)
     end
   end

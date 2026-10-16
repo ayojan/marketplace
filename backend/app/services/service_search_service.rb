@@ -101,7 +101,7 @@ class ServiceSearchService
     when 'base_price'
       # Use subquery to avoid DISTINCT + complex ORDER BY conflict in PostgreSQL
       Service.where(id: filtered_services.select(:id)).order(
-        Arel.sql("CASE WHEN services.pricing_type = #{Service.pricing_types['custom']} THEN 1 ELSE 0 END"),
+        Arel.sql("CASE WHEN services.pricing_type = 'custom' THEN 1 ELSE 0 END"),
         "services.base_price #{sort_direction}"
       )
     when 'updated_at'

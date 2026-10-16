@@ -49,7 +49,7 @@ class PortfolioItemsController < ApiController
   def create
     return render json: { errors: ['Vendor not found'] }, status: :not_found unless current_user&.vendor
 
-    result = CreatePortfolioItem.call(current_user.vendor, portfolio_item_params)
+    result = Vendors::CreatePortfolioItem.call(current_user.vendor, portfolio_item_params)
 
     if result[:success]
       render json: {
@@ -65,7 +65,7 @@ class PortfolioItemsController < ApiController
 
   # PATCH/PUT /portfolio_items/:id
   def update
-    result = UpdatePortfolioItem.call(@portfolio_item, portfolio_item_params)
+    result = Vendors::UpdatePortfolioItem.call(@portfolio_item, portfolio_item_params)
 
     if result[:success]
       render json: {
@@ -81,7 +81,7 @@ class PortfolioItemsController < ApiController
 
   # DELETE /portfolio_items/:id
   def destroy
-    result = DeletePortfolioItem.call(@portfolio_item)
+    result = Vendors::DeletePortfolioItem.call(@portfolio_item)
     if result[:success]
       render json: { message: 'Portfolio item deleted successfully' }
     else
@@ -92,7 +92,7 @@ class PortfolioItemsController < ApiController
   # POST /portfolio_items/:id/upload_images
   def upload_images
     uploaded_files = params[:images] || params[:image]
-    result = BulkUploadPortfolioImages.call(@portfolio_item, uploaded_files)
+    result = Vendors::BulkUploadPortfolioImages.call(@portfolio_item, uploaded_files)
 
     if result[:success]
       render json: {
@@ -125,7 +125,7 @@ class PortfolioItemsController < ApiController
   # GET /portfolio_items/summary
   def summary
     ensure_vendor_role
-    summary = PortfolioSummaryService.call(current_user.vendor)
+    summary = Vendors::PortfolioSummaryService.call(current_user.vendor)
 
     render json: { summary: summary }
   end
@@ -133,7 +133,7 @@ class PortfolioItemsController < ApiController
   # POST /portfolio_items/reorder
   def reorder
     ensure_vendor_role
-    result = ReorderPortfolioItems.call(current_user.vendor, params[:category], params[:item_orders])
+    result = Vendors::ReorderPortfolioItems.call(current_user.vendor, params[:category], params[:item_orders])
 
     if result[:success]
       render json: {
@@ -150,7 +150,7 @@ class PortfolioItemsController < ApiController
 
   # POST /portfolio_items/:id/duplicate
   def duplicate
-    result = DuplicatePortfolioItem.call(@portfolio_item)
+    result = Vendors::DuplicatePortfolioItem.call(@portfolio_item)
 
     if result[:success]
       render json: {
@@ -167,7 +167,7 @@ class PortfolioItemsController < ApiController
   # PATCH /portfolio_items/set_featured
   def set_featured
     ensure_vendor_role
-    result = SetFeaturedPortfolioItems.call(
+    result = Vendors::SetFeaturedPortfolioItems.call(
       current_user.vendor,
       params[:item_ids],
       featured_status: params[:featured]

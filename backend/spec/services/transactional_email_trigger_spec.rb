@@ -50,7 +50,7 @@ RSpec.describe Bookings::UpdateBookingStatus, 'and User transactional email trig
     it 'triggers rejection notification when vendor declines booking' do
       allow(NotificationJob).to receive(:perform_later)
 
-      BookingResponseService.call(booking, vendor_user, 'decline')
+      Bookings::BookingResponseService.call(booking, vendor_user, 'decline')
 
       expect(NotificationJob).to have_received(:perform_later).with(
         'booking_rejected',

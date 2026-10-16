@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe AvailabilitySlotsController do
   def auth_as(user)
-    token = JwtService.encode(user_id: user.id)
+    token = Users::JwtService.encode(user_id: user.id)
     request.headers['Authorization'] = "Bearer #{token}"
   end
 

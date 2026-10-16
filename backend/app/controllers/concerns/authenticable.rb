@@ -12,6 +12,6 @@ module Authenticable
   private
 
   def authenticate_request
-    @current_user = AuthorizeApiRequest.new(request.headers).call[:user]
+    @current_user = Users::AuthorizeApiRequest.new(request.headers).call[:user]
   end
 end

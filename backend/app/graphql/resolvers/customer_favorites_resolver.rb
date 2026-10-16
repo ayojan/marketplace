@@ -14,7 +14,7 @@ module Resolvers
       user = context[:current_user]
       return [] unless user
 
-      result = Favorites::GetCustomerFavorites.call(
+      result = Customers::GetFavorites.call(
         user: user,
         sort: sort,
         page: page,

@@ -43,7 +43,7 @@ module BookingManagement::BookingActionHelpers
     service = Service.find(params[:service_id])
     end_time = calculate_checker_end_time(params[:date], params[:start_time], params[:end_time], params[:duration])
 
-    AvailabilityCheckerService.new(
+    Bookings::AvailabilityCheckerService.new(
       vendor: service.vendor,
       date: Date.parse(params[:date]),
       start_time: params[:start_time],
@@ -69,7 +69,7 @@ module BookingManagement::BookingActionHelpers
     start_dt = DateTime.parse("#{params[:date]} #{params[:start_time]}")
     end_dt = calculate_resolver_end_datetime(start_dt, params[:duration])
 
-    ConflictResolutionService.new(
+    Bookings::ConflictResolutionService.new(
       vendor: find_resolver_vendor,
       event_date: start_dt,
       event_end_date: end_dt
@@ -157,7 +157,7 @@ module BookingManagement::ModificationActions
   end
 
   def create
-    service = BookingCreationService.new(booking_params.merge(customer: current_user))
+    service = Bookings::BookingCreationService.new(booking_params.merge(customer: current_user))
     result = service.call
     if result[:success]
       render json: {
@@ -208,11 +208,11 @@ module BookingManagement::ModificationActions
     return unless vendor_response_authorized?
 
     response_action = params[:response_action]
-    unless BookingResponseService::RESPONSE_STATUS.key?(response_action)
+    unless Bookings::BookingResponseService::RESPONSE_STATUS.key?(response_action)
       return render json: { error: 'Invalid response action' }, status: :bad_request
     end
 
-    result = BookingResponseService.call(@booking, current_user, response_action, response_options)
+    result = Bookings::BookingResponseService.call(@booking, current_user, response_action, response_options)
     render_respond_result(result, response_action)
   end
 
