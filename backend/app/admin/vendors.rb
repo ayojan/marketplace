@@ -5,13 +5,28 @@ ActiveAdmin.register Vendor do
 
   permit_params :user_id, :business_name, :description, :location, :phone,
                 :website, :instagram_handle, :facebook_url, :years_experience,
-                :verification_status, :rejection_reason
+                :verification_status, :rejection_reason, category_ids: []
 
-  includes :user
+  includes :user, vendor_categories: :category
 
   controller do
     def find_resource
       scoped_collection.find_by_id_or_slug!(params[:id])
+    end
+
+    def create
+      super do |success, _failure|
+        if success.present? && params[:vendor] && params[:vendor][:category_ids]
+          resource.sync_categories(params[:vendor][:category_ids].compact_blank)
+        end
+      end
+    end
+
+    def update
+      if params[:vendor] && params[:vendor][:category_ids]
+        resource.sync_categories(params[:vendor][:category_ids].compact_blank)
+      end
+      super
     end
   end
 
@@ -27,6 +42,12 @@ ActiveAdmin.register Vendor do
     selectable_column
     id_column
     column :business_name
+    column 'Categories' do |vendor|
+      vendor.vendor_categories.map do |vc|
+        label = vc.is_primary? ? "#{vc.category.name} ★" : vc.category.name
+        status_tag label, class: vc.is_primary? ? :ok : nil
+      end
+    end
     column :user do |vendor|
       link_to vendor.user.full_name, admin_user_path(vendor.user) if vendor.user
     end
@@ -56,6 +77,7 @@ ActiveAdmin.register Vendor do
 
   # Filters
   filter :business_name
+  filter :categories, as: :select, collection: -> { Category.ordered }
   filter :user, collection: -> { User.vendors.map { |u| [u.full_name, u.id] } }
   filter :phone
   filter :location
@@ -75,6 +97,15 @@ ActiveAdmin.register Vendor do
       end
       row 'User Email' do |vendor|
         vendor.user&.email
+      end
+      row :primary_category do |vendor|
+        vendor.primary_category&.name || 'None'
+      end
+      row 'Operating Categories' do |vendor|
+        vendor.vendor_categories.map do |vc|
+          label = vc.is_primary? ? "#{vc.category.name} (Primary)" : vc.category.name
+          status_tag label, class: vc.is_primary? ? :ok : nil
+        end
       end
       row :verification_status do |vendor|
         status_tag vendor.verification_status
@@ -119,6 +150,10 @@ ActiveAdmin.register Vendor do
     f.inputs 'Vendor Details' do
       f.input :user, collection: User.vendors.map { |u| [u.full_name, u.id] }
       f.input :business_name
+      f.input :category_ids, as: :select, multiple: true,
+                             collection: Category.active.ordered.map { |c| [c.name, c.id] },
+                             label: 'Categories (Max 3, first is Primary)',
+                             hint: 'Select up to 3 categories. The first selected will be primary.'
       f.input :description, as: :text, input_html: { rows: 4 }
       f.input :location
       f.input :phone

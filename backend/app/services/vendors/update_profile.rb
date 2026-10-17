@@ -17,9 +17,10 @@ module Vendors
     def call
       vendor.assign_attributes(permitted_attributes)
       apply_metadata
+      apply_categories
 
       if vendor.save
-        { success: true, vendor: vendor }
+        { success: true, vendor: vendor.reload }
       else
         { success: false, errors: vendor.errors.full_messages }
       end
@@ -42,6 +43,13 @@ module Vendors
       PERMITTED_ATTRIBUTES.each_with_object({}) do |attr, hash|
         hash[attr] = data[attr] if data.key?(attr)
       end
+    end
+
+    def apply_categories
+      raw = payload[:category_ids] || payload[:categories]
+      return if raw.nil?
+
+      vendor.sync_categories(raw, primary_id: payload[:primary_category_id])
     end
 
     def apply_metadata

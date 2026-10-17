@@ -9,7 +9,13 @@ class ApiController < ActionController::API
     render json: { message: 'Missing token' }, status: :unauthorized unless @current_user
   end
 
-  attr_reader :current_user
+  def current_user
+    @current_user ||= begin
+      Auth::AuthorizeApiRequest.call(request.headers)[:user]
+    rescue StandardError
+      nil
+    end
+  end
 
   protected
 

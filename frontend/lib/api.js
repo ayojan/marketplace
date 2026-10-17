@@ -132,9 +132,18 @@ export const apiService = {
     search: (params) => api.get('/services/search', { params }),
     images: {
       list: (serviceId) => api.get(`/services/${serviceId}/images`),
-      upload: (serviceId, file) => {
+      upload: (serviceId, file, meta = {}) => {
         const formData = new FormData();
+        formData.append('service_image[image]', file);
         formData.append('image', file);
+        if (meta?.title) {
+          formData.append('service_image[title]', meta.title);
+          formData.append('title', meta.title);
+        }
+        if (meta?.is_primary !== undefined) {
+          formData.append('service_image[is_primary]', meta.is_primary);
+          formData.append('is_primary', meta.is_primary);
+        }
         return api.post(`/services/${serviceId}/images`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });

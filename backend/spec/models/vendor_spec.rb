@@ -55,7 +55,8 @@ RSpec.describe Vendor do
     it { is_expected.to belong_to(:user) }
     it { is_expected.to have_many(:vendor_services).dependent(:destroy) }
     it { is_expected.to have_many(:services).dependent(:destroy) }
-    it { is_expected.to have_many(:categories).through(:services) }
+    it { is_expected.to have_many(:vendor_categories).dependent(:destroy) }
+    it { is_expected.to have_many(:categories).through(:vendor_categories) }
     it { is_expected.to have_many(:bookings).dependent(:destroy) }
   end
 
@@ -288,6 +289,39 @@ RSpec.describe Vendor do
       it 'sets categories from string' do
         complete_vendor.service_categories_list = 'Photography, Videography'
         expect(complete_vendor.service_categories).to eq('Photography, Videography')
+      end
+    end
+
+    describe '#sync_categories' do
+      let(:photography) { create(:category, name: 'Photography') }
+      let(:videography) { create(:category, name: 'Videography') }
+      let(:decor) { create(:category, name: 'Decor') }
+      let(:catering) { create(:category, name: 'Catering') }
+
+      it 'syncs up to 3 categories and sets the first as primary by default' do
+        vendor.sync_categories([photography.id, videography.id])
+        vendor.reload
+
+        expect(vendor.categories).to contain_exactly(photography, videography)
+        expect(vendor.primary_category).to eq(photography)
+        expect(vendor.secondary_categories).to contain_exactly(videography)
+        expect(vendor.primary_category_name).to eq('Photography')
+      end
+
+      it 'respects explicit primary_id' do
+        vendor.sync_categories([photography.id, videography.id], primary_id: videography.id)
+        vendor.reload
+
+        expect(vendor.primary_category).to eq(videography)
+        expect(vendor.secondary_categories).to contain_exactly(photography)
+      end
+
+      it 'limits selection to max 3 categories' do
+        vendor.sync_categories([photography.id, videography.id, decor.id, catering.id])
+        vendor.reload
+
+        expect(vendor.categories.count).to eq(3)
+        expect(vendor.categories).to contain_exactly(photography, videography, decor)
       end
     end
 

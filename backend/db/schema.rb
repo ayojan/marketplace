@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_17_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -465,6 +465,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  create_table "vendor_categories", force: :cascade do |t|
+    t.bigint "vendor_id", null: false
+    t.bigint "category_id", null: false
+    t.boolean "is_primary", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_vendor_categories_on_category_id"
+    t.index ["vendor_id", "category_id"], name: "index_vendor_categories_on_vendor_id_and_category_id", unique: true
+    t.index ["vendor_id", "is_primary"], name: "index_vendor_categories_on_vendor_id_and_is_primary"
+    t.index ["vendor_id"], name: "index_vendor_categories_on_vendor_id"
+  end
+
   create_table "vendor_services", force: :cascade do |t|
     t.bigint "vendor_id", null: false
     t.bigint "service_id", null: false
@@ -545,6 +557,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_230550) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "vendor_categories", "categories"
+  add_foreign_key "vendor_categories", "vendors"
   add_foreign_key "vendor_services", "services"
   add_foreign_key "vendor_services", "vendors"
   add_foreign_key "vendors", "users"

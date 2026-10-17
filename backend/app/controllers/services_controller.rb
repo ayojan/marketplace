@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# rubocop:disable Metrics/ClassLength
 class ServicesController < ApiController
   before_action :authenticate_user!, except: %i[index show search]
   before_action :set_service, only: %i[update destroy]
@@ -7,13 +8,16 @@ class ServicesController < ApiController
   before_action :ensure_service_owner, only: %i[update destroy]
 
   def index
-    result = Services::SearchService.call(index_search_params)
-
-    render json: {
-      services: result[:services].map { |service| present_service(service) },
-      pagination: result[:pagination],
-      filters: result[:filters]
-    }
+    if vendor_scoped_index?
+      render_vendor_services
+    else
+      result = Services::SearchService.call(index_search_params)
+      render json: {
+        services: result[:services].map { |service| present_service(service) },
+        pagination: result[:pagination],
+        filters: result[:filters]
+      }
+    end
   end
 
   def show
@@ -82,9 +86,44 @@ class ServicesController < ApiController
   end
 
   def ensure_service_owner
-    return if @service.vendor.user == current_user
+    return if owner_authorized?
 
     render json: { error: 'You can only manage your own services' }, status: :forbidden
+  end
+
+  def owner_authorized?
+    return false unless @service && current_user
+
+    vendor = @service.vendor
+    return true if vendor&.user_id == current_user.id
+    return true if current_user.vendor && @service.vendor_id == current_user.vendor.id
+
+    @service.vendors.exists?(user_id: current_user.id)
+  end
+
+  def vendor_scoped_index?
+    return false unless current_user&.vendor?
+    return true if params[:scope] == 'mine'
+
+    no_filters = %i[vendor_id q query category_id].all? { |key| params[key].blank? }
+    no_filters && params[:all] != 'true'
+  end
+
+  def render_vendor_services
+    vendor = current_user.vendor
+    services = if vendor
+                 vendor.services
+                       .includes(:categories, service_images: { image_attachment: :blob })
+                       .order(created_at: :desc)
+               else
+                 Service.none
+               end
+
+    render json: {
+      services: services.map { |service| present_service(service, include_details: true) },
+      pagination: { current_page: 1, total_pages: 1, total_count: services.count },
+      filters: {}
+    }
   end
 
   def ensure_vendor
@@ -117,3 +156,4 @@ class ServicesController < ApiController
     }
   end
 end
+# rubocop:enable Metrics/ClassLength

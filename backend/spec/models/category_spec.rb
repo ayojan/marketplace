@@ -24,7 +24,8 @@ RSpec.describe Category do
   describe 'associations' do
     it { is_expected.to have_many(:service_categories).dependent(:destroy) }
     it { is_expected.to have_many(:services).through(:service_categories) }
-    it { is_expected.to have_many(:vendors).through(:services) }
+    it { is_expected.to have_many(:vendor_categories).dependent(:destroy) }
+    it { is_expected.to have_many(:vendors).through(:vendor_categories) }
   end
 
   describe 'validations' do

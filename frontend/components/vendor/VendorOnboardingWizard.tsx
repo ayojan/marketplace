@@ -454,6 +454,27 @@ export default function VendorOnboardingWizard() {
 
     setIsSubmitting(true);
     try {
+      // Sync selected categories to vendor profile
+      const matchedCategoryIds = selectedCategories
+        .map((catSlug) => {
+          const match = categoriesList.find(
+            (c) => c.slug === catSlug || c.name.toLowerCase() === (CATEGORY_PRESETS[catSlug]?.name || catSlug).toLowerCase()
+          );
+          return match?.id;
+        })
+        .filter(Boolean);
+
+      if (matchedCategoryIds.length > 0) {
+        await apiService.profiles.updateMe({
+          vendor: {
+            category_ids: matchedCategoryIds,
+            primary_category_id: matchedCategoryIds[0]
+          }
+        }).catch((err) => {
+          console.warn('Vendor categories sync notice:', err);
+        });
+      }
+
       // Find matching category IDs from backend
       for (const off of offerings) {
         const catMatch = categoriesList.find(
@@ -611,6 +632,10 @@ export default function VendorOnboardingWizard() {
       setSelectedCategories((prev) => prev.filter((s) => s !== slug));
       setOfferings((prev) => prev.filter((o) => o.categorySlug !== slug));
     } else {
+      if (selectedCategories.length >= 3) {
+        toast.error('You can select up to 3 operating categories (1 primary + 2 secondary).');
+        return;
+      }
       setSelectedCategories((prev) => [...prev, slug]);
       // Add a starter offering
       const preset = CATEGORY_PRESETS[slug];
@@ -1184,24 +1209,38 @@ export default function VendorOnboardingWizard() {
               <form onSubmit={handleStep3Submit} className="space-y-6">
                 {/* Category Selection Grid */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-[#221F1C] block">
-                    1. Select One or More Categories
-                  </Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-[#221F1C] block">
+                      1. Select Operating Categories (Max 3)
+                    </Label>
+                    <span className="text-[10px] font-semibold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full border border-[#E8E2D9]">
+                      {selectedCategories.length}/3 Selected
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#6B6560]">
+                    First selected category will serve as your Primary anchor trade on the marketplace.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                     {Object.entries(CATEGORY_PRESETS).map(([slug, data]) => {
                       const isSelected = selectedCategories.includes(slug);
+                      const isPrimary = selectedCategories[0] === slug;
                       return (
                         <div
                           key={slug}
                           onClick={() => handleToggleCategory(slug, data.name)}
-                          className={`p-3 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 ${
+                          className={`p-3 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 select-none ${
                             isSelected
                               ? 'border-[#9E5338] bg-[#F3EADF] text-[#9E5338] font-bold shadow-xs'
                               : 'border-[#E8E2D9] bg-[#FBF8F4] text-[#6B6560] hover:bg-white'
                           }`}
                         >
                           <span className="text-xs">{data.name}</span>
-                          {isSelected && <Check className="size-3 text-[#9E5338]" />}
+                          {isSelected && (
+                            <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold">
+                              <Check className="size-3 text-[#9E5338]" />
+                              {isPrimary ? 'Primary ★' : 'Secondary'}
+                            </span>
+                          )}
                         </div>
                       );
                     })}
