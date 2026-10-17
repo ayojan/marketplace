@@ -23,6 +23,7 @@ module Services
     def build_base_service_response
       {
         id: service.id,
+        vendor_id: service.vendor_id,
         name: service.name,
         description: service.description,
         base_price: service.base_price,
@@ -51,7 +52,8 @@ module Services
         {
           id: img.id,
           url: image_url(img.image),
-          is_primary: img.is_primary
+          is_primary: img.is_primary,
+          title: img.title
         }
       end
     end
@@ -65,6 +67,7 @@ module Services
 
     def service_vendor_json(vendor)
       img_url = vendor_image_url(vendor)
+      primary_cat = vendor&.primary_category || vendor&.categories&.first
       {
         id: vendor&.id,
         user_id: vendor&.user_id,
@@ -75,6 +78,8 @@ module Services
         total_reviews: vendor&.total_reviews,
         is_verified: vendor&.verified?,
         verification_status: vendor&.verification_status,
+        primary_category: primary_cat ? { id: primary_cat.id, name: primary_cat.name, slug: primary_cat.slug } : nil,
+        service_categories: vendor&.service_categories_list || [],
         image: img_url,
         profile_image_url: img_url
       }

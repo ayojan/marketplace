@@ -10,23 +10,26 @@ module VendorSerializable
     featured_items = vendor.featured_portfolio_items
     primary_image = extract_primary_image(featured_items.first)
 
+    vendor_core_attributes(vendor, primary_image)
+      .slice(:id, :user_id, :slug, :business_name, :location, :profile_image_url, :image)
+      .merge(vendor_summary_operational_attributes(vendor))
+      .merge(
+        base_price: calculate_vendor_min_price(vendor),
+        metadata: vendor.metadata || {},
+        featured_portfolio: featured_items.first(3).map { |item| portfolio_item_json(item) }
+      )
+  end
+
+  def vendor_summary_operational_attributes(vendor)
     {
-      id: vendor.id,
-      user_id: vendor.user_id,
-      slug: vendor.slug,
-      business_name: vendor.business_name,
-      location: vendor.location,
       average_rating: vendor.average_rating,
       total_reviews: vendor.total_reviews,
       years_experience: vendor.years_experience,
       is_verified: vendor.verified?,
       verification_status: vendor.verification_status,
-      service_categories: vendor.service_categories_list,
-      profile_image_url: primary_image,
-      image: primary_image,
-      base_price: calculate_vendor_min_price(vendor),
-      metadata: vendor.metadata || {},
-      featured_portfolio: featured_items.first(3).map { |item| portfolio_item_json(item) }
+      primary_category: vendor_primary_category_json(vendor),
+      categories: vendor_categories_json(vendor),
+      service_categories: vendor.service_categories_list
     }
   end
 
@@ -68,8 +71,42 @@ module VendorSerializable
       total_reviews: vendor.total_reviews,
       is_verified: vendor.verified?,
       base_price: calculate_vendor_min_price(vendor),
+      primary_category: vendor_primary_category_json(vendor),
+      categories: vendor_categories_json(vendor),
       service_categories: vendor.service_categories_list,
       metadata: vendor.metadata || {}
+    }
+  end
+
+  def vendor_primary_category_json(vendor)
+    cat = vendor.primary_category || vendor.categories.first
+    return nil unless cat
+
+    { id: cat.id, name: cat.name, slug: cat.slug }
+  end
+
+  def vendor_categories_json(vendor)
+    vcs = vendor_categories_collection(vendor)
+    return [] if vcs.empty?
+
+    vcs.sort_by { |vc| vc.is_primary? ? 0 : 1 }.map { |vc| format_vendor_category(vc) }
+  end
+
+  def vendor_categories_collection(vendor)
+    if vendor.association(:vendor_categories).loaded?
+      vendor.vendor_categories
+    else
+      vendor.vendor_categories.includes(:category)
+    end
+  end
+
+  def format_vendor_category(vendor_category)
+    cat = vendor_category.category
+    {
+      id: vendor_category.category_id,
+      name: cat&.name,
+      slug: cat&.slug,
+      is_primary: vendor_category.is_primary?
     }
   end
 
@@ -110,19 +147,43 @@ module VendorSerializable
   def service_json(service)
     {
       id: service.id,
+      vendor_id: service.vendor_id,
       name: service.name,
       description: service.description,
+      status: service.status,
       base_price: service.base_price,
       pricing_type: service.pricing_type,
-      category: if service.service_category
-                  {
-                    id: service.service_category.id,
-                    name: service.service_category.name,
-                    slug: service.service_category.respond_to?(:slug) ? service.service_category.slug : nil
-                  }
-                end,
-      images: service.service_images.limit(3).map { |img| image_summary_json(img) }
+      formatted_price: service.respond_to?(:formatted_base_price) ? service.formatted_base_price : nil,
+      category: service_primary_category_json(service),
+      categories: service_categories_json(service),
+      images: service_images_json(service)
     }
+  end
+
+  def service_primary_category_json(service)
+    cat = service.service_category if service.respond_to?(:service_category)
+    cat ||= service.categories.first if service.respond_to?(:categories) && service.categories.present?
+    return nil unless cat
+
+    { id: cat.id, name: cat.name, slug: cat.respond_to?(:slug) ? cat.slug : nil }
+  end
+
+  def service_categories_json(service)
+    return [] unless service.respond_to?(:categories) && service.categories.present?
+
+    service.categories.map do |c|
+      { id: c.id, name: c.name, slug: c.respond_to?(:slug) ? c.slug : nil }
+    end
+  end
+
+  def service_images_json(service)
+    if service.respond_to?(:service_images) && service.service_images.any?
+      service.service_images.limit(5).map { |img| image_summary_json(img) }
+    elsif service.respond_to?(:images) && service.images.attached?
+      service.images.limit(5).map { |img| image_summary_json(img) }
+    else
+      []
+    end
   end
 
   def portfolio_item_json(item)
@@ -152,9 +213,17 @@ module VendorSerializable
   end
 
   def image_summary_json(image)
+    url = if image.is_a?(ActiveStorage::Attachment)
+            url_for(image)
+          elsif image.respond_to?(:image) && image.image.attached?
+            url_for(image.image)
+          end
+
     {
       id: image.id,
-      url: image.is_a?(ActiveStorage::Attachment) ? url_for(image) : nil
+      url: url,
+      is_primary: image.respond_to?(:is_primary) ? image.is_primary : nil,
+      title: image.respond_to?(:title) ? image.title : nil
     }
   rescue StandardError
     { id: image.id, url: nil }

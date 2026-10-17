@@ -189,19 +189,37 @@ class ServiceImagesController < ApiController
   end
 
   def ensure_service_owner
-    return if @service&.vendor&.user == current_user
+    return if owner_authorized?
 
     render json: {
       error: 'You can only manage images for your own services'
     }, status: :forbidden
   end
 
+  def owner_authorized?
+    return false unless @service && current_user
+
+    vendor = @service.vendor
+    return true if vendor&.user_id == current_user.id
+    return true if current_user.vendor && @service.vendor_id == current_user.vendor.id
+
+    @service.vendors.exists?(user_id: current_user.id)
+  end
+
   def service_image_params
-    params.expect(service_image: %i[image title description alt_text display_order is_primary])
+    if params[:service_image].present?
+      params.expect(service_image: %i[image title description alt_text display_order is_primary])
+    else
+      params.permit(:image, :title, :description, :alt_text, :display_order, :is_primary)
+    end
   end
 
   def service_image_update_params
-    params.expect(service_image: %i[title description alt_text display_order is_primary])
+    if params[:service_image].present?
+      params.expect(service_image: %i[title description alt_text display_order is_primary])
+    else
+      params.permit(:title, :description, :alt_text, :display_order, :is_primary)
+    end
   end
 
   def service_image_response(service_image)
@@ -212,6 +230,7 @@ class ServiceImagesController < ApiController
       alt_text: service_image.alt_text,
       display_order: service_image.display_order,
       is_primary: service_image.is_primary,
+      url: service_image.thumbnail_url || service_image.image_url,
       thumbnail_url: service_image.thumbnail_url,
       medium_url: service_image.medium_url,
       file_size_mb: service_image.file_size_mb,
@@ -228,6 +247,7 @@ class ServiceImagesController < ApiController
       alt_text: service_image.alt_text,
       display_order: service_image.display_order,
       is_primary: service_image.is_primary,
+      url: service_image.large_url || service_image.image_url || service_image.medium_url,
       thumbnail_url: service_image.thumbnail_url,
       medium_url: service_image.medium_url,
       large_url: service_image.large_url,

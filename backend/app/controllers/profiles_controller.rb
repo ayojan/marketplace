@@ -2,6 +2,8 @@
 
 # rubocop:disable Metrics/ClassLength
 class ProfilesController < ApiController
+  include VendorSerializable
+
   before_action :authenticate_user!, except: [:service_categories]
   before_action :set_profile, only: %i[show update destroy]
   before_action :ensure_vendor_role, only: %i[me update_me create update destroy]
@@ -157,6 +159,17 @@ class ProfilesController < ApiController
   end
 
   def profile_response(profile)
+    profile_base_attributes(profile).merge(
+      service_categories: profile.service_categories_list || [],
+      categories: vendor_categories_json(profile),
+      primary_category: vendor_primary_category_json(profile),
+      metadata: profile.metadata || {},
+      created_at: profile.created_at,
+      updated_at: profile.updated_at
+    )
+  end
+
+  def profile_base_attributes(profile)
     {
       id: profile.id,
       slug: profile.slug,
@@ -170,11 +183,7 @@ class ProfilesController < ApiController
       cancellation_policy: profile.cancellation_policy,
       business_license: profile.business_license,
       verification_status: profile.verification_status,
-      years_experience: profile.years_experience,
-      service_categories: profile.service_categories_list || [],
-      metadata: profile.metadata || {},
-      created_at: profile.created_at,
-      updated_at: profile.updated_at
+      years_experience: profile.years_experience
     }
   end
 end

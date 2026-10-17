@@ -238,4 +238,53 @@ describe('VendorProfile', () => {
     expect(toast.info).toHaveBeenCalledWith('You cannot favorite your own business profile');
     expect(apiService.favorites.add).not.toHaveBeenCalled();
   });
+
+  it('allows a customer to click on a service to see details in a modal', async () => {
+    mockAuthUser = { id: 1, role: 'customer' };
+    render(<VendorProfile params={mockParams} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Available Service Packages')).toBeInTheDocument();
+      expect(screen.getByText('View Service Details')).toBeInTheDocument();
+    });
+
+    // Click "View Service Details"
+    fireEvent.click(screen.getByText('View Service Details'));
+
+    // Modal should be open displaying full details
+    await waitFor(() => {
+      expect(screen.getByText('Full Description & Scope of Work')).toBeInTheDocument();
+      expect(screen.getAllByText('Complete wedding photography package').length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByText(/Transparent Pricing & Jashnify Guarantee/i)).toBeInTheDocument();
+      expect(screen.getByText(/What This Service Includes/i)).toBeInTheDocument();
+    });
+
+    // Click "Close" button to close modal
+    fireEvent.click(screen.getByRole('button', { name: /^close$/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Full Description & Scope of Work')).not.toBeInTheDocument();
+    });
+  });
+
+  it('allows selecting the package directly from the service details modal', async () => {
+    mockAuthUser = { id: 1, role: 'customer' };
+    render(<VendorProfile params={mockParams} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('View Service Details')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('View Service Details'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Full Description & Scope of Work')).toBeInTheDocument();
+    });
+
+    const selectBtn = screen.getByRole('button', { name: /Package Already Selected|Select & Reserve This Package/i });
+    expect(selectBtn).toBeInTheDocument();
+    fireEvent.click(selectBtn);
+
+    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Selected "Wedding Photography"'));
+  });
 });

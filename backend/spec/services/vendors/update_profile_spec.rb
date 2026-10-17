@@ -127,5 +127,25 @@ RSpec.describe Vendors::UpdateProfile do
         expect(vendor.years_experience).to eq(10)
       end
     end
+
+    context 'with category updates' do
+      let(:cat_photo) { create(:category, name: 'Photo') }
+      let(:cat_video) { create(:category, name: 'Video') }
+
+      it 'syncs categories and sets primary category' do
+        params = {
+          vendor: {
+            category_ids: [cat_photo.id, cat_video.id],
+            primary_category_id: cat_video.id
+          }
+        }
+
+        result = described_class.call(vendor: vendor, params: params)
+
+        expect(result[:success]).to be true
+        expect(vendor.reload.categories).to contain_exactly(cat_photo, cat_video)
+        expect(vendor.primary_category).to eq(cat_video)
+      end
+    end
   end
 end

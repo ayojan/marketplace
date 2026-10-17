@@ -20,9 +20,10 @@
 #
 class Category < ApplicationRecord
   # Associations
+  has_many :vendor_categories, dependent: :destroy
+  has_many :vendors, through: :vendor_categories
   has_many :service_categories, dependent: :destroy
   has_many :services, through: :service_categories
-  has_many :vendors, through: :services, source: :vendor
 
   # Validations
   validates :name, presence: true, uniqueness: true, length: { minimum: 2, maximum: 50 } # rubocop:disable Rails/UniqueValidationWithoutIndex
@@ -63,6 +64,14 @@ class Category < ApplicationRecord
       return found if found
 
       find_by(id: id_or_slug) if id_or_slug.to_s.match?(/\A\d+\z/)
+    end
+
+    def ransackable_associations(_auth_object = nil)
+      %w[services service_categories vendors vendor_categories]
+    end
+
+    def ransackable_attributes(_auth_object = nil)
+      %w[id name slug active icon description created_at updated_at]
     end
   end
 

@@ -15,6 +15,7 @@ module Services
       if service.save
         VendorService.find_or_create_by!(vendor: vendor, service: service)
         attach_category(service)
+        attach_images(service)
         service.reload
         { success: true, service: service }
       else
@@ -47,6 +48,30 @@ module Services
 
       category = Category.find_by(id: cat_id)
       service.categories << category if category && service.categories.exclude?(category)
+    end
+
+    def attach_images(service)
+      uploaded = extract_uploaded_images
+      return if uploaded.blank?
+
+      Array(uploaded).each_with_index do |img_file, idx|
+        create_service_image(service, img_file, idx)
+      end
+    end
+
+    def extract_uploaded_images
+      raw = params.is_a?(ActionController::Parameters) ? params.to_unsafe_h : params
+      (raw[:service] || raw)[:images] || raw[:images]
+    end
+
+    def create_service_image(service, img_file, idx)
+      return if img_file.blank?
+
+      service.service_images.create(
+        image: img_file,
+        display_order: service.service_images.count + idx,
+        is_primary: service.service_images.none?(&:is_primary?)
+      )
     end
   end
 end

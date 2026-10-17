@@ -68,14 +68,24 @@ const VendorDashboard = () => {
   const loadDashboardData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const [servicesResponse, analyticsResponse, profileResponse] = await Promise.all([
-        apiService.services.getAll().catch(() => null),
-        apiService.analytics.dashboard().catch(() => null),
-        apiService.profiles.me().catch(() => null)
+      const [profileResponse, analyticsResponse] = await Promise.all([
+        apiService.profiles.me().catch(() => null),
+        apiService.analytics.dashboard().catch(() => null)
       ]);
-      const fetchedServices = servicesResponse?.data?.services || [];
-      const fetchedAnalytics = analyticsResponse?.data || null;
       const fetchedProfile = profileResponse?.data || null;
+      const vendorId = fetchedProfile?.id;
+
+      const servicesResponse = await (vendorId
+        ? apiService.vendors.getServices(vendorId).catch(() => null)
+        : apiService.services.getAll({ scope: 'mine' }).catch(() => null));
+
+      let fetchedServices = servicesResponse?.data?.services || [];
+      if (vendorId) {
+        fetchedServices = fetchedServices.filter((s: any) =>
+          !s.vendor_id || String(s.vendor_id) === String(vendorId)
+        );
+      }
+      const fetchedAnalytics = analyticsResponse?.data || null;
 
       setDashboardData({
         services: fetchedServices,

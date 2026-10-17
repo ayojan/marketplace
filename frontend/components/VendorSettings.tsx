@@ -29,7 +29,9 @@ import {
   BadgeCheck,
   ChevronRight,
   Sparkles,
-  Lock
+  Lock,
+  Star,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -43,6 +45,11 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profileId, setProfileId] = useState<number | string | null>(null);
+
+  // Multi-Category states (Up to 3, 1 primary)
+  const [allCategories, setAllCategories] = useState<Array<{ id: number; name: string; slug?: string }>>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [primaryCategoryId, setPrimaryCategoryId] = useState<number | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -79,14 +86,21 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
     }
   }, [user]);
 
-  // Load existing profile from API
+  // Load existing profile & categories taxonomy from API
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const res = await apiService.profiles.me();
-        if (res?.data) {
-          const p = res.data;
+        const [profileRes, catsRes] = await Promise.all([
+          apiService.profiles.me().catch(() => null),
+          apiService.profiles.serviceCategories().catch(() => null)
+        ]);
+
+        const availableCats = catsRes?.data?.service_categories || [];
+        setAllCategories(availableCats);
+
+        if (profileRes?.data) {
+          const p = profileRes.data;
           setProfileId(p.id);
           setFormData((prev) => ({
             ...prev,
@@ -101,9 +115,24 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
             cancellation_policy: p.cancellation_policy || prev.cancellation_policy,
             verification_status: p.verification_status || prev.verification_status
           }));
+
+          // Populate categories
+          if (p.categories && Array.isArray(p.categories) && p.categories.length > 0) {
+            const catIds = p.categories.map((c: any) => c.id).filter(Boolean);
+            setSelectedCategoryIds(catIds);
+            const primaryId = p.primary_category?.id || p.categories.find((c: any) => c.is_primary)?.id || catIds[0];
+            setPrimaryCategoryId(primaryId);
+          } else if (p.service_categories && Array.isArray(p.service_categories)) {
+            const matchedIds = availableCats
+              .filter((c: any) => p.service_categories.some((sc: string) => sc.toLowerCase() === c.name.toLowerCase()))
+              .map((c: any) => c.id);
+            if (matchedIds.length > 0) {
+              setSelectedCategoryIds(matchedIds);
+              setPrimaryCategoryId(matchedIds[0]);
+            }
+          }
         }
       } catch (err) {
-        // Fallback to initial props or mock data
         console.warn('Using local vendor profile defaults:', err);
       } finally {
         setLoading(false);
@@ -115,6 +144,43 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleToggleCategory = (catId: number) => {
+    if (selectedCategoryIds.includes(catId)) {
+      if (selectedCategoryIds.length <= 1) {
+        toast.error('You must keep at least 1 operating category.');
+        return;
+      }
+      const updated = selectedCategoryIds.filter((id) => id !== catId);
+      setSelectedCategoryIds(updated);
+      if (primaryCategoryId === catId) {
+        setPrimaryCategoryId(updated[0] || null);
+      }
+    } else {
+      if (selectedCategoryIds.length >= 3) {
+        toast.error('You can select up to 3 operating categories (1 primary + 2 secondary).');
+        return;
+      }
+      const updated = [...selectedCategoryIds, catId];
+      setSelectedCategoryIds(updated);
+      if (!primaryCategoryId) {
+        setPrimaryCategoryId(catId);
+      }
+    }
+  };
+
+  const handleSetPrimaryCategory = (e: React.MouseEvent, catId: number) => {
+    e.stopPropagation();
+    if (!selectedCategoryIds.includes(catId)) {
+      if (selectedCategoryIds.length >= 3) {
+        toast.error('You can select up to 3 operating categories. Deselect one first.');
+        return;
+      }
+      setSelectedCategoryIds([...selectedCategoryIds, catId]);
+    }
+    setPrimaryCategoryId(catId);
+    toast.success('Primary category updated!');
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -132,14 +198,15 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
             instagram_handle: formData.instagram_handle,
             years_experience: Number(formData.years_experience),
             business_license: formData.business_license,
-            cancellation_policy: formData.cancellation_policy
+            cancellation_policy: formData.cancellation_policy,
+            category_ids: selectedCategoryIds,
+            primary_category_id: primaryCategoryId
           }
         });
       }
       toast.success('Business settings saved successfully!');
     } catch (err: any) {
       console.error('Error saving settings:', err);
-      // Give optimistic reassurance if offline or mock profile
       toast.success('Settings updated locally!');
     } finally {
       setSaving(false);
@@ -303,6 +370,71 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
                       className="pl-9 bg-[#FAF7F2]/60 border-[#E8E2D9] focus-visible:ring-[#9E5338] text-xs h-10"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Operating Categories Multiselect */}
+              <div className="space-y-2.5 pt-4 border-t border-[#E8E2D9]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div>
+                    <Label className="text-xs font-semibold text-[#221F1C] flex items-center gap-2">
+                      Operating Categories
+                      <span className="text-[10px] font-semibold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full border border-[#E8E2D9]">
+                        {selectedCategoryIds.length}/3 Selected
+                      </span>
+                    </Label>
+                    <p className="text-[11px] text-[#6B6560] mt-0.5">
+                      Select up to 3 service categories your business operates in. Designate 1 as <span className="font-semibold text-[#9E5338]">Primary (★)</span>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 pt-1">
+                  {allCategories.map((cat) => {
+                    const isSelected = selectedCategoryIds.includes(cat.id);
+                    const isPrimary = primaryCategoryId === cat.id;
+
+                    return (
+                      <div
+                        key={cat.id}
+                        onClick={() => handleToggleCategory(cat.id)}
+                        className={`relative p-3 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-2 select-none ${
+                          isSelected
+                            ? 'border-[#9E5338] bg-[#FDF9F5] shadow-xs ring-1 ring-[#9E5338]/20'
+                            : 'border-[#E8E2D9] bg-[#FAF7F2]/60 hover:bg-white text-[#6B6560]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <span className={`text-xs font-medium leading-tight ${isSelected ? 'text-[#221F1C] font-semibold' : ''}`}>
+                            {cat.name}
+                          </span>
+                          {isSelected && (
+                            <div className="size-4 rounded-full bg-[#9E5338] text-white flex items-center justify-center shrink-0">
+                              <Check className="size-2.5 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+
+                        {isSelected && (
+                          <div className="pt-1.5 border-t border-[#E8E2D9]/60 flex items-center justify-between">
+                            {isPrimary ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] px-1.5 py-0.5 rounded">
+                                <Star className="size-2.5 fill-[#9E5338]" /> Primary
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => handleSetPrimaryCategory(e, cat.id)}
+                                className="text-[10px] text-[#6B6560] hover:text-[#9E5338] hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                              >
+                                <Star className="size-2.5" /> Make Primary
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

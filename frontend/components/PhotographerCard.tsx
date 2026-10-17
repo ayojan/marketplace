@@ -25,6 +25,10 @@ interface Vendor {
   user_id?: string | number;
   is_verified?: boolean;
   verification_status?: string;
+  primary_category?: { id?: number; name?: string; slug?: string } | string;
+  categories?: Array<{ id?: number; name?: string; slug?: string; is_primary?: boolean } | string>;
+  service_categories?: string[];
+  category?: string;
 }
 
 interface PhotographerCardProps {
@@ -52,6 +56,35 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   const priceRange = hasBasePrice
     ? `₹${Number(photographer.base_price).toLocaleString('en-IN')}`
     : 'Price on request';
+
+  // Category resolution
+  const categoriesList: string[] = [];
+  if (photographer.primary_category) {
+    const pName = typeof photographer.primary_category === 'string'
+      ? photographer.primary_category
+      : photographer.primary_category.name;
+    if (pName) categoriesList.push(pName);
+  }
+  if (photographer.categories && Array.isArray(photographer.categories)) {
+    photographer.categories.forEach((cat: any) => {
+      const cName = typeof cat === 'string' ? cat : cat.name;
+      if (cName && !categoriesList.includes(cName)) {
+        categoriesList.push(cName);
+      }
+    });
+  } else if (photographer.service_categories && Array.isArray(photographer.service_categories)) {
+    photographer.service_categories.forEach((cat: string) => {
+      if (cat && !categoriesList.includes(cat)) {
+        categoriesList.push(cat);
+      }
+    });
+  } else if (photographer.category && !categoriesList.includes(photographer.category)) {
+    categoriesList.push(photographer.category);
+  }
+
+  const primaryCategoryName = categoriesList[0] || null;
+  const additionalCategoriesCount = Math.max(0, categoriesList.length - 1);
+  const additionalCategoriesNames = categoriesList.slice(1).join(', ');
 
   useEffect(() => {
     let isMounted = true;
@@ -192,6 +225,23 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
             {name}
           </h3>
         </Link>
+
+        {/* Operating Categories Badges */}
+        {primaryCategoryName && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-md border border-[#E8E2D9]">
+              {primaryCategoryName}
+            </span>
+            {additionalCategoriesCount > 0 && (
+              <span
+                title={`Also operates in: ${additionalCategoriesNames}`}
+                className="inline-flex items-center text-[10px] font-medium text-[#6B6560] bg-[#FAF7F2] px-1.5 py-0.5 rounded-md border border-[#E8E2D9] cursor-help"
+              >
+                +{additionalCategoriesCount} more
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Rating Line & Response Metric */}
         <div className="flex items-center justify-between text-xs">

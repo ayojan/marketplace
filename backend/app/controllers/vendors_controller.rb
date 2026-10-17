@@ -9,7 +9,11 @@ class VendorsController < ApiController
 
   def index
     @vendors = apply_filters(
-      Vendor.includes(:user, services: :categories, portfolio_items: { images_attachments: :blob })
+      Vendor.includes(
+        :user, :vendor_categories, :categories,
+        services: :categories,
+        portfolio_items: { images_attachments: :blob }
+      )
     )
     total_count = @vendors.count
 
@@ -27,7 +31,12 @@ class VendorsController < ApiController
   end
 
   def services
-    services = @vendor.services.active.includes(:categories, :service_images)
+    services_scope = if current_user && @vendor.user_id == current_user.id
+                       @vendor.services
+                     else
+                       @vendor.services.active
+                     end
+    services = services_scope.includes(:categories, :service_images).order(created_at: :desc)
 
     render json: {
       services: services.map { |service| service_json(service) }

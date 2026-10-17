@@ -2,6 +2,8 @@
 
 # rubocop:disable Metrics/ClassLength
 class AuthController < ApplicationController
+  RAW_CATEGORY_KEYS = %i[category_ids categories category category_id service_category].freeze
+
   skip_before_action :authenticate_request, only: %i[login register logout google]
   before_action :validate_auth_params, only: %i[login register]
 
@@ -226,8 +228,9 @@ class AuthController < ApplicationController
   def auth_params
     permitted = params.expect(
       auth: [:email, :password, :password_confirmation, :first_name, :last_name, :role,
-             { vendor_attributes: %i[business_name location description phone website
-                                     category category_id service_category],
+             { vendor_attributes: [:business_name, :location, :description, :phone, :website,
+                                   :category, :category_id, :service_category, :primary_category_id,
+                                   { category_ids: [], categories: [] }],
                customer_attributes: %i[phone location preferences event_types budget_range company_name] }]
     )
     permitted[:role] = 'customer' unless %w[customer vendor].include?(permitted[:role].to_s)
@@ -242,6 +245,9 @@ class AuthController < ApplicationController
     attributes.delete(:category)
     attributes.delete(:category_id)
     attributes.delete(:service_category)
+    attributes.delete(:category_ids)
+    attributes.delete(:categories)
+    attributes.delete(:primary_category_id)
     normalize_vendor_description(permitted, attributes)
   end
 
@@ -255,16 +261,46 @@ class AuthController < ApplicationController
   end
 
   def attach_initial_vendor_category(vendor)
-    cat_param = params.dig(:auth, :vendor_attributes, :category) ||
-                params.dig(:auth, :vendor_attributes, :category_id) ||
-                params.dig(:auth, :vendor_attributes, :service_category) ||
-                params.dig(:auth, :category)
-    return if cat_param.blank?
+    resolved = resolve_initial_categories
+    return if resolved.empty?
 
-    category = find_matching_category(cat_param)
-    create_starter_service(vendor, category) if category
+    primary_cat = resolve_primary_category(resolved)
+    vendor.sync_categories(resolved.map(&:id), primary_id: primary_cat.id)
+    create_starter_service(vendor, primary_cat)
   rescue StandardError => e
     Rails.logger.warn("Failed to attach initial category to vendor #{vendor.id}: #{e.message}")
+  end
+
+  def resolve_initial_categories
+    cat_list = extract_raw_categories
+    return [] if cat_list.empty?
+
+    cat_list.filter_map { |ident| find_matching_category(ident) }.uniq.first(3)
+  end
+
+  def extract_raw_categories
+    raw_cats = find_raw_category_param
+    return [] if raw_cats.blank?
+
+    Array(raw_cats).flat_map { |item| item.to_s.split(',') }.map(&:strip).compact_blank
+  end
+
+  def find_raw_category_param
+    v_attrs = params[:auth]&.dig(:vendor_attributes)
+    if v_attrs.present?
+      match = RAW_CATEGORY_KEYS.find { |k| v_attrs[k].present? }
+      return v_attrs[match] if match
+    end
+    params[:auth]&.dig(:category)
+  end
+
+  def resolve_primary_category(resolved)
+    primary_id = params.dig(:auth, :vendor_attributes, :primary_category_id)
+    if primary_id.present?
+      resolved.find { |c| c.id == primary_id.to_i } || resolved.first
+    else
+      resolved.first
+    end
   end
 
   def create_starter_service(vendor, category)
