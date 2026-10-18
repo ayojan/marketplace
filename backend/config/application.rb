@@ -57,11 +57,8 @@ module Marketplace
     # Note: Setting to false to support ActiveAdmin
     config.api_only = false
 
-    # Configure Redis for caching
-    config.cache_store = :redis_cache_store, {
-      url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'),
-      namespace: 'marketplace_cache'
-    }
+    # Configure Solid Cache for caching (PostgreSQL-backed, no Redis required)
+    config.cache_store = :solid_cache_store
     # Configure Active Job to use Solid Queue (PostgreSQL-backed, no Redis required)
     config.active_job.queue_adapter = :solid_queue
   end

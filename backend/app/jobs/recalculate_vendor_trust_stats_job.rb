@@ -1,13 +1,9 @@
 # frozen_string_literal: true
 
-class RecalculateVendorTrustStatsJob
-  include Sidekiq::Job
-
-  sidekiq_options retry: 3, dead: true, queue: 'low'
-
-  def sidekiq_options
-    self.class.get_sidekiq_options
-  end
+class RecalculateVendorTrustStatsJob < ApplicationJob
+  queue_as :low
+  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  discard_on ActiveRecord::RecordNotFound
 
   # Use unique job constraint to prevent duplicate jobs for same vendor
   # Requires: gem 'sidekiq-unique-jobs'

@@ -1,14 +1,8 @@
 # frozen_string_literal: true
 
-class BookingReminderJob
-  include Sidekiq::Job
-
-  # Low priority: batch job that can run at non-peak times
-  sidekiq_options queue: 'low', retry: 3, dead: true
-
-  def sidekiq_options
-    self.class.get_sidekiq_options
-  end
+class BookingReminderJob < ApplicationJob
+  queue_as :low
+  retry_on StandardError, wait: :exponentially_longer, attempts: 3
 
   def perform
     # Find bookings happening in 24 hours (+/- 30 minutes window)

@@ -1,8 +1,0 @@
-# Sidekiq Job Scheduler Configuration
-# This file defines recurring jobs to be executed by Sidekiq
-# Requires: gem 'sidekiq-scheduler' in Gemfile
-
-booking_reminder_job:
-  cron: '0 9 * * *'  # Daily at 9:00 AM UTC
-  class: 'BookingReminderJob'
-  description: 'Send booking reminders to customers and vendors for bookings happening in 24 hours'
