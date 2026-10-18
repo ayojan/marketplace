@@ -768,10 +768,12 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
                               {/* Real service image thumbnail if present */}
                               {primaryImg && (
                                 <div className="relative size-18 sm:size-20 rounded-xl overflow-hidden border border-[#E8E2D9] bg-stone-100 shrink-0">
-                                  <img
+                                  <Image
                                     src={primaryImg}
                                     alt={service.name}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    fill
+                                    unoptimized
+                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                                   />
                                   {service.images && service.images.length > 1 && (
                                     <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/70 text-white text-[9px] font-semibold backdrop-blur-xs flex items-center gap-0.5">
