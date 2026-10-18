@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Star, MapPin, Heart, ShieldCheck, Clock } from 'lucide-react';
+import { Star, MapPin, Heart, Clock, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { apiService } from '@/lib/api';
 import { tokenService } from '@/lib/tokenService';
 import { toast } from 'sonner';
+import VerifiedPartnerBadge from './VerifiedPartnerBadge';
 
 interface Vendor {
   id: string;
@@ -25,6 +26,7 @@ interface Vendor {
   user_id?: string | number;
   is_verified?: boolean;
   verification_status?: string;
+  verification_checks?: Record<string, any>;
   primary_category?: { id?: number; name?: string; slug?: string } | string;
   categories?: Array<{ id?: number; name?: string; slug?: string; is_primary?: boolean } | string>;
   service_categories?: string[];
@@ -48,9 +50,13 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   const rating = rawRating ? Number(rawRating) : null;
   const totalReviews = photographer.total_reviews ?? 0;
   const location = photographer.location || '';
+  // Verified Partner check: Vendor must have completed all verification standards
+  const checksCompleted = photographer.verification_checks
+    ? Object.values(photographer.verification_checks).every((c: any) => c.completed !== false)
+    : true;
   const isVerified = Boolean(
-    photographer.is_verified === true ||
-    photographer.verification_status === 'verified'
+    checksCompleted &&
+    (photographer.is_verified === true || photographer.verification_status === 'verified')
   );
   const hasBasePrice = typeof photographer.base_price === 'number' && Number(photographer.base_price) > 0;
   const priceRange = hasBasePrice
@@ -195,14 +201,19 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
 
-          {/* Verified Partner Badge - Only displayed for verified partners */}
-          {isVerified && (
-            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-white/60 text-[11px] font-semibold text-[#8E4532] shadow-xs pointer-events-none">
-              <ShieldCheck className="size-3.5 text-[#9E5338]" />
-              <span>Verified Partner</span>
-            </div>
-          )}
         </Link>
+
+        {/* Verified Partner Badge - Interactive overlay */}
+        {isVerified && (
+          <div className="absolute top-3 left-3 z-20">
+            <VerifiedPartnerBadge
+              vendorName={name}
+              verificationChecks={photographer.verification_checks}
+              isVerified={isVerified}
+              size="sm"
+            />
+          </div>
+        )}
 
         {/* Favorite Heart Button - Interactive overlay */}
         <button 
@@ -245,7 +256,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
 
         {/* Rating Line & Response Metric */}
         <div className="flex items-center justify-between text-xs">
-          {rating && rating > 0 ? (
+          {rating && rating > 0 && totalReviews > 0 ? (
             <div className="flex items-center gap-1.5 text-[#221F1C]">
               <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
               <span className="font-semibold">{rating.toFixed(1)}</span>
@@ -253,8 +264,10 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
             </div>
           ) : (
             <div className="flex items-center gap-1.5 text-[#6B6560]">
-              <Star className="size-3.5 text-[#D97706]" />
-              <span className="font-medium text-[11px]">New Partner</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[11px] font-medium text-[#6B6560] border border-[#E8E2D9]">
+                <Sparkles className="size-3 text-[#9E5338]" />
+                <span>New on Ayoj</span>
+              </span>
             </div>
           )}
 

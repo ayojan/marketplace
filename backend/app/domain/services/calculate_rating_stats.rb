@@ -55,7 +55,7 @@ module Services
     end
 
     def rating_display
-      return 'No ratings yet' if service.total_reviews.zero?
+      return 'New on Ayoj' if service.total_reviews.zero? || service.average_rating.to_f.zero?
 
       reviews_label = 'review'.pluralize(service.total_reviews)
       "#{service.average_rating.round(1)} (#{service.total_reviews} #{reviews_label})"

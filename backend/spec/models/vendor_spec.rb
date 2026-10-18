@@ -251,6 +251,83 @@ RSpec.describe Vendor do
       end
     end
 
+    describe '#can_display_verified_badge?' do
+      let!(:service) { create(:service, vendor: complete_vendor, status: :active) }
+
+      before do
+        complete_vendor.update!(
+          verification_status: :verified,
+          verified_at: Time.current,
+          business_license: '07AABCT2345D1Z5',
+          phone: '+91 98111 22334',
+          location: 'Delhi NCR',
+          description: 'A' * 60
+        )
+      end
+
+      it 'returns true when all verification checks are completed' do
+        expect(complete_vendor.can_display_verified_badge?).to be true
+      end
+
+      it 'returns false when business license is missing' do
+        complete_vendor.update!(business_license: nil)
+        expect(complete_vendor.can_display_verified_badge?).to be false
+      end
+
+      it 'returns false when phone is missing' do
+        complete_vendor.update!(phone: nil)
+        expect(complete_vendor.can_display_verified_badge?).to be false
+      end
+
+      it 'returns false when location is missing' do
+        complete_vendor.update_column(:location, nil)
+        expect(complete_vendor.can_display_verified_badge?).to be false
+      end
+
+      it 'returns false when profile is incomplete (description < 50 chars)' do
+        complete_vendor.update_column(:description, 'Short')
+        expect(complete_vendor.can_display_verified_badge?).to be false
+      end
+
+      it 'returns false when vendor has no services' do
+        complete_vendor.services.destroy_all
+        expect(complete_vendor.can_display_verified_badge?).to be false
+      end
+
+      it 'returns false when verification status is not verified' do
+        complete_vendor.update!(verification_status: :pending_verification)
+        expect(complete_vendor.can_display_verified_badge?).to be false
+      end
+
+      it 'returns false when verified_at is nil' do
+        complete_vendor.update!(verified_at: nil)
+        expect(complete_vendor.can_display_verified_badge?).to be false
+      end
+    end
+
+    describe '#verification_checks' do
+      let!(:service) { create(:service, vendor: complete_vendor, status: :active) }
+
+      it 'returns structured status for each verification standard' do
+        complete_vendor.update!(
+          verification_status: :verified,
+          verified_at: Time.current,
+          business_license: '07AABCT2345D1Z5',
+          phone: '+91 98111 22334',
+          location: 'Delhi NCR',
+          description: 'A' * 60
+        )
+
+        checks = complete_vendor.verification_checks
+        expect(checks[:business_license][:completed]).to be true
+        expect(checks[:contact_verified][:completed]).to be true
+        expect(checks[:profile_complete][:completed]).to be true
+        expect(checks[:services_active][:completed]).to be true
+        expect(checks[:curation_approved][:completed]).to be true
+        expect(complete_vendor.all_verification_checks_completed?).to be true
+      end
+    end
+
     describe '#has_description?' do
       it 'returns true when description is present and long enough' do
         complete_vendor.update(description: 'A' * 60)
@@ -440,7 +517,7 @@ RSpec.describe Vendor do
 
       it 'returns no ratings message when no reviews' do
         complete_vendor.update(total_reviews: 0)
-        expect(complete_vendor.rating_display).to eq('No ratings yet')
+        expect(complete_vendor.rating_display).to eq('New on Ayoj')
       end
     end
   end

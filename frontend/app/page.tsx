@@ -504,11 +504,12 @@ export default function Landing() {
 
                 <div className="text-left">
                   <div className="flex items-center gap-1.5 leading-none">
-                    <span className="text-sm font-bold text-[#221F1C]">4.9</span>
-                    <Star className="size-3 fill-amber-400 text-amber-400" />
+                    <span className="text-xs font-bold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full border border-[#E8E2D9]">
+                      Curated &amp; Verified
+                    </span>
                   </div>
                   <div className="text-[11px] text-[#6B6560] leading-tight mt-1">
-                    verified host rating across <br /> 5,000+ celebrations
+                    Authentic portfolios &amp; direct <br /> creative partner booking
                   </div>
                 </div>
 

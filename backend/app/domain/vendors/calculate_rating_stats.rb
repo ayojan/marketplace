@@ -55,7 +55,7 @@ module Vendors
     end
 
     def rating_display
-      return 'No ratings yet' if vendor.total_reviews.zero?
+      return 'New on Ayoj' if vendor.total_reviews.zero? || vendor.average_rating.to_f.zero?
 
       reviews_label = 'review'.pluralize(vendor.total_reviews)
       "#{vendor.average_rating.round(1)} (#{vendor.total_reviews} #{reviews_label})"

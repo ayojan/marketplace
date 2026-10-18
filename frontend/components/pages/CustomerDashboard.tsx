@@ -180,7 +180,7 @@ const CustomerDashboard = () => {
         name: f.vendor?.business_name || 'Creative Partner',
         category: Array.isArray(f.vendor?.service_categories) ? f.vendor?.service_categories[0] : (f.vendor?.service_categories || 'Creative Partner'),
         location: f.vendor?.location || 'Delhi NCR',
-        rating: f.vendor?.average_rating || 4.9,
+        rating: f.vendor?.average_rating ? Number(f.vendor.average_rating) : 0,
         reviewsCount: f.vendor?.total_reviews || 0,
         price: f.vendor?.base_price ? `₹${f.vendor.base_price.toLocaleString()}` : 'Price on request',
         image: f.vendor?.image || f.vendor?.profile_image_url || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
@@ -526,12 +526,18 @@ const CustomerDashboard = () => {
                       <h4 className="text-xs font-bold text-[#221F1C] truncate group-hover:text-[#9E5338] transition-colors">
                         {vendor.name}
                       </h4>
-                      <p className="text-[10px] text-[#6B6560] truncate">{vendor.category} • {vendor.location}</p>
-                      <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-[#221F1C]">
-                        <Star size={12} className="fill-[#D97706] text-[#D97706]" />
-                        <span>{vendor.rating}</span>
-                        <span className="text-[#6B6560] font-normal">({vendor.reviewsCount})</span>
-                      </div>
+                      {vendor.reviewsCount > 0 && Number(vendor.rating) > 0 ? (
+                        <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-[#221F1C]">
+                          <Star size={12} className="fill-[#D97706] text-[#D97706]" />
+                          <span>{Number(vendor.rating).toFixed(1)}</span>
+                          <span className="text-[#6B6560] font-normal">({vendor.reviewsCount})</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 mt-1 text-[10px] text-[#6B6560]">
+                          <Sparkles size={11} className="text-[#9E5338]" />
+                          <span className="font-medium">New on Ayoj</span>
+                        </div>
+                      )}
                     </div>
                     <ChevronRight size={16} className="text-[#9E5338] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
                   </Link>

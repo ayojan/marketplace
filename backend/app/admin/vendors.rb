@@ -5,7 +5,7 @@ ActiveAdmin.register Vendor do
 
   permit_params :user_id, :business_name, :description, :location, :phone,
                 :website, :instagram_handle, :facebook_url, :years_experience,
-                :verification_status, :rejection_reason, category_ids: []
+                :business_license, :verification_status, :rejection_reason, category_ids: []
 
   includes :user, vendor_categories: :category
 
@@ -110,6 +110,11 @@ ActiveAdmin.register Vendor do
       row :verification_status do |vendor|
         status_tag vendor.verification_status
       end
+      row 'Verified Partner Badge Active?' do |vendor|
+        status_tag(vendor.can_display_verified_badge? ? 'YES - Verified Partner' : 'NO - Incomplete Checks',
+                   class: vendor.can_display_verified_badge? ? :ok : :warn)
+      end
+      row :business_license
       row :verified_at
       row :rejection_reason if vendor.verification_rejected?
       row :phone
@@ -126,6 +131,19 @@ ActiveAdmin.register Vendor do
       row :facebook_url
       row :created_at
       row :updated_at
+    end
+
+    panel 'Verified Partner Standards & Checks Breakdown' do
+      table_for vendor.verification_checks.values do
+        column 'Check Name', &:title
+        column 'Description', &:description
+        column 'Status' do |c|
+          status_tag(c[:completed] ? 'Completed' : 'Pending', class: c[:completed] ? :ok : :warn)
+        end
+        column 'Provided Value' do |c|
+          c[:value] || (c[:completed] ? 'Satisfied' : 'Missing')
+        end
+      end
     end
 
     panel "Services (#{vendor.services.count})" do
@@ -154,6 +172,7 @@ ActiveAdmin.register Vendor do
                              collection: Category.active.ordered.map { |c| [c.name, c.id] },
                              label: 'Categories (Max 3, first is Primary)',
                              hint: 'Select up to 3 categories. The first selected will be primary.'
+      f.input :business_license, label: 'Business Registration / GSTIN'
       f.input :description, as: :text, input_html: { rows: 4 }
       f.input :location
       f.input :phone
@@ -169,8 +188,14 @@ ActiveAdmin.register Vendor do
 
   # Member Actions
   member_action :verify, method: %i[get put] do
-    resource.update(verification_status: :verified, verified_at: Time.current, rejection_reason: nil)
-    redirect_to resource_path, notice: "Vendor '#{resource.business_name}' has been verified!"
+    resource.approve_verification!
+    if resource.can_display_verified_badge?
+      redirect_to resource_path,
+                  notice: "Vendor '#{resource.business_name}' has been verified and awarded the Verified Partner badge!"
+    else
+      redirect_to resource_path,
+                  alert: "Vendor '#{resource.business_name}' is verified in system, but Verified Partner badge won't display until missing checks (license, phone, profile, service) are satisfied."
+    end
   end
 
   member_action :reject, method: %i[get put] do

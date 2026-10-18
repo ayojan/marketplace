@@ -270,4 +270,48 @@ RSpec.describe ProfilesController do
       expect(json_response['service_categories'].first['name']).to eq('Active Category')
     end
   end
+
+  describe 'POST #request_verification' do
+    context 'when authenticated as vendor' do
+      before do
+        request.headers.merge!(auth_headers(vendor_user))
+      end
+
+      it 'returns unprocessable_content when verification requirements are missing' do
+        vendor.update!(business_license: nil)
+        vendor.services.destroy_all
+
+        post :request_verification, format: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json_response = response.parsed_body
+        expect(json_response['error']).to include('Cannot submit verification request yet')
+        expect(json_response['missing_requirements']).to include('Business registration or GSTIN number')
+      end
+
+      it 'submits verification request successfully when all requirements are met' do
+        vendor.update!(
+          business_license: '07AABCT2345D1Z5',
+          phone: '+91 98111 22334',
+          location: 'Delhi NCR',
+          description: 'A' * 60
+        )
+        create(:service, vendor: vendor, status: :active)
+
+        post :request_verification, format: :json
+
+        expect(response).to have_http_status(:ok)
+        json_response = response.parsed_body
+        expect(json_response['status']).to eq('pending_verification')
+        expect(json_response['verification_checks']).to be_present
+      end
+    end
+
+    context 'when not authenticated' do
+      it 'returns unauthorized' do
+        post :request_verification, format: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
 end

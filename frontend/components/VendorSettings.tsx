@@ -214,13 +214,51 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
   };
 
   const handleRequestVerification = async () => {
+    // Check requirements first
+    const missing: string[] = [];
+    if (!formData.business_license?.trim()) {
+      missing.push('Business Registration / GSTIN number');
+    }
+    if (!formData.phone?.trim()) {
+      missing.push('Contact phone number');
+    }
+    if (!formData.location?.trim()) {
+      missing.push('Operational location');
+    }
+    if ((formData.description || '').trim().length < 50) {
+      missing.push('Detailed description (at least 50 characters)');
+    }
+
+    if (missing.length > 0) {
+      toast.error(`Please complete requirements before requesting verification: ${missing.join(', ')}.`);
+      return;
+    }
+
     try {
-      await apiService.profiles.requestVerification();
+      if (profileId) {
+        await apiService.profiles.update(profileId, {
+          vendor: {
+            business_name: formData.business_name,
+            description: formData.description,
+            location: formData.location,
+            phone: formData.phone,
+            website: formData.website,
+            instagram_handle: formData.instagram_handle,
+            years_experience: Number(formData.years_experience),
+            business_license: formData.business_license,
+            cancellation_policy: formData.cancellation_policy,
+            category_ids: selectedCategoryIds,
+            primary_category_id: primaryCategoryId
+          }
+        });
+      }
+
+      const res = await apiService.profiles.requestVerification();
       setFormData((prev) => ({ ...prev, verification_status: 'pending_verification' }));
-      toast.success('Verification request submitted! Our team will review your business license within 24-48 hours.');
-    } catch (err) {
-      setFormData((prev) => ({ ...prev, verification_status: 'pending_verification' }));
-      toast.success('Verification request received for review.');
+      toast.success(res.data?.message || 'Verification request submitted! Our team will review your business credentials within 24-48 hours.');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || err.message || 'Unable to submit verification request. Please check missing requirements.';
+      toast.error(errorMsg);
     }
   };
 
@@ -594,7 +632,99 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {/* Verification Checklist */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6560]">
+                    Required Verification Standards
+                  </h4>
+                  <span className="text-[11px] text-[#9E5338] font-semibold">
+                    All 4 standards required for badge
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Standard 1: License */}
+                  <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                    formData.business_license?.trim() ? 'bg-emerald-50/50 border-emerald-200' : 'bg-[#FAF7F2] border-[#E8E2D9]'
+                  }`}>
+                    {formData.business_license?.trim() ? (
+                      <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="text-left min-w-0">
+                      <p className="text-xs font-bold text-[#221F1C]">1. Business Registration / GSTIN</p>
+                      <p className="text-[11px] text-[#6B6560] mt-0.5">
+                        {formData.business_license?.trim()
+                          ? `GSTIN: ${formData.business_license}`
+                          : 'Enter your valid GSTIN or MSME certificate number below.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Standard 2: Contact & Location */}
+                  <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                    formData.phone?.trim() && formData.location?.trim() ? 'bg-emerald-50/50 border-emerald-200' : 'bg-[#FAF7F2] border-[#E8E2D9]'
+                  }`}>
+                    {formData.phone?.trim() && formData.location?.trim() ? (
+                      <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="text-left min-w-0">
+                      <p className="text-xs font-bold text-[#221F1C]">2. Contact & Base Location</p>
+                      <p className="text-[11px] text-[#6B6560] mt-0.5">
+                        {formData.phone?.trim() && formData.location?.trim()
+                          ? `${formData.location} · ${formData.phone}`
+                          : 'Set operational city and direct telephone in Basic Info.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Standard 3: Profile Completeness */}
+                  <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                    (formData.description || '').trim().length >= 50 ? 'bg-emerald-50/50 border-emerald-200' : 'bg-[#FAF7F2] border-[#E8E2D9]'
+                  }`}>
+                    {(formData.description || '').trim().length >= 50 ? (
+                      <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="text-left min-w-0">
+                      <p className="text-xs font-bold text-[#221F1C]">3. Comprehensive Studio Profile</p>
+                      <p className="text-[11px] text-[#6B6560] mt-0.5">
+                        {(formData.description || '').trim().length >= 50
+                          ? `Complete (${(formData.description || '').trim().length} chars bio)`
+                          : 'Studio bio must be at least 50 characters long.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Standard 4: Ayoj Curation Approval */}
+                  <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                    formData.verification_status === 'verified' ? 'bg-emerald-50/50 border-emerald-200' : 'bg-[#FAF7F2] border-[#E8E2D9]'
+                  }`}>
+                    {formData.verification_status === 'verified' ? (
+                      <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <Clock className="size-4 text-[#9E5338] shrink-0 mt-0.5" />
+                    )}
+                    <div className="text-left min-w-0">
+                      <p className="text-xs font-bold text-[#221F1C]">4. Ayoj Curation Team Review</p>
+                      <p className="text-[11px] text-[#6B6560] mt-0.5">
+                        {formData.verification_status === 'verified'
+                          ? 'Certified and approved by platform trust operations.'
+                          : formData.verification_status === 'pending_verification'
+                            ? 'Documents submitted and currently under review.'
+                            : 'Request official verification once items 1-3 are complete.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-2 border-t border-[#E8E2D9]">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-[#221F1C]">Business Registration / GSTIN Number</Label>
                   <Input
@@ -611,8 +741,10 @@ export default function VendorSettings({ initialVendor }: VendorSettingsProps) {
                 <div className="p-4 rounded-xl border border-dashed border-[#E8E2D9] bg-[#FAF7F2]/50 text-center space-y-2">
                   <FileText className="size-6 text-[#9E5338] mx-auto opacity-80" />
                   <div>
-                    <p className="text-xs font-semibold text-[#221F1C]">Official Documentation</p>
-                    <p className="text-[11px] text-[#6B6560]">Trade certificate, past 3 wedding contracts, or studio registration</p>
+                    <p className="text-xs font-semibold text-[#221F1C]">Official Documentation & Review</p>
+                    <p className="text-[11px] text-[#6B6560]">
+                      Submit for manual review. When approved, the Verified Partner badge will display automatically on your cards.
+                    </p>
                   </div>
                   {formData.verification_status !== 'verified' && (
                     <Button
