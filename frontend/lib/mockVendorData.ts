@@ -57,8 +57,8 @@ export const MOCK_VENDORS: MockVendor[] = [
     phone: '+91 98765 43210',
     category: 'Photographers',
     location: 'Delhi NCR',
-    rating: 4.9,
-    total_reviews: 320,
+    rating: 0,
+    total_reviews: 0,
     base_price: 50000,
     image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
     verified: true,
@@ -70,7 +70,7 @@ export const MOCK_VENDORS: MockVendor[] = [
     overview: {
       total_bookings: 28,
       active_services: 3,
-      average_rating: '4.9',
+      average_rating: '0.0',
     },
     services: [
       {
@@ -160,8 +160,8 @@ export const MOCK_VENDORS: MockVendor[] = [
     phone: '+91 98112 34567',
     category: 'Makeup Artists',
     location: 'Gurgaon',
-    rating: 4.8,
-    total_reviews: 214,
+    rating: 0,
+    total_reviews: 0,
     base_price: 15000,
     image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
     verified: true,
@@ -173,7 +173,7 @@ export const MOCK_VENDORS: MockVendor[] = [
     overview: {
       total_bookings: 19,
       active_services: 3,
-      average_rating: '4.8',
+      average_rating: '0.0',
     },
     services: [
       {

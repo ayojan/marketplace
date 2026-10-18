@@ -349,7 +349,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
                 {service?.name || 'Service Booking'}
               </h1>
               <p className="text-xs sm:text-sm text-[#6B6560] mt-1.5 flex items-center gap-2">
-                <span className="font-semibold text-[#221F1C]">{service?.vendor?.business_name || 'Ayoj Verified Partner'}</span>
+                <span className="font-semibold text-[#221F1C]">{service?.vendor?.business_name || (service?.vendor?.is_verified ? 'Ayoj Verified Partner' : 'Ayoj Creative Partner')}</span>
                 {service?.category?.name && (
                   <>
                     <span className="size-1 rounded-full bg-[#9E5338]" />

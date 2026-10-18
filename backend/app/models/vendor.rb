@@ -142,7 +142,66 @@ class Vendor < ApplicationRecord
 
   alias has_portfolio? portfolio?
 
-  # ── Verification ──────────────────────────────────────────────────────────────
+  # ── Verification System & Standards ───────────────────────────────────────────
+  # A vendor is awarded the "Verified Partner" badge ONLY when all corresponding
+  # verification checks have been completed:
+  # 1. Official business registration / GSTIN on file
+  # 2. Confirmed contact phone and serviceable location
+  # 3. Complete profile (name, location, description >= 50 chars)
+  # 4. At least one active celebration service package
+  # 5. Administrative curation & trust approval (verified_at present)
+  def verification_checks
+    has_active_service = if association(:services).loaded?
+                           services.any?(&:active?) || services.any?
+                         else
+                           services.active.exists? || services.exists?
+                         end
+
+    {
+      business_license: {
+        key: 'business_license',
+        title: 'Business Registration / GSTIN',
+        description: 'Government registered business certificate, GSTIN, or trade license',
+        completed: business_license.present?,
+        value: business_license.presence
+      },
+      contact_verified: {
+        key: 'contact_verified',
+        title: 'Direct Contact & Base Location',
+        description: 'Confirmed operational service base location and direct telephone contact',
+        completed: phone.present? && location.present?,
+        value: [location.presence, phone.presence].compact.join(' · ')
+      },
+      profile_complete: {
+        key: 'profile_complete',
+        title: 'Complete Professional Profile',
+        description: 'Detailed studio description (50+ characters) and profile information',
+        completed: profile_complete?
+      },
+      services_active: {
+        key: 'services_active',
+        title: 'Active Service Catalog & Pricing',
+        description: 'At least one published celebration service package with upfront pricing',
+        completed: has_active_service
+      },
+      curation_approved: {
+        key: 'curation_approved',
+        title: 'Ayoj Trust & Curation Approval',
+        description: 'Quality vetting and formal partner certification by Ayoj Operations',
+        completed: verification_verified? && verified_at.present?,
+        verified_at: verified_at
+      }
+    }
+  end
+
+  def all_verification_checks_completed?
+    verification_checks.values.all? { |c| c[:completed] }
+  end
+
+  def can_display_verified_badge?
+    all_verification_checks_completed?
+  end
+
   def request_verification!
     Vendors::HandleVerification.call(vendor: self, action: :request)
   end

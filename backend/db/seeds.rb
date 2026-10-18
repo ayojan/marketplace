@@ -72,9 +72,8 @@ vendors_info = [
     location: 'Delhi NCR',
     category: categories[0], # Photography
     experience: 8,
-    rating: 4.9,
-    reviews_count: 320,
     price: 50000,
+    business_license: '07AABCT2345D1Z5',
     description: 'Premier wedding photography studio specializing in timeless candid moments and traditional rituals.'
   },
   {
@@ -85,9 +84,8 @@ vendors_info = [
     location: 'Gurgaon',
     category: categories[2], # Makeup
     experience: 6,
-    rating: 4.8,
-    reviews_count: 214,
     price: 15000,
+    business_license: '06AABCK1234F1Z8',
     description: 'HD Airbrush bridal makeup specialist giving brides flawless, radiant looks for their special day.'
   },
   {
@@ -98,9 +96,8 @@ vendors_info = [
     location: 'Delhi NCR',
     category: categories[3], # Decorator
     experience: 10,
-    rating: 4.9,
-    reviews_count: 189,
     price: 100000,
+    business_license: '07AABCE9876P1Z2',
     description: 'Bespoke event and wedding stage decorators creating grand floral setups and royal entrance mandaps.'
   }
 ]
@@ -123,11 +120,12 @@ vendors_info.each do |v_data|
     location: v_data[:location],
     description: v_data[:description],
     years_experience: v_data[:experience],
+    business_license: v_data[:business_license],
     verification_status: :verified,
     verified_at: Time.current,
     phone: '+91 98111 22334',
-    average_rating: v_data[:rating],
-    total_reviews: v_data[:reviews_count]
+    average_rating: 0.0,
+    total_reviews: 0
   )
 
   # Create Services for vendor

@@ -12,7 +12,7 @@ RSpec.describe Services::CalculateRatingStats do
       it 'returns zeroed stats and default display' do
         result = calculator.call
         expect(result[:distribution]).to eq({ 5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0 })
-        expect(result[:display]).to eq('No ratings yet')
+        expect(result[:display]).to eq('New on Ayoj')
       end
     end
 

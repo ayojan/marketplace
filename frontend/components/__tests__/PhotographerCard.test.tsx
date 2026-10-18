@@ -180,5 +180,92 @@ describe('PhotographerCard - Favorite Functionality', () => {
 
       expect(screen.getByText('Verified Partner')).toBeInTheDocument();
     });
+
+    it('does NOT render Verified Partner badge when verification checks are incomplete', () => {
+      render(
+        <PhotographerCard
+          photographer={{
+            ...mockPhotographer,
+            is_verified: true,
+            verification_status: 'verified',
+            verification_checks: {
+              business_license: { title: 'GSTIN', description: '', completed: false },
+              contact_verified: { title: 'Contact', description: '', completed: true },
+            },
+          }}
+        />
+      );
+
+      expect(screen.queryByText('Verified Partner')).not.toBeInTheDocument();
+    });
+
+    it('renders Verified Partner badge when all verification checks are completed', () => {
+      render(
+        <PhotographerCard
+          photographer={{
+            ...mockPhotographer,
+            is_verified: true,
+            verification_status: 'verified',
+            verification_checks: {
+              business_license: { title: 'GSTIN', description: '', completed: true },
+              contact_verified: { title: 'Contact', description: '', completed: true },
+              profile_complete: { title: 'Profile', description: '', completed: true },
+              services_active: { title: 'Services', description: '', completed: true },
+              curation_approved: { title: 'Approved', description: '', completed: true },
+            },
+          }}
+        />
+      );
+
+      expect(screen.getByText('Verified Partner')).toBeInTheDocument();
+    });
+  });
+
+  describe('Rating & Reviews Display', () => {
+    it('displays genuine rating and review count when both are positive', () => {
+      render(
+        <PhotographerCard
+          photographer={{
+            ...mockPhotographer,
+            rating: 4.8,
+            total_reviews: 15,
+          }}
+        />
+      );
+
+      expect(screen.getByText('4.8')).toBeInTheDocument();
+      expect(screen.getByText('(15)')).toBeInTheDocument();
+      expect(screen.queryByText('New on Ayoj')).not.toBeInTheDocument();
+    });
+
+    it('displays neutral "New on Ayoj" label when reviews count is 0', () => {
+      render(
+        <PhotographerCard
+          photographer={{
+            ...mockPhotographer,
+            rating: 0,
+            total_reviews: 0,
+          }}
+        />
+      );
+
+      expect(screen.getByText('New on Ayoj')).toBeInTheDocument();
+      expect(screen.queryByText('4.8')).not.toBeInTheDocument();
+    });
+
+    it('displays neutral "New on Ayoj" label when vendor has fabricated rating but 0 reviews', () => {
+      render(
+        <PhotographerCard
+          photographer={{
+            ...mockPhotographer,
+            rating: 4.9,
+            total_reviews: 0,
+          }}
+        />
+      );
+
+      expect(screen.getByText('New on Ayoj')).toBeInTheDocument();
+      expect(screen.queryByText('4.9')).not.toBeInTheDocument();
+    });
   });
 });

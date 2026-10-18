@@ -28,10 +28,10 @@ RSpec.describe Vendors::CalculateRatingStats do
         expect(result[:breakdown][:punctuality]).to eq(0.0)
       end
 
-      it 'returns "No ratings yet" display' do
+      it 'returns "New on Ayoj" display' do
         result = described_class.call(vendor: vendor)
 
-        expect(result[:display]).to eq('No ratings yet')
+        expect(result[:display]).to eq('New on Ayoj')
       end
     end
 

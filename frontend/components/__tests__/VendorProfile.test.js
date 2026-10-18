@@ -143,7 +143,7 @@ describe('VendorProfile', () => {
     expect(screen.getByText('Professional photography services for all occasions')).toBeInTheDocument();
     expect(screen.getByText(/New York, NY/)).toBeInTheDocument();
     expect(screen.getByText('+1-555-123-4567')).toBeInTheDocument();
-    expect(screen.getByText(/Verified Pro/)).toBeInTheDocument();
+    expect(screen.getByText(/Verified Partner/)).toBeInTheDocument();
     expect(screen.getByText(/10\+ Years Experience/)).toBeInTheDocument();
     expect(screen.getAllByText('4.5').length).toBeGreaterThan(0);
   });
@@ -286,5 +286,28 @@ describe('VendorProfile', () => {
     fireEvent.click(selectBtn);
 
     expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Selected "Wedding Photography"'));
+  });
+
+  it('renders neutral "New on Ayoj" label and empty state when vendor has no reviews', async () => {
+    apiService.vendors.getById.mockResolvedValue({
+      data: {
+        vendor: {
+          ...mockVendor,
+          average_rating: '0.0',
+          total_reviews: 0,
+        },
+      },
+    });
+
+    render(<VendorProfile params={mockParams} />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('New on Ayoj').length).toBeGreaterThan(0);
+    });
+
+    expect(screen.getByText('No Client Reviews Yet')).toBeInTheDocument();
+    expect(screen.getByText(/All Ayoj reviews are written by confirmed hosts after an event booking is completed/)).toBeInTheDocument();
+    expect(screen.queryByText('Priya Sharma')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rahul Kapoor')).not.toBeInTheDocument();
   });
 });

@@ -560,7 +560,7 @@ export default function Header() {
                   <p className="text-[11px] text-[#6B6560] truncate">{user.email}</p>
                   <div className="mt-1.5">
                     <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[#F3EADF] text-[#9E5338]">
-                      {user.role === 'vendor' ? 'Verified Partner' : 'Customer Host'}
+                      {user.role === 'vendor' ? (user.vendor?.is_verified || user.is_verified ? 'Verified Partner' : 'Creative Partner') : 'Customer Host'}
                     </span>
                   </div>
                 </div>

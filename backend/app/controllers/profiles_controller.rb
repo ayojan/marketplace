@@ -81,8 +81,30 @@ class ProfilesController < ApiController
 
   def request_verification
     @profile = current_user.vendor
+    return render json: { error: 'Vendor profile not found' }, status: :not_found unless @profile
+
+    missing = []
+    missing << 'Business registration or GSTIN number' if @profile.business_license.blank?
+    missing << 'Contact phone number' if @profile.phone.blank?
+    missing << 'Operational location' if @profile.location.blank?
+    missing << 'Detailed profile description (at least 50 characters)' unless @profile.profile_complete?
+    missing << 'At least one service in your catalog' unless @profile.services.exists?
+
+    if missing.any?
+      render json: {
+        error: "Cannot submit verification request yet. Please complete: #{missing.join(', ')}.",
+        missing_requirements: missing,
+        verification_checks: @profile.verification_checks
+      }, status: :unprocessable_content
+      return
+    end
+
     if @profile.request_verification!
-      render json: { message: 'Verification request submitted successfully', status: @profile.verification_status }
+      render json: {
+        message: 'Verification request submitted successfully. Our trust operations team will review your business credentials within 24-48 hours.',
+        status: @profile.verification_status,
+        verification_checks: @profile.verification_checks
+      }
     else
       render json: { error: 'Failed to submit verification request' }, status: :unprocessable_content
     end
