@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { apiService } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -648,10 +649,12 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
                             key={img.id} 
                             className="relative aspect-square rounded-xl overflow-hidden border border-[#E8E2D9] group bg-stone-100"
                           >
-                            <img
-                              src={img.url || img.thumbnail_url || img.medium_url}
+                            <Image
+                              src={img.url || img.thumbnail_url || img.medium_url || ''}
                               alt={img.title || 'Service photo'}
-                              className="w-full h-full object-cover"
+                              fill
+                              unoptimized
+                              className="object-cover"
                             />
                             {img.is_primary && (
                               <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#9E5338] text-white text-[9px] font-bold shadow-xs flex items-center gap-0.5">
@@ -694,10 +697,12 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
                             key={index} 
                             className="relative aspect-square rounded-xl overflow-hidden border border-[#9E5338]/40 ring-1 ring-[#9E5338]/30 group bg-stone-100"
                           >
-                            <img
+                            <Image
                               src={preview.previewUrl}
                               alt={preview.file.name}
-                              className="w-full h-full object-cover"
+                              fill
+                              unoptimized
+                              className="object-cover"
                             />
                             <button
                               type="button"
@@ -806,10 +811,12 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
                       className="relative size-16 rounded-xl overflow-hidden border border-[#E8E2D9] bg-stone-100 shrink-0 cursor-pointer group/thumb"
                       title="Click to view/manage photos"
                     >
-                      <img
-                        src={service.images.find(i => i.is_primary)?.url || service.images[0].url || service.images[0].thumbnail_url}
+                      <Image
+                        src={(service.images.find(i => i.is_primary)?.url || service.images[0].url || service.images[0].thumbnail_url) || ''}
                         alt={service.name}
-                        className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform"
+                        fill
+                        unoptimized
+                        className="object-cover group-hover/thumb:scale-105 transition-transform"
                       />
                       <span className="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/75 text-white text-[8px] font-bold flex items-center gap-0.5">
                         <Camera className="size-2" /> {service.images.length}
@@ -976,10 +983,12 @@ const ServiceManagement = ({ services: initialServices, onServiceUpdate }: any) 
                           key={img.id} 
                           className="relative aspect-square rounded-xl overflow-hidden border border-[#E8E2D9] group bg-stone-100"
                         >
-                          <img
-                            src={img.url || img.thumbnail_url || img.medium_url}
+                          <Image
+                            src={img.url || img.thumbnail_url || img.medium_url || ''}
                             alt={img.title || activePhotoService.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            unoptimized
+                            className="object-cover"
                           />
                           {img.is_primary && (
                             <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#9E5338] text-white text-[9px] font-bold shadow-xs flex items-center gap-0.5">

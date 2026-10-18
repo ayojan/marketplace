@@ -50,6 +50,7 @@ interface Service {
     id: string | number;
     business_name: string;
     location?: string;
+    is_verified?: boolean;
   };
 }
 
