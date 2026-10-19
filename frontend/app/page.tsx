@@ -48,14 +48,7 @@ import Header, { CITIES } from '@/components/Header';
 import PhotographerCard from '@/components/PhotographerCard';
 import AyojLogo from '@/components/AyojLogo';
 import { useLocation } from '@/lib/contexts/LocationContext';
-
-const SOCIAL_LINKS = [
-  { name: 'Instagram', href: 'https://instagram.com/ayoj.official', icon: Instagram },
-  { name: 'LinkedIn', href: 'https://linkedin.com/company/ayoj', icon: Linkedin },
-  { name: 'YouTube', href: 'https://youtube.com/@ayojofficial', icon: Youtube },
-  { name: 'X', href: 'https://x.com/ayojofficial', icon: Twitter },
-  { name: 'Facebook', href: 'https://facebook.com/ayojofficial', icon: Facebook },
-];
+import Footer from '@/components/Footer';
 
 const TRENDING_SEARCHES = [
   { label: 'Candid Wedding Photographers', category: 'photographer', icon: Camera, tag: 'High Demand' },
@@ -669,10 +662,10 @@ export default function Landing() {
 
           {/* Vendors Grid */}
           {loadingVendors ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {[1, 2, 3, 4, 5].map((i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="rounded-2xl border border-[#E8E2D9] bg-white p-4 animate-pulse space-y-3">
-                  <div className="h-44 bg-[#F3EADF]/60 rounded-xl" />
+                  <div className="h-48 bg-[#F3EADF]/60 rounded-xl" />
                   <div className="h-4 bg-[#F3EADF]/60 rounded w-3/4" />
                   <div className="h-3 bg-[#F3EADF]/40 rounded w-1/2" />
                   <div className="h-4 bg-[#F3EADF]/50 rounded w-1/3" />
@@ -694,8 +687,8 @@ export default function Landing() {
             });
 
             return (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
-                {filtered.slice(0, 5).map((vendor) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative">
+                {filtered.slice(0, 8).map((vendor) => (
                   <PhotographerCard key={vendor.id} photographer={vendor} />
                 ))}
 
@@ -728,15 +721,17 @@ export default function Landing() {
                   </div>
                 )}
 
-                {/* Scroll Right Arrow Button */}
-                {filtered.length > 5 && (
-                  <button 
-                    onClick={() => router.push(`/marketplace?category=${activeVendorTab}`)}
-                    className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white border border-[#E8E2D9] shadow-lg items-center justify-center text-[#221F1C] hover:bg-[#9E5338] hover:text-white transition-all cursor-pointer z-20"
-                    aria-label="View more vendors in this category"
-                  >
-                    <ChevronRight className="size-5" />
-                  </button>
+                {/* Explore more button if extra vendors available */}
+                {filtered.length > 8 && (
+                  <div className="col-span-full pt-4 text-center">
+                    <Link
+                      href={`/marketplace?category=${activeVendorTab}${selectedCity !== 'All Cities' ? `&location=${encodeURIComponent(selectedCity)}` : ''}`}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-[#E8E2D9] text-xs font-semibold text-[#9E5338] hover:bg-[#F3EADF] hover:border-[#9E5338]/40 transition-all shadow-xs cursor-pointer"
+                    >
+                      <span>Explore all {filtered.length} {activeVendorTab === 'all' ? 'verified pros' : activeVendorTab} in {selectedCity}</span>
+                      <ArrowRight className="size-3.5" />
+                    </Link>
+                  </div>
                 )}
               </div>
             );
@@ -762,7 +757,50 @@ export default function Landing() {
             </p>
           </div>
 
-          {/* 3 Progressive Journey Cards with Embedded Capabilities */}
+          {/* 4 Core Guarantees Ribbon */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-5xl mx-auto">
+            <div className="p-3.5 rounded-xl bg-white border border-[#E8E2D9] shadow-2xs flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-[#FAF7F2] border border-[#E8E2D9] flex items-center justify-center text-[#9E5338] shrink-0">
+                <IndianRupee className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#221F1C]">0% Middleman Markups</p>
+                <p className="text-[11px] text-[#6B6560]">Direct artist-to-host pricing</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white border border-[#E8E2D9] shadow-2xs flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-[#FAF7F2] border border-[#E8E2D9] flex items-center justify-center text-[#9E5338] shrink-0">
+                <Camera className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#221F1C]">100% Real Portfolios</p>
+                <p className="text-[11px] text-[#6B6560]">Verified celebration photos</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white border border-[#E8E2D9] shadow-2xs flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-[#FAF7F2] border border-[#E8E2D9] flex items-center justify-center text-[#9E5338] shrink-0">
+                <MessageSquare className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#221F1C]">Direct Host Chat</p>
+                <p className="text-[11px] text-[#6B6560]">Talk directly with artists</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white border border-[#E8E2D9] shadow-2xs flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-[#FAF7F2] border border-[#E8E2D9] flex items-center justify-center text-[#9E5338] shrink-0">
+                <CalendarCheck className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#221F1C]">Live Slot Checking</p>
+                <p className="text-[11px] text-[#6B6560]">Real-time date availability</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Progressive Journey Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
             {/* Desktop step connector */}
             <div className="hidden md:block absolute top-[52px] left-16 right-16 h-[1px] border-t border-dashed border-[#E8E2D9] pointer-events-none z-0" />
@@ -772,28 +810,28 @@ export default function Landing() {
                 step: '01',
                 badge: 'Discover & Shortlist',
                 title: 'Curated Portfolios & Verified Reviews',
-                desc: 'Explore authentic high-resolution photo galleries, equipment lists, and real past celebration work directly from creative studios.',
+                desc: 'Explore authentic high-resolution galleries, equipment gear, and real celebration work directly from creative studios.',
                 icon: Camera,
                 features: ['Real client galleries & albums', 'Verified host reviews & ratings', 'Multi-category creative talent'],
-                highlight: 'Authentic creative portfolios'
+                highlight: 'Explore authentic portfolios'
               },
               {
                 step: '02',
                 badge: 'Connect & Align',
-                title: 'Clear Package Pricing & Direct Chat',
-                desc: 'View published starting rates with zero hidden platform markups. Chat directly with artists to customize deliverables, timings, and quotes.',
+                title: 'Transparent Pricing & Direct Chat',
+                desc: 'View published starting rates with zero hidden markups. Chat directly with artists to customize deliverables and quotes.',
                 icon: IndianRupee,
-                features: ['Published upfront package rates', 'Direct artist-to-host chat', '0% hidden platform markups'],
+                features: ['Published upfront package rates', 'Direct artist-to-host chat', 'Customizable celebration quotes'],
                 highlight: 'Direct host-to-artist messaging'
               },
               {
                 step: '03',
                 badge: 'Reserve & Celebrate',
                 title: 'Live Slot Availability & Dashboard Booking',
-                desc: 'Check open dates on vendor profiles. Submit your date reservation request and manage celebration status directly in your host dashboard.',
+                desc: 'Check open dates on vendor profiles. Submit your date reservation request and manage celebration status directly.',
                 icon: CalendarCheck,
                 features: ['Live calendar slot checking', 'Host dashboard status tracking', 'Direct date reservation coordination'],
-                highlight: 'Direct booking coordination'
+                highlight: 'Seamless celebration coordination'
               }
             ].map((s) => {
               const Icon = s.icon;
@@ -844,57 +882,6 @@ export default function Landing() {
                 </div>
               );
             })}
-          </div>
-
-          {/* Unified Trust Ribbon - 4 Honest Guarantees */}
-          <div className="bg-white border border-[#E8E2D9] rounded-2xl p-6 sm:p-7 shadow-xs">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-1 lg:max-w-xs shrink-0">
-                <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#9E5338]">
-                  <ShieldCheck className="size-3.5 text-[#9E5338]" /> The Ayoj Standard
-                </div>
-                <h4 className="text-base font-serif font-bold text-[#221F1C]">
-                  A Marketplace Built on Transparency
-                </h4>
-                <p className="text-xs text-[#6B6560] leading-relaxed">
-                  Real portfolios, direct conversations, and upfront pricing. No middlemen markups.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 flex-1">
-                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
-                    <IndianRupee className="size-3.5 text-[#9E5338]" />
-                    <span>0% Markups</span>
-                  </div>
-                  <p className="text-[11px] text-[#6B6560] leading-tight">Published direct package pricing</p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
-                    <MessageSquare className="size-3.5 text-[#9E5338]" />
-                    <span>Direct Chat</span>
-                  </div>
-                  <p className="text-[11px] text-[#6B6560] leading-tight">Message artists directly anytime</p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
-                    <Camera className="size-3.5 text-[#9E5338]" />
-                    <span>Real Portfolios</span>
-                  </div>
-                  <p className="text-[11px] text-[#6B6560] leading-tight">Genuine past celebration photos</p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]/80 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
-                    <CalendarCheck className="size-3.5 text-[#9E5338]" />
-                    <span>Live Slots</span>
-                  </div>
-                  <p className="text-[11px] text-[#6B6560] leading-tight">Real-time date availability</p>
-                </div>
-              </div>
-            </div>
           </div>
 
         </div>
@@ -1078,36 +1065,8 @@ export default function Landing() {
       </section>
       </main>
 
-      {/* Footer with Official Logo & Social Links */}
-      <footer className="py-5 border-t border-[#E8E2D9] bg-[#FBF8F4] mb-16 md:mb-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
-              <AyojLogo size="sm" showTagline={false} />
-              <span className="text-xs text-[#6B6560]">© 2026 Ayoj Marketplace. All rights reserved.</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {SOCIAL_LINKS.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={social.name}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Ayoj on ${social.name}`}
-                    title={`Follow Ayoj on ${social.name}`}
-                    className="size-8 rounded-full border border-[#E8E2D9] bg-white flex items-center justify-center text-[#6B6560] hover:text-[#9E5338] hover:border-[#9E5338]/40 hover:bg-[#FAF7F2] transition-all cursor-pointer shadow-2xs group"
-                  >
-                    <Icon className="size-3.5 transition-transform duration-150 group-hover:scale-110" />
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Modern Marketplace Footer */}
+      <Footer />
     </div>
   );
 }

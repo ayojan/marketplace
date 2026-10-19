@@ -33,13 +33,24 @@ import {
   CheckCircle2,
   Send,
   Calendar,
-  FileText
+  FileText,
+  IndianRupee
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '@/lib/api';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { toast } from 'sonner';
+import Footer from '@/components/Footer';
+
+// Quick Budget Presets for Instant 1-Tap Filtering
+const QUICK_BUDGET_PRESETS = [
+  { id: 'all', label: 'All Budgets', min: '', max: '' },
+  { id: 'under-25k', label: 'Under ₹25k', min: '', max: '25000' },
+  { id: '25k-50k', label: '₹25k – ₹50k', min: '25000', max: '50000' },
+  { id: '50k-100k', label: '₹50k – ₹1L', min: '50000', max: '100000' },
+  { id: 'above-100k', label: '₹1L+', min: '100000', max: '' },
+];
 
 // Unified Trade Categories matching Home Page
 const TRADE_CATEGORIES = [
@@ -90,6 +101,10 @@ function MarketplaceContent() {
   const initialOccasionParam = searchParams.get('occasion') || 'all';
   const initialSearchParam = searchParams.get('search') || searchParams.get('q') || '';
   const initialLocationParam = searchParams.get('location') || 'all';
+  const initialMinPrice = searchParams.get('min_price') || '';
+  const initialMaxPrice = searchParams.get('max_price') || '';
+  const initialSort = searchParams.get('sort') || 'featured';
+  const initialPricingType = searchParams.get('pricing_type') || 'all';
 
   // Resolve matching category ID
   const matchedCategoryId = useMemo(() => {
@@ -113,10 +128,10 @@ function MarketplaceContent() {
   const [selectedOccasion, setSelectedOccasion] = useState<string>(matchedOccasionId);
   const [selectedLocation, setSelectedLocation] = useState<string>(initialLocationParam);
   const [searchQuery, setSearchQuery] = useState<string>(initialSearchParam);
-  const [minPrice, setMinPrice] = useState<string>('');
-  const [maxPrice, setMaxPrice] = useState<string>('');
-  const [selectedPricingType, setSelectedPricingType] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('featured');
+  const [minPrice, setMinPrice] = useState<string>(initialMinPrice);
+  const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice);
+  const [selectedPricingType, setSelectedPricingType] = useState<string>(initialPricingType);
+  const [sortBy, setSortBy] = useState<string>(initialSort);
 
   const {
     selectedCity,
@@ -227,7 +242,57 @@ function MarketplaceContent() {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // Sync state if URL query params change
+  // Bi-directional URL synchronization
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (selectedCategory && selectedCategory !== 'all') params.set('category', selectedCategory);
+    if (selectedOccasion && selectedOccasion !== 'all') params.set('occasion', selectedOccasion);
+    if (selectedLocation && selectedLocation !== 'all' && selectedLocation !== 'All Locations') params.set('location', selectedLocation);
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (minPrice) params.set('min_price', minPrice);
+    if (maxPrice) params.set('max_price', maxPrice);
+    if (selectedPricingType && selectedPricingType !== 'all') params.set('pricing_type', selectedPricingType);
+    if (sortBy && sortBy !== 'featured') params.set('sort', sortBy);
+
+    const qs = params.toString();
+    const newPath = qs ? `/marketplace?${qs}` : '/marketplace';
+    window.history.replaceState(null, '', newPath);
+  }, [selectedCategory, selectedOccasion, selectedLocation, searchQuery, minPrice, maxPrice, selectedPricingType, sortBy]);
+
+  // Support native browser Back & Forward navigation via popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const sp = new URLSearchParams(window.location.search);
+      const cat = sp.get('category') || sp.get('trade') || 'all';
+      const occ = sp.get('occasion') || 'all';
+      const loc = sp.get('location') || 'all';
+      const q = sp.get('search') || sp.get('q') || '';
+      const minP = sp.get('min_price') || '';
+      const maxP = sp.get('max_price') || '';
+      const s = sp.get('sort') || 'featured';
+      const pt = sp.get('pricing_type') || 'all';
+
+      setSelectedCategory(cat);
+      setSelectedOccasion(occ);
+      setSelectedLocation(loc);
+      setSearchQuery(q);
+      setMinPrice(minP);
+      setMaxPrice(maxP);
+      setSortBy(s);
+      setSelectedPricingType(pt);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Sync state if URL query params change externally
   useEffect(() => {
     if (matchedCategoryId !== 'all' && matchedCategoryId !== selectedCategory) {
       setSelectedCategory(matchedCategoryId);
@@ -475,7 +540,7 @@ function MarketplaceContent() {
     setMaxPrice('');
     setSelectedPricingType('all');
     setSortBy('featured');
-    router.replace('/marketplace');
+    window.history.replaceState(null, '', '/marketplace');
   };
 
   const FilterSidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
@@ -1009,6 +1074,34 @@ function MarketplaceContent() {
                 );
               })}
             </div>
+
+            {/* Quick Budget Preset Pills Bar */}
+            <div className="pt-2 flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-2xl mx-auto -mx-4 px-4 sm:mx-auto sm:px-0">
+              <span className="text-[10px] font-bold text-[#6B6560] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+                <IndianRupee className="size-3 text-[#9E5338]" /> Budget:
+              </span>
+              {QUICK_BUDGET_PRESETS.map((preset) => {
+                const isActive = (preset.id === 'all' && !minPrice && !maxPrice) ||
+                  (preset.min === minPrice && preset.max === maxPrice);
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => {
+                      setMinPrice(preset.min);
+                      setMaxPrice(preset.max);
+                    }}
+                    className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-95 cursor-pointer border ${
+                      isActive
+                        ? 'bg-[#9E5338] text-white border-[#9E5338] font-semibold shadow-2xs'
+                        : 'bg-white/90 text-[#4A4540] border-[#E8E2D9] hover:border-[#9E5338]/40 hover:bg-white hover:text-[#221F1C]'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -1387,6 +1480,9 @@ function MarketplaceContent() {
           </main>
         </div>
       </section>
+
+      {/* Modern Marketplace Footer */}
+      <Footer />
 
       {/* Mobile Sticky Floating Filter & Sort Pill */}
       <div className="lg:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md border border-[#E8E2D9] shadow-xl rounded-full px-4 py-2 flex items-center gap-3">
