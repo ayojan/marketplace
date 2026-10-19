@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Star, MapPin, Heart, Clock, Sparkles } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Star, MapPin, Heart, Sparkles, ChevronRight, Images } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,23 @@ import { apiService } from '@/lib/api';
 import { tokenService } from '@/lib/tokenService';
 import { toast } from 'sonner';
 import VerifiedPartnerBadge from './VerifiedPartnerBadge';
+
+interface PortfolioImage {
+  id: number;
+  url: string;
+  title?: string;
+}
+
+interface PortfolioItem {
+  id: number;
+  title?: string;
+  description?: string;
+  category?: string;
+  is_featured?: boolean;
+  image_count?: number;
+  primary_image_url?: string;
+  images?: PortfolioImage[];
+}
 
 interface Vendor {
   id: string;
@@ -21,7 +38,7 @@ interface Vendor {
   average_rating?: number;
   total_reviews?: number;
   location?: string;
-  base_price?: number;
+  base_price?: number | string;
   is_favorite?: boolean;
   user_id?: string | number;
   is_verified?: boolean;
@@ -31,6 +48,9 @@ interface Vendor {
   categories?: Array<{ id?: number; name?: string; slug?: string; is_primary?: boolean } | string>;
   service_categories?: string[];
   category?: string;
+  featured_portfolio?: PortfolioItem[];
+  years_experience?: number;
+  service_images?: string[];
 }
 
 interface PhotographerCardProps {
@@ -38,14 +58,22 @@ interface PhotographerCardProps {
   onFavoriteToggle?: (vendorId: string, isFav: boolean) => void;
 }
 
+const CYCLE_INTERVAL = 4000; // 4 seconds per image
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=1000&auto=format&fit=crop';
+
 export default function PhotographerCard({ photographer, onFavoriteToggle }: PhotographerCardProps) {
   const router = useRouter();
   const [isLiked, setIsLiked] = useState(photographer.is_favorite || false);
   const [isLiking, setIsLiking] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const id = photographer.id;
   const slugOrId = photographer.slug || photographer.id;
   const name = photographer.name || photographer.business_name || 'Creative Partner';
-  const image = photographer.image || photographer.profile_image_url || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=1000&auto=format&fit=crop';
+  const defaultImage = photographer.image || photographer.profile_image_url || FALLBACK_IMAGE;
   const rawRating = photographer.rating ?? photographer.average_rating;
   const rating = rawRating ? Number(rawRating) : null;
   const totalReviews = photographer.total_reviews ?? 0;
@@ -58,10 +86,49 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
     checksCompleted &&
     (photographer.is_verified === true || photographer.verification_status === 'verified')
   );
-  const hasBasePrice = typeof photographer.base_price === 'number' && Number(photographer.base_price) > 0;
+  const hasBasePrice = photographer.base_price != null && !isNaN(Number(photographer.base_price)) && Number(photographer.base_price) > 0;
   const priceRange = hasBasePrice
     ? `₹${Number(photographer.base_price).toLocaleString('en-IN')}`
     : 'Price on request';
+
+  // Build portfolio image gallery from featured_portfolio and service images
+  const portfolioImages: string[] = [];
+  if (photographer.featured_portfolio && Array.isArray(photographer.featured_portfolio)) {
+    photographer.featured_portfolio.forEach((item) => {
+      if (item.images && Array.isArray(item.images)) {
+        item.images.forEach((img) => {
+          if (img.url && !portfolioImages.includes(img.url)) {
+            portfolioImages.push(img.url);
+          }
+        });
+      } else if (item.primary_image_url) {
+        if (!portfolioImages.includes(item.primary_image_url)) {
+          portfolioImages.push(item.primary_image_url);
+        }
+      }
+    });
+  }
+
+  // Include any supplementary service images
+  if (photographer.service_images && Array.isArray(photographer.service_images)) {
+    photographer.service_images.forEach((imgUrl: string) => {
+      if (imgUrl && !portfolioImages.includes(imgUrl)) {
+        portfolioImages.push(imgUrl);
+      }
+    });
+  }
+
+  // Include primary profile/featured image if valid and not already included
+  const primaryImg = photographer.image || photographer.profile_image_url;
+  if (primaryImg && !portfolioImages.includes(primaryImg)) {
+    portfolioImages.unshift(primaryImg);
+  }
+
+  // Ensure we always have at least the default image, cap at 5 for performance
+  const allImages = portfolioImages.length > 0
+    ? portfolioImages.slice(0, 5)
+    : [defaultImage];
+  const hasMultipleImages = allImages.length > 1;
 
   // Category resolution
   const categoriesList: string[] = [];
@@ -91,6 +158,40 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   const primaryCategoryName = categoriesList[0] || null;
   const additionalCategoriesCount = Math.max(0, categoriesList.length - 1);
   const additionalCategoriesNames = categoriesList.slice(1).join(', ');
+
+  // Auto-cycle portfolio images
+  const goToNextImage = useCallback(() => {
+    if (!hasMultipleImages) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+      setIsTransitioning(false);
+    }, 400); // transition duration
+  }, [hasMultipleImages, allImages.length]);
+
+  // Auto-cycle portfolio images (pauses smoothly when card is hovered)
+  useEffect(() => {
+    if (!hasMultipleImages || isHovered) return;
+
+    intervalRef.current = setInterval(goToNextImage, CYCLE_INTERVAL);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [goToNextImage, hasMultipleImages, isHovered]);
+
+  // Manual dot navigation
+  const goToImage = (index: number) => {
+    if (index === currentImageIndex) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentImageIndex(index);
+      setIsTransitioning(false);
+    }, 400);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -184,26 +285,83 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   };
 
   return (
-    <div className="bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
+    <div
+      className="vendor-card-root bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-500 group relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       
-      {/* Photo header - Entire visible photo clickable to open vendor profile */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-[#F3EADF]">
+      {/* Photo carousel header */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#F3EADF]">
         <Link 
           href={`/vendors/${slugOrId}`}
           className="block w-full h-full cursor-pointer relative"
           aria-label={`View ${name} profile`}
         >
-          <Image
-            src={image}
-            alt={name}
-            fill
-            unoptimized
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          {/* All images rendered, only active one visible via opacity */}
+          {allImages.map((imgUrl, idx) => (
+            <Image
+              key={imgUrl + idx}
+              src={imgUrl}
+              alt={`${name} portfolio ${idx + 1}`}
+              fill
+              unoptimized
+              className={`object-cover transition-all duration-700 ease-in-out absolute inset-0 ${
+                idx === currentImageIndex
+                  ? isTransitioning
+                    ? 'opacity-0 scale-105'
+                    : 'opacity-100 scale-100'
+                  : 'opacity-0 scale-100'
+              } group-hover:scale-[1.03]`}
+            />
+          ))}
 
+          {/* Bottom gradient overlay for readability */}
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/50 via-black/20 to-transparent z-10 pointer-events-none" />
+
+          {/* Inline price badge - bottom left, over image */}
+          <div className="absolute bottom-3 left-3 z-20">
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold backdrop-blur-md ${
+              hasBasePrice
+                ? 'bg-white/90 text-[#221F1C] shadow-sm'
+                : 'bg-black/40 text-white/90'
+            }`}>
+              {priceRange}
+              {hasBasePrice && <span className="text-[10px] font-normal text-[#6B6560]">onwards</span>}
+            </span>
+          </div>
         </Link>
 
-        {/* Verified Partner Badge - Interactive overlay */}
+        {/* Dot indicators for portfolio cycling */}
+        {hasMultipleImages && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
+            {allImages.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); goToImage(idx); }}
+                className={`rounded-full transition-all duration-300 ${
+                  idx === currentImageIndex
+                    ? 'w-4 h-1.5 bg-white shadow-sm'
+                    : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80'
+                }`}
+                aria-label={`Go to image ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Portfolio count indicator - top right area */}
+        {hasMultipleImages && (
+          <div className="absolute top-3 right-14 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-md text-white text-[10px] font-medium">
+              <Images className="size-3" />
+              {allImages.length}
+            </span>
+          </div>
+        )}
+
+        {/* Verified Partner Badge */}
         {isVerified && (
           <div className="absolute top-3 left-3 z-20">
             <VerifiedPartnerBadge
@@ -215,103 +373,95 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           </div>
         )}
 
-        {/* Favorite Heart Button - Interactive overlay */}
+        {/* Favorite Heart Button */}
         <button 
           type="button"
           onClick={handleToggleFavorite}
           disabled={isLiking}
           title={isLiked ? "Remove from saved" : "Save to favorites"}
-          className="absolute top-3 right-3 size-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-[#9E5338] transition-all cursor-pointer z-20"
+          className={`absolute top-3 right-3 size-9 rounded-full flex items-center justify-center transition-all cursor-pointer z-20 ${
+            isLiked
+              ? 'bg-white text-rose-500 shadow-md'
+              : 'bg-black/30 backdrop-blur-md text-white hover:bg-white hover:text-[#9E5338] hover:shadow-md'
+          }`}
         >
-          <Heart className={`size-4 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
+          <Heart className={`size-4 transition-transform duration-200 ${isLiked ? 'fill-rose-500 scale-110' : ''} ${isLiking ? 'animate-pulse' : ''}`} />
         </button>
       </div>
 
       {/* Card Content Body */}
-      <div className="p-4 space-y-2.5 bg-white">
+      <div className="p-4 space-y-2 bg-white">
         
-        {/* Clickable Vendor Title */}
-        <Link href={`/vendors/${slugOrId}`} className="block">
-          <h3 className="text-base font-serif font-bold text-[#221F1C] truncate tracking-tight group-hover:text-[#9E5338] transition-colors cursor-pointer">
-            {name}
-          </h3>
-        </Link>
+        {/* Top row: Name + Rating */}
+        <div className="flex items-start justify-between gap-2">
+          <Link href={`/vendors/${slugOrId}`} className="block min-w-0 flex-1">
+            <h3 className="text-[15px] font-serif font-bold text-[#221F1C] truncate tracking-tight group-hover:text-[#9E5338] transition-colors cursor-pointer leading-snug">
+              {name}
+            </h3>
+          </Link>
 
-        {/* Operating Categories Badges */}
-        {primaryCategoryName && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-md border border-[#E8E2D9]">
-              {primaryCategoryName}
-            </span>
-            {additionalCategoriesCount > 0 && (
-              <span
-                title={`Also operates in: ${additionalCategoriesNames}`}
-                className="inline-flex items-center text-[10px] font-medium text-[#6B6560] bg-[#FAF7F2] px-1.5 py-0.5 rounded-md border border-[#E8E2D9] cursor-help"
-              >
-                +{additionalCategoriesCount} more
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Rating Line & Response Metric */}
-        <div className="flex items-center justify-between text-xs">
+          {/* Compact rating */}
           {rating && rating > 0 && totalReviews > 0 ? (
-            <div className="flex items-center gap-1.5 text-[#221F1C]">
-              <Star className="size-3.5 fill-[#D97706] text-[#D97706]" />
-              <span className="font-semibold">{rating.toFixed(1)}</span>
-              <span className="text-[#6B6560]">({totalReviews})</span>
+            <div className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-md bg-[#FEF9EE] border border-amber-100">
+              <Star className="size-3 fill-[#D97706] text-[#D97706]" />
+              <span className="text-xs font-bold text-[#221F1C]">{rating.toFixed(1)}</span>
+              <span className="text-[10px] text-[#6B6560]">({totalReviews})</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-[#6B6560]">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[11px] font-medium text-[#6B6560] border border-[#E8E2D9]">
-                <Sparkles className="size-3 text-[#9E5338]" />
-                <span>New on Ayoj</span>
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#FAF7F2] text-[10px] font-medium text-[#9E5338] border border-[#E8E2D9] shrink-0">
+              <Sparkles className="size-2.5" />
+              New
+            </span>
           )}
-
-          <span className="inline-flex items-center gap-1 text-[11px] text-[#6B6560] bg-[#FAF7F2] px-2 py-0.5 rounded-md border border-[#E5DED6]">
-            <Clock className="size-3 text-[#9E5338]" />
-            <span>Fast Response</span>
-          </span>
         </div>
 
-        {/* Location Line */}
-        {location && (
-          <div className="flex items-center gap-1.5 text-xs text-[#6B6560]">
-            <MapPin className="size-3.5 text-[#6B6560] shrink-0" />
-            <span className="truncate">{location}</span>
-          </div>
-        )}
-
-        {/* Transparent Pricing & View Profile CTA */}
-        <div className="pt-2.5 border-t border-[#E8E2D9] flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-[#6B6560]">
-                {hasBasePrice ? 'Starting From' : 'Pricing'}
+        {/* Category + Location row */}
+        <div className="flex items-center gap-1.5 text-xs text-[#6B6560] flex-wrap">
+          {primaryCategoryName && (
+            <span className="inline-flex items-center text-[11px] font-semibold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-md border border-[#E8E2D9]">
+              {primaryCategoryName}
+            </span>
+          )}
+          {additionalCategoriesCount > 0 && (
+            <span
+              title={`Also operates in: ${additionalCategoriesNames}`}
+              className="inline-flex items-center text-[10px] font-medium text-[#6B6560] bg-[#FAF7F2] px-1.5 py-0.5 rounded-md border border-[#E8E2D9] cursor-help"
+            >
+              +{additionalCategoriesCount} more
+            </span>
+          )}
+          {location && (
+            <>
+              <span className="text-[#D5CFC8]">·</span>
+              <span className="inline-flex items-center gap-1 truncate">
+                <MapPin className="size-3 text-[#9E5338] shrink-0" />
+                <span className="truncate">{location}</span>
               </span>
-              {hasBasePrice && (
-                <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                  Transparent
-                </span>
-              )}
-            </div>
-            <div className="text-sm font-bold text-[#221F1C]">
-              {priceRange} {hasBasePrice && <span className="text-[11px] text-[#6B6560] font-normal">/ event</span>}
-            </div>
-          </div>
+            </>
+          )}
+        </div>
 
-          <Link href={`/vendors/${slugOrId}`}>
-            <span className="px-3.5 py-1.5 rounded-full border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:bg-[#9E5338] hover:text-white hover:border-[#9E5338] transition-all inline-block cursor-pointer">
+        {/* View Profile CTA */}
+        <div className="pt-2">
+          <Link href={`/vendors/${slugOrId}`} className="block">
+            <span className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[#9E5338] bg-[#FAF7F2] border border-[#E8E2D9] hover:bg-[#9E5338] hover:text-white hover:border-[#9E5338] transition-all duration-300 cursor-pointer group/btn">
               View Profile
+              <ChevronRight className="size-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
             </span>
           </Link>
         </div>
 
       </div>
 
+      {/* CSS for the card */}
+      <style jsx>{`
+        .vendor-card-root {
+          will-change: transform, box-shadow;
+        }
+        .vendor-card-root:hover {
+          transform: translateY(-2px);
+        }
+      `}</style>
     </div>
   );
 }

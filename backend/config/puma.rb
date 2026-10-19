@@ -34,5 +34,8 @@ pidfile ENV.fetch('PIDFILE') { 'tmp/pids/server.pid' }
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 
+# Preload application before starting workers in cluster mode (required for Solid Queue puma plugin)
+preload_app!
+
 # Run Solid Queue supervisor inside Puma when enabled (default true)
 plugin :solid_queue if ENV.fetch('SOLID_QUEUE_IN_PUMA', 'true') == 'true'

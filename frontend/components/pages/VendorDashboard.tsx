@@ -395,7 +395,7 @@ const VendorDashboard = () => {
                 {activeTab === 'bookings' && <VendorBookings />}
                 {activeTab === 'services' && <ServiceManagement services={dashboardData.services} onServiceUpdate={loadDashboardData} />}
                 {activeTab === 'portfolio' && <PortfolioManager />}
-                {activeTab === 'calendar' && <BookingCalendar bookings={[]} />}
+                {activeTab === 'calendar' && <BookingCalendar />}
                 {activeTab === 'settings' && <VendorSettings />}
               </motion.div>
             )}

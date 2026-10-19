@@ -116,11 +116,7 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
 
         const vendorServices = servicesRes?.data?.services || [];
         setServices(vendorServices);
-        if (vendorServices.length > 0) {
-          setSelectedService(vendorServices[0]);
-        } else {
-          setSelectedService(null);
-        }
+        setSelectedService(null);
 
         setReviews(reviewsRes?.data?.reviews || []);
       } else {
