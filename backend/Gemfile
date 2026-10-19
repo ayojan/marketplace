@@ -36,6 +36,9 @@ gem 'pundit', '~> 2.3'
 # Connection Pool (pinned to avoid Rails 8 incompatibility with 3.0)
 gem 'connection_pool', '~> 2.5'
 
+# Pinned to < 3.0.0 because json 3.0+ removed `quirks_mode`, which ActiveSupport 8.0.x passes to JSON.generate
+gem 'json', '< 3.0.0'
+
 # Pagination
 gem 'kaminari'
 
