@@ -231,8 +231,8 @@ export const apiService = {
   availabilitySlots: {
     getAll: (params) => api.get('/availability_slots', { params }),
     create: (data) => api.post('/availability_slots', data),
-    update: (id, data) => api.put('/availability_slots', id, data),
-    delete: (id) => api.delete('/availability_slots', id),
+    update: (id, data) => api.put(`/availability_slots/${id}`, data),
+    delete: (id) => api.delete(`/availability_slots/${id}`),
     bulkCreate: (data) => api.post('/availability_slots/bulk_create', data),
     checkConflicts: (params) =>
         api.get('/availability_slots/check_conflicts', { params }),

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Services
+  # rubocop:disable Metrics/ClassLength
   class ServicePresenter
     include Rails.application.routes.url_helpers
 
@@ -66,24 +67,38 @@ module Services
     end
 
     def service_vendor_json(vendor)
+      return nil unless vendor
+
+      primary_cat = vendor.primary_category || vendor.categories.first
       img_url = vendor_image_url(vendor)
-      primary_cat = vendor&.primary_category || vendor&.categories&.first
       {
-        id: vendor&.id,
-        user_id: vendor&.user_id,
-        slug: vendor&.slug,
-        business_name: vendor&.business_name,
-        location: vendor&.location,
-        average_rating: vendor&.average_rating,
-        total_reviews: vendor&.total_reviews,
-        is_verified: vendor&.can_display_verified_badge?,
-        verification_status: vendor&.verification_status,
-        verification_checks: vendor&.verification_checks,
-        primary_category: primary_cat ? { id: primary_cat.id, name: primary_cat.name, slug: primary_cat.slug } : nil,
-        service_categories: vendor&.service_categories_list || [],
+        id: vendor.id,
+        user_id: vendor.user_id,
+        slug: vendor.slug,
+        business_name: vendor.business_name,
+        location: vendor.location,
+        average_rating: vendor.average_rating,
+        total_reviews: vendor.total_reviews,
+        is_verified: vendor.can_display_verified_badge?,
+        verification_status: vendor.verification_status,
+        verification_checks: vendor.verification_checks,
+        primary_category: primary_category_json(primary_cat),
+        service_categories: vendor.service_categories_list || [],
         image: img_url,
-        profile_image_url: img_url
+        profile_image_url: img_url,
+        featured_portfolio: vendor_featured_portfolio(vendor)
       }
+    end
+
+    def primary_category_json(category)
+      return nil unless category
+
+      { id: category.id, name: category.name, slug: category.slug }
+    end
+
+    def vendor_featured_portfolio(vendor)
+      items = vendor.featured_portfolio_items || []
+      items.first(3).map { |item| portfolio_item_json(item) }
     end
 
     def vendor_image_url(vendor)
@@ -94,17 +109,49 @@ module Services
     end
 
     def image_url(attachment)
-      return nil unless attachment&.attached?
+      target = resolve_attachment_target(attachment)
+      return nil unless target
 
       if url_helper.respond_to?(:url_for)
-        url_helper.url_for(attachment)
+        url_helper.url_for(target)
       else
-        url_for(attachment)
+        url_for(target)
       end
     rescue StandardError
       nil
     end
+
+    def resolve_attachment_target(attachment)
+      return nil unless attachment
+      return nil if attachment.respond_to?(:attached?) && !attachment.attached?
+
+      attached_image(attachment) || attachment
+    end
+
+    def attached_image(attachment)
+      return unless attachment.respond_to?(:image)
+
+      img = attachment.image
+      return unless img.respond_to?(:attached?) && img.attached?
+
+      img
+    end
+
+    def portfolio_item_json(item)
+      image_list = item.images.attached? ? item.images.map { |img| { id: img.id, url: image_url(img) } } : []
+      {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        category: item.category,
+        is_featured: item.is_featured,
+        image_count: image_list.size,
+        primary_image_url: image_list.first&.dig(:url),
+        images: image_list
+      }
+    end
   end
 end
+# rubocop:enable Metrics/ClassLength
 
 ServicePresenter = Services::ServicePresenter

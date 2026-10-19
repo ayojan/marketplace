@@ -270,12 +270,26 @@ function MarketplaceContent() {
 
         // Aggregate services by vendor
         const uniqueVendors = Array.from(new Set(data.map((s: any) => s.vendor?.id))).filter(Boolean).map(id => {
-          const service = data.find((s: any) => s.vendor?.id === id);
+          const vendorServices = data.filter((s: any) => s.vendor?.id === id);
+          const firstService = vendorServices[0];
+          
+          // Collect all images from vendor's services as supplementary images
+          const serviceImages = vendorServices.flatMap((s: any) => 
+            (s.images || []).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
+          );
+
+          // Find minimum valid price across services
+          const prices = vendorServices
+            .map((s: any) => Number(s.base_price))
+            .filter((p: number) => !isNaN(p) && p > 0);
+          const minPrice = prices.length > 0 ? Math.min(...prices) : (Number(firstService.vendor?.base_price) || 0);
+
           return {
-            ...service.vendor,
-            base_price: service.base_price,
-            service_categories: [service.category?.name].filter(Boolean),
-            occasions: service.occasions || []
+            ...firstService.vendor,
+            base_price: minPrice,
+            service_images: serviceImages,
+            service_categories: Array.from(new Set(vendorServices.map((s: any) => s.category?.name).filter(Boolean))),
+            occasions: vendorServices.flatMap((s: any) => s.occasions || [])
           };
         });
 

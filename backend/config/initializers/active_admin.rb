@@ -5,7 +5,7 @@ if defined?(ActiveAdmin)
     # Set the title that is displayed on the main layout
     # for each of the active admin pages.
     #
-    config.site_title = 'Marketplace'
+    config.site_title = 'Aayoj'
 
     # Set the link url for the title. For example, to take
     # users to your main site. Defaults to no link.
@@ -17,7 +17,7 @@ if defined?(ActiveAdmin)
     #
     # Note: Aim for an image that's 21px high so it fits in the header.
     #
-    # config.site_title_image = "logo.png"
+    # config.site_title_image = "../frontend/public/images/ayoj-icon.png"
 
     # == Load Paths
     #
