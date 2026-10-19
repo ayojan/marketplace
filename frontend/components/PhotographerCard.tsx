@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Star, MapPin, Heart, Sparkles, ChevronRight, Images } from 'lucide-react';
+import { Star, MapPin, Heart, Sparkles, ChevronRight, Images, ArrowLeftRight, Check } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,7 @@ import { apiService } from '@/lib/api';
 import { tokenService } from '@/lib/tokenService';
 import { toast } from 'sonner';
 import VerifiedPartnerBadge from './VerifiedPartnerBadge';
+import { saveRecentlyViewedVendor } from '@/lib/recentlyViewed';
 
 interface PortfolioImage {
   id: number;
@@ -56,12 +57,21 @@ interface Vendor {
 interface PhotographerCardProps {
   photographer: Vendor;
   onFavoriteToggle?: (vendorId: string, isFav: boolean) => void;
+  isCompared?: boolean;
+  onToggleCompare?: (vendor: Vendor) => void;
+  onQuickInquire?: (vendor: Vendor) => void;
 }
 
 const CYCLE_INTERVAL = 4000; // 4 seconds per image
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=1000&auto=format&fit=crop';
 
-export default function PhotographerCard({ photographer, onFavoriteToggle }: PhotographerCardProps) {
+export default function PhotographerCard({ 
+  photographer, 
+  onFavoriteToggle,
+  isCompared = false,
+  onToggleCompare,
+  onQuickInquire
+}: PhotographerCardProps) {
   const router = useRouter();
   const [isLiked, setIsLiked] = useState(photographer.is_favorite || false);
   const [isLiking, setIsLiking] = useState(false);
@@ -158,6 +168,19 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
   const primaryCategoryName = categoriesList[0] || null;
   const additionalCategoriesCount = Math.max(0, categoriesList.length - 1);
   const additionalCategoriesNames = categoriesList.slice(1).join(', ');
+
+  const handleRecordView = () => {
+    saveRecentlyViewedVendor({
+      id: photographer.id,
+      slug: photographer.slug,
+      name: name,
+      category: primaryCategoryName || (typeof photographer.category === 'string' ? photographer.category : undefined),
+      image: defaultImage,
+      rating: rating || undefined,
+      base_price: photographer.base_price,
+      location: location || undefined
+    });
+  };
 
   // Auto-cycle portfolio images
   const goToNextImage = useCallback(() => {
@@ -295,6 +318,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
       <div className="relative aspect-[4/3] overflow-hidden bg-[#F3EADF]">
         <Link 
           href={`/vendors/${slugOrId}`}
+          onClick={handleRecordView}
           className="block w-full h-full cursor-pointer relative"
           aria-label={`View ${name} profile`}
         >
@@ -373,6 +397,30 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           </div>
         )}
 
+        {/* Compare Toggle Button */}
+        {onToggleCompare && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleCompare(photographer);
+            }}
+            title={isCompared ? "Remove from comparison" : "Add to comparison"}
+            className={`absolute top-3 right-13 size-9 rounded-full flex items-center justify-center transition-all cursor-pointer z-20 ${
+              isCompared
+                ? 'bg-[#9E5338] text-white shadow-md ring-2 ring-white/60'
+                : 'bg-black/30 backdrop-blur-md text-white hover:bg-white hover:text-[#9E5338] hover:shadow-md'
+            }`}
+          >
+            {isCompared ? (
+              <Check className="size-4 stroke-[3]" />
+            ) : (
+              <ArrowLeftRight className="size-3.5" />
+            )}
+          </button>
+        )}
+
         {/* Favorite Heart Button */}
         <button 
           type="button"
@@ -394,7 +442,7 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
         
         {/* Top row: Name + Rating */}
         <div className="flex items-start justify-between gap-2">
-          <Link href={`/vendors/${slugOrId}`} className="block min-w-0 flex-1">
+          <Link href={`/vendors/${slugOrId}`} onClick={handleRecordView} className="block min-w-0 flex-1">
             <h3 className="text-[15px] font-serif font-bold text-[#221F1C] truncate tracking-tight group-hover:text-[#9E5338] transition-colors cursor-pointer leading-snug">
               {name}
             </h3>
@@ -441,14 +489,30 @@ export default function PhotographerCard({ photographer, onFavoriteToggle }: Pho
           )}
         </div>
 
-        {/* View Profile CTA */}
-        <div className="pt-2">
-          <Link href={`/vendors/${slugOrId}`} className="block">
+        {/* Actions CTA Bar */}
+        <div className="pt-2 flex items-center gap-2">
+          <Link href={`/vendors/${slugOrId}`} onClick={handleRecordView} className="flex-1 block">
             <span className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[#9E5338] bg-[#FAF7F2] border border-[#E8E2D9] hover:bg-[#9E5338] hover:text-white hover:border-[#9E5338] transition-all duration-300 cursor-pointer group/btn">
-              View Profile
+              <span>View Profile</span>
               <ChevronRight className="size-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
             </span>
           </Link>
+
+          {onToggleCompare && (
+            <button
+              type="button"
+              onClick={() => onToggleCompare(photographer)}
+              title={isCompared ? "Remove from inquiry basket & comparison" : "Add to inquiry basket & comparison"}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                isCompared
+                  ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-2xs'
+                  : 'bg-white text-[#6B6560] border-[#E8E2D9] hover:text-[#9E5338] hover:border-[#9E5338]/40 hover:bg-[#FAF7F2]'
+              }`}
+            >
+              {isCompared ? <Check className="size-3.5 stroke-[2.5]" /> : <ArrowLeftRight className="size-3.5" />}
+              <span className="hidden sm:inline">{isCompared ? 'In Basket' : 'Compare / Inquire'}</span>
+            </button>
+          )}
         </div>
 
       </div>
