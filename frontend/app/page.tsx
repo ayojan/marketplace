@@ -49,6 +49,8 @@ import PhotographerCard from '@/components/PhotographerCard';
 import AyojLogo from '@/components/AyojLogo';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import Footer from '@/components/Footer';
+import RecentlyViewedStrip from '@/components/RecentlyViewedStrip';
+import CelebrationMatchmaker from '@/components/CelebrationMatchmaker';
 
 const TRENDING_SEARCHES = [
   { label: 'Candid Wedding Photographers', category: 'photographer', icon: Camera, tag: 'High Demand' },
@@ -608,6 +610,9 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Pick Up Where You Left Off Strip (Self-hides if no history) */}
+      <RecentlyViewedStrip />
+
       {/* Top rated vendors in Selected City Section - Immediate inventory proof */}
       <section className="py-14 px-4 sm:px-6 bg-[#FBF8F4]">
         <div className="max-w-7xl mx-auto space-y-6 relative">
@@ -739,6 +744,9 @@ export default function Landing() {
 
         </div>
       </section>
+
+      {/* 60-Second Celebration Budget & Pro Matchmaker Wizard */}
+      <CelebrationMatchmaker />
 
       {/* Unified "How Ayoj Works & Transparent Marketplace" Section */}
       <section className="py-16 px-4 sm:px-6 bg-[#FAF7F2] border-t border-[#E8E2D9]">

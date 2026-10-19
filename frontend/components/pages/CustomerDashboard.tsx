@@ -44,6 +44,12 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
+// Modular Customer Profile & Passport Components
+import CustomerProfileHeader from '@/components/customer/CustomerProfileHeader';
+import CustomerProfileView from '@/components/customer/CustomerProfileView';
+import CustomerDreamTeamTracker from '@/components/customer/CustomerDreamTeamTracker';
+import { CustomerProfileData } from '@/components/customer/types';
+
 const CustomerDashboard = () => {
   const { user, updateUser } = useAuth();
   const searchParams = useSearchParams();
@@ -76,18 +82,52 @@ const CustomerDashboard = () => {
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const [selectedBookingForChat, setSelectedBookingForChat] = useState<any>(null);
 
-  // Editable Profile Settings Form State
-  const [profileForm, setProfileForm] = useState({
+  // Enriched Celebration Passport & Profile State
+  const [profileForm, setProfileForm] = useState<CustomerProfileData>({
     firstName: user?.first_name || '',
     lastName: user?.last_name || '',
     email: user?.email || '',
-    phone: '',
-    city: 'Delhi NCR',
+    phone: user?.phone || '',
+    city: user?.location || 'Delhi NCR',
+    avatarUrl: user?.avatar_url || '',
+    coupleName: '',
+    hashtag: '',
     weddingDate: '',
     eventType: 'Wedding',
-    budgetRange: 'between_1000_2500'
+    venueName: '',
+    guestCount: '100_250',
+    budgetRange: 'between_1000_2500',
+    totalBudget: 300000,
+    vibeTags: ['📸 Candid & Storytelling', '👑 Royal & Grand Heritage'],
+    coHost: {
+      name: '',
+      email: '',
+      relationship: 'Partner / Fiancé',
+      status: 'none',
+    },
+    notifications: {
+      whatsapp: true,
+      sms: true,
+      email: true,
+      marketing: false,
+    },
   });
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // Gamified Profile Completion Gauge
+  const completionPercentage = useMemo(() => {
+    let score = 0;
+    if (profileForm.firstName) score += 15;
+    if (profileForm.lastName) score += 10;
+    if (profileForm.email) score += 10;
+    if (profileForm.phone) score += 15;
+    if (profileForm.city) score += 10;
+    if (profileForm.weddingDate) score += 15;
+    if (profileForm.venueName) score += 10;
+    if (profileForm.vibeTags && profileForm.vibeTags.length > 0) score += 10;
+    if (profileForm.avatarUrl) score += 5;
+    return Math.min(100, score);
+  }, [profileForm]);
 
   // Sync user prop when auth finishes loading
   useEffect(() => {
@@ -97,6 +137,9 @@ const CustomerDashboard = () => {
         firstName: prev.firstName || user.first_name || '',
         lastName: prev.lastName || user.last_name || '',
         email: user.email || prev.email || '',
+        phone: prev.phone || user.phone || '',
+        city: prev.city || user.location || 'Delhi NCR',
+        avatarUrl: prev.avatarUrl || user.avatar_url || '',
       }));
     }
   }, [user]);
@@ -266,9 +309,18 @@ const CustomerDashboard = () => {
           email: profile.email || user?.email || prev.email,
           phone: profile.phone || prev.phone,
           city: profile.location || prev.city,
+          avatarUrl: extraPrefs.avatarUrl || user?.avatar_url || prev.avatarUrl,
+          coupleName: extraPrefs.coupleName || prev.coupleName,
+          hashtag: extraPrefs.hashtag || prev.hashtag,
           weddingDate: extraPrefs.weddingDate || prev.weddingDate,
           eventType: profile.event_types || extraPrefs.eventType || prev.eventType,
+          venueName: extraPrefs.venueName || prev.venueName,
+          guestCount: extraPrefs.guestCount || prev.guestCount,
           budgetRange: profile.budget_range || extraPrefs.budgetRange || prev.budgetRange,
+          totalBudget: extraPrefs.totalBudget || prev.totalBudget,
+          vibeTags: Array.isArray(extraPrefs.vibeTags) ? extraPrefs.vibeTags : prev.vibeTags,
+          coHost: extraPrefs.coHost || prev.coHost,
+          notifications: extraPrefs.notifications || prev.notifications,
         }));
       }
     } catch (err) {
@@ -329,8 +381,8 @@ const CustomerDashboard = () => {
     }
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setSavingProfile(true);
     try {
       const payload = {
@@ -345,6 +397,15 @@ const CustomerDashboard = () => {
           eventType: profileForm.eventType,
           budgetRange: profileForm.budgetRange,
           city: profileForm.city,
+          avatarUrl: profileForm.avatarUrl,
+          coupleName: profileForm.coupleName,
+          hashtag: profileForm.hashtag,
+          venueName: profileForm.venueName,
+          guestCount: profileForm.guestCount,
+          vibeTags: profileForm.vibeTags,
+          totalBudget: profileForm.totalBudget,
+          coHost: profileForm.coHost,
+          notifications: profileForm.notifications,
         }),
       };
 
@@ -357,10 +418,11 @@ const CustomerDashboard = () => {
           last_name: profileForm.lastName,
           phone: profileForm.phone,
           location: profileForm.city,
+          avatar_url: profileForm.avatarUrl,
         });
       }
 
-      toast.success('Profile and celebration preferences updated successfully!');
+      toast.success('Celebration Passport and profile updated successfully!');
     } catch (err: any) {
       toast.error(err.extractedMessage || 'Failed to update profile');
     } finally {
@@ -398,6 +460,9 @@ const CustomerDashboard = () => {
         {/* Main Feed Column */}
         <div className="lg:col-span-2 space-y-6">
           
+          {/* Celebration Dream Team Lineup Matrix */}
+          <CustomerDreamTeamTracker bookings={bookings} />
+
           {/* Active Bookings Card */}
           <div className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-5">
             <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-4">
@@ -973,182 +1038,6 @@ const CustomerDashboard = () => {
     );
   };
 
-  const renderSettingsTab = () => {
-    return (
-      <div className="space-y-6 animate-in fade-in duration-300 w-full">
-        {/* Profile Edit Form */}
-        <form onSubmit={handleSaveProfile} className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E8E2D9] shadow-sm space-y-8 w-full">
-          
-          {/* Section 1: Personal Details */}
-          <div className="space-y-4">
-            <div className="border-b border-[#E8E2D9] pb-3">
-              <h4 className="text-sm font-serif font-bold text-[#221F1C] flex items-center gap-2">
-                <User className="size-4 text-[#9E5338]" />
-                Personal Information
-              </h4>
-              <p className="text-xs text-[#6B6560]">Your name and primary contact details visible to booked vendors</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  First Name <span className="text-[#9E5338]">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={profileForm.firstName}
-                  onChange={e => setProfileForm({ ...profileForm, firstName: e.target.value })}
-                  placeholder="Enter first name"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  Last Name <span className="text-[#9E5338]">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={profileForm.lastName}
-                  onChange={e => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                  placeholder="Enter last name"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  disabled
-                  value={profileForm.email}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#F3EADF]/60 text-xs text-[#6B6560] cursor-not-allowed"
-                />
-                <span className="text-[10px] text-[#6B6560]">Account primary login email (read-only)</span>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  Phone / WhatsApp Number
-                </label>
-                <input
-                  type="tel"
-                  value={profileForm.phone}
-                  onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
-                  placeholder="+91 98765 43210"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Celebration & Event Preferences */}
-          <div className="space-y-4">
-            <div className="border-b border-[#E8E2D9] pb-3">
-              <h4 className="text-sm font-serif font-bold text-[#221F1C] flex items-center gap-2">
-                <Sparkles className="size-4 text-[#9E5338]" />
-                Event & Celebration Preferences
-              </h4>
-              <p className="text-xs text-[#6B6560]">Helps recommended photographers and decorators tailor packages for you</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  Primary Location / City
-                </label>
-                <select
-                  value={profileForm.city}
-                  onChange={e => setProfileForm({ ...profileForm, city: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors cursor-pointer"
-                >
-                  {CITIES.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  Target Event Date
-                </label>
-                <input
-                  type="date"
-                  value={profileForm.weddingDate}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={e => setProfileForm({ ...profileForm, weddingDate: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  Celebration Type
-                </label>
-                <select
-                  value={profileForm.eventType}
-                  onChange={e => setProfileForm({ ...profileForm, eventType: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors cursor-pointer"
-                >
-                  <option value="Wedding">Wedding / Shaadi</option>
-                  <option value="Pre-Wedding">Pre-Wedding / Engagement</option>
-                  <option value="Birthday">Birthday Celebration</option>
-                  <option value="Corporate">Corporate / Summit</option>
-                  <option value="Anniversary">Anniversary</option>
-                  <option value="Baby Shower">Baby Shower / Godh Bharai</option>
-                  <option value="Other">Other Event</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#221F1C] block">
-                  Estimated Budget Preference
-                </label>
-                <select
-                  value={profileForm.budgetRange}
-                  onChange={e => setProfileForm({ ...profileForm, budgetRange: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF7F2] text-xs text-[#221F1C] focus:outline-none focus:border-[#9E5338] transition-colors cursor-pointer"
-                >
-                  <option value="under_500">Under ₹50,000</option>
-                  <option value="between_500_1000">₹50,000 – ₹1,50,000</option>
-                  <option value="between_1000_2500">₹1,50,000 – ₹3,00,000</option>
-                  <option value="between_2500_5000">₹3,00,000 – ₹5,00,000</option>
-                  <option value="above_5000">Above ₹5,00,000</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Actions */}
-          <div className="pt-4 border-t border-[#E8E2D9] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <span className="text-xs text-[#6B6560]">
-              All details are secured under Ayoj privacy policy
-            </span>
-
-            <Button 
-              type="submit" 
-              disabled={savingProfile}
-              className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-semibold px-8 h-11 shadow-sm active:scale-95 transition-all cursor-pointer"
-            >
-              {savingProfile ? (
-                <>
-                  <Loader2 className="size-4 animate-spin mr-2" />
-                  Saving Changes...
-                </>
-              ) : (
-                'Save Profile Changes'
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-[#FBF8F4] text-[#221F1C] font-sans selection:bg-[#F3EADF] selection:text-[#9E5338] flex flex-col justify-between">
       <div>
@@ -1171,82 +1060,27 @@ const CustomerDashboard = () => {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           
-          {/* Aligned Header Banner Card */}
-          <div className="bg-white rounded-2xl p-6 sm:p-8 border border-[#E8E2D9] shadow-sm mb-8 relative overflow-hidden">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative z-10">
-              <div className="flex items-center gap-5">
-                <div className="size-16 sm:size-20 rounded-full bg-[#F3EADF] border-2 border-[#9E5338]/30 flex items-center justify-center text-[#9E5338] font-serif font-bold text-2xl shadow-sm shrink-0">
-                  {user?.first_name?.[0] || 'P'}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] bg-[#F3EADF] px-2.5 py-0.5 rounded-full border border-[#E8E2D9]">
-                      Verified Customer
-                    </span>
-                    <span className="text-[10px] text-[#6B6560] flex items-center gap-1">
-                      <MapPin size={11} /> {profileForm.city}
-                    </span>
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-[#221F1C]">
-                    Welcome back, {user?.first_name || profileForm.firstName || 'Celebration'} {user?.last_name || profileForm.lastName || 'Host'}
-                  </h1>
-                  <p className="text-xs text-[#6B6560] mt-1">
-                    Upcoming Celebration: <span className="font-semibold text-[#221F1C]">
-                      {profileForm.weddingDate ? new Date(profileForm.weddingDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Set Date'}
-                    </span> • {profileForm.city || 'Delhi NCR'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Link href="/marketplace">
-                  <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-6 h-10 shadow-sm cursor-pointer">
-                    Find Creative Partners
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Navigation Tabs Bar */}
-            <div className="mt-8 pt-6 border-t border-[#E8E2D9] flex items-center gap-2 overflow-x-auto no-scrollbar">
-              {[
-                { id: 'overview', name: 'Overview', icon: CalendarIcon },
-                { id: 'bookings', name: 'My Bookings', icon: ShoppingBag, badge: bookings.length > 0 ? bookings.length.toString() : undefined },
-                { id: 'saved', name: 'Saved Pros', icon: Heart, badge: savedVendors.length > 0 ? savedVendors.length.toString() : undefined },
-                { id: 'reviews', name: 'My Reviews', icon: Star },
-                { id: 'profile', name: 'Profile & Settings', icon: User },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id || (tab.id === 'profile' && activeTab === 'settings');
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      if (typeof window !== 'undefined') {
-                        window.history.replaceState(null, '', `/customer/dashboard?tab=${tab.id}`);
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      isActive
-                        ? 'bg-[#F3EADF] text-[#9E5338] border border-[#E8E2D9]'
-                        : 'text-[#6B6560] hover:text-[#221F1C] hover:bg-[#FBF8F4]'
-                    }`}
-                  >
-                    <Icon size={15} />
-                    <span>{tab.name}</span>
-                    {tab.badge && (
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                        isActive ? 'bg-[#9E5338] text-white' : 'bg-[#E8E2D9] text-[#6B6560]'
-                      }`}>
-                        {tab.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* Revamped Interactive Host Banner & Navigation */}
+          <CustomerProfileHeader
+            user={user}
+            profileData={profileForm}
+            activeTab={activeTab}
+            onTabChange={(tab) => {
+              setActiveTab(tab);
+              if (typeof window !== 'undefined') {
+                window.history.replaceState(null, '', `/customer/dashboard?tab=${tab}`);
+              }
+            }}
+            onAvatarSelect={(url) => {
+              setProfileForm((prev) => ({ ...prev, avatarUrl: url }));
+              if (updateUser) {
+                updateUser({ avatar_url: url });
+              }
+            }}
+            bookingsCount={bookings.length}
+            savedCount={savedVendors.length}
+            completionPercentage={completionPercentage}
+          />
 
           <AnimatePresence mode="wait">
             {loading ? (
@@ -1277,7 +1111,16 @@ const CustomerDashboard = () => {
                 {activeTab === 'bookings' && renderBookingsTab()}
                 {activeTab === 'saved' && renderSavedTab()}
                 {activeTab === 'reviews' && renderReviewsTab()}
-                {(activeTab === 'profile' || activeTab === 'settings') && renderSettingsTab()}
+                {(activeTab === 'profile' || activeTab === 'settings') && (
+                  <CustomerProfileView
+                    data={profileForm}
+                    onChange={(updated) => setProfileForm((prev) => ({ ...prev, ...updated }))}
+                    onSave={handleSaveProfile}
+                    saving={savingProfile}
+                    bookings={bookings}
+                    completionPercentage={completionPercentage}
+                  />
+                )}
               </motion.div>
             )}
           </AnimatePresence>

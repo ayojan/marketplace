@@ -42,6 +42,8 @@ import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
+import VendorCompareDrawer, { CompareVendor } from '@/components/VendorCompareDrawer';
+import RecentlyViewedStrip from '@/components/RecentlyViewedStrip';
 
 // Quick Budget Presets for Instant 1-Tap Filtering
 const QUICK_BUDGET_PRESETS = [
@@ -103,6 +105,7 @@ function MarketplaceContent() {
   const initialLocationParam = searchParams.get('location') || 'all';
   const initialMinPrice = searchParams.get('min_price') || '';
   const initialMaxPrice = searchParams.get('max_price') || '';
+  const initialDateParam = searchParams.get('date') || '';
   const initialSort = searchParams.get('sort') || 'featured';
   const initialPricingType = searchParams.get('pricing_type') || 'all';
 
@@ -130,8 +133,37 @@ function MarketplaceContent() {
   const [searchQuery, setSearchQuery] = useState<string>(initialSearchParam);
   const [minPrice, setMinPrice] = useState<string>(initialMinPrice);
   const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice);
+  const [selectedDate, setSelectedDate] = useState<string>(initialDateParam);
   const [selectedPricingType, setSelectedPricingType] = useState<string>(initialPricingType);
   const [sortBy, setSortBy] = useState<string>(initialSort);
+
+  // Comparison & Inquiry Basket State
+  const [comparedVendors, setComparedVendors] = useState<any[]>([]);
+  const [isBroadcastInquiryOpen, setIsBroadcastInquiryOpen] = useState(false);
+
+  const handleToggleCompare = (vendor: any) => {
+    setComparedVendors((prev) => {
+      const exists = prev.some((v) => v.id === vendor.id);
+      if (exists) {
+        toast.info(`Removed ${vendor.name || vendor.business_name} from inquiry basket`);
+        return prev.filter((v) => v.id !== vendor.id);
+      }
+      if (prev.length >= 3) {
+        toast.warning('You can add up to 3 partners to the inquiry basket');
+        return prev;
+      }
+      toast.success(`Added ${vendor.name || vendor.business_name} to inquiry basket`);
+      return [...prev, vendor];
+    });
+  };
+
+  const handleRemoveCompare = (vendorId: string | number) => {
+    setComparedVendors((prev) => prev.filter((v) => v.id !== vendorId));
+  };
+
+  const handleClearCompare = () => {
+    setComparedVendors([]);
+  };
 
   const {
     selectedCity,
@@ -233,6 +265,7 @@ function MarketplaceContent() {
   const [openSections, setOpenSections] = useState({
     category: true,
     occasion: true,
+    date: true,
     location: true,
     price: true,
     pricingType: true,
@@ -257,13 +290,14 @@ function MarketplaceContent() {
     if (searchQuery.trim()) params.set('search', searchQuery.trim());
     if (minPrice) params.set('min_price', minPrice);
     if (maxPrice) params.set('max_price', maxPrice);
+    if (selectedDate) params.set('date', selectedDate);
     if (selectedPricingType && selectedPricingType !== 'all') params.set('pricing_type', selectedPricingType);
     if (sortBy && sortBy !== 'featured') params.set('sort', sortBy);
 
     const qs = params.toString();
     const newPath = qs ? `/marketplace?${qs}` : '/marketplace';
     window.history.replaceState(null, '', newPath);
-  }, [selectedCategory, selectedOccasion, selectedLocation, searchQuery, minPrice, maxPrice, selectedPricingType, sortBy]);
+  }, [selectedCategory, selectedOccasion, selectedLocation, searchQuery, minPrice, maxPrice, selectedDate, selectedPricingType, sortBy]);
 
   // Support native browser Back & Forward navigation via popstate
   useEffect(() => {
@@ -275,6 +309,7 @@ function MarketplaceContent() {
       const q = sp.get('search') || sp.get('q') || '';
       const minP = sp.get('min_price') || '';
       const maxP = sp.get('max_price') || '';
+      const dt = sp.get('date') || '';
       const s = sp.get('sort') || 'featured';
       const pt = sp.get('pricing_type') || 'all';
 
@@ -284,6 +319,7 @@ function MarketplaceContent() {
       setSearchQuery(q);
       setMinPrice(minP);
       setMaxPrice(maxP);
+      setSelectedDate(dt);
       setSortBy(s);
       setSelectedPricingType(pt);
     };
@@ -486,9 +522,19 @@ function MarketplaceContent() {
         if (!isNaN(max) && (vendor.base_price || 0) > max) return false;
       }
 
+      // 7. Date Filter (Check if vendor is marked unavailable)
+      if (selectedDate) {
+        const unavailableDates = (vendor.unavailable_dates || vendor.blocked_dates || []).map((d: any) => 
+          typeof d === 'string' ? d.split('T')[0] : (d.date ? String(d.date).split('T')[0] : '')
+        );
+        if (unavailableDates.includes(selectedDate)) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [allVendors, selectedCategory, selectedOccasion, selectedLocation, searchQuery, minPrice, maxPrice]);
+  }, [allVendors, selectedCategory, selectedOccasion, selectedLocation, searchQuery, minPrice, maxPrice, selectedDate]);
 
   // Sort filtered vendors based on selected sort option
   const sortedVendors = useMemo(() => {
@@ -519,8 +565,9 @@ function MarketplaceContent() {
     if (minPrice) count++;
     if (maxPrice) count++;
     if (selectedPricingType !== 'all') count++;
+    if (selectedDate) count++;
     return count;
-  }, [selectedCategory, selectedOccasion, selectedLocation, minPrice, maxPrice, selectedPricingType]);
+  }, [selectedCategory, selectedOccasion, selectedLocation, minPrice, maxPrice, selectedPricingType, selectedDate]);
 
   const hasActiveFilters = 
     selectedCategory !== 'all' || 
@@ -529,6 +576,7 @@ function MarketplaceContent() {
     Boolean(searchQuery) || 
     Boolean(minPrice) || 
     Boolean(maxPrice) || 
+    Boolean(selectedDate) ||
     selectedPricingType !== 'all';
 
   const resetAllFilters = () => {
@@ -538,6 +586,7 @@ function MarketplaceContent() {
     setSearchQuery('');
     setMinPrice('');
     setMaxPrice('');
+    setSelectedDate('');
     setSelectedPricingType('all');
     setSortBy('featured');
     window.history.replaceState(null, '', '/marketplace');
@@ -683,6 +732,68 @@ function MarketplaceContent() {
                 </button>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-[#E8E2D9]" />
+
+      {/* Celebration Date Section with Accordion */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => toggleSection('date')}
+          className="w-full flex items-center justify-between text-left cursor-pointer group"
+          aria-expanded={openSections.date}
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-[#221F1C] uppercase tracking-wider">
+              Celebration Date
+            </span>
+            {selectedDate && (
+              <span className="size-2 rounded-full bg-[#9E5338]" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedDate && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDate('');
+                }}
+                className="text-[11px] text-[#9E5338] hover:underline font-semibold cursor-pointer"
+              >
+                Clear
+              </span>
+            )}
+            {openSections.date ? (
+              <ChevronUp className="size-3.5 text-[#6B6560] group-hover:text-[#221F1C]" />
+            ) : (
+              <ChevronDown className="size-3.5 text-[#6B6560] group-hover:text-[#221F1C]" />
+            )}
+          </div>
+        </button>
+
+        {openSections.date && (
+          <div className="space-y-2 pt-1 animate-in fade-in-0 duration-150">
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9E5338] pointer-events-none" />
+              <Input
+                type="date"
+                value={selectedDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  if (isMobile) setIsMobileFilterOpen(false);
+                }}
+                className="pl-8 bg-[#FAF7F2] border-[#E8E2D9] h-9 rounded-xl text-xs cursor-pointer text-[#221F1C]"
+              />
+            </div>
+            {selectedDate && (
+              <p className="text-[11px] text-[#6B6560] italic">
+                Filtering pros for {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -1106,6 +1217,9 @@ function MarketplaceContent() {
         </div>
       </section>
 
+      {/* Pick Up Where You Left Off Strip (Self-hides if empty) */}
+      <RecentlyViewedStrip />
+
       {/* Mobile Slide-in Left Filter Drawer */}
       <AnimatePresence>
         {isMobileFilterOpen && (
@@ -1253,24 +1367,45 @@ function MarketplaceContent() {
                 </div>
               </div>
 
-              {/* Sort by Dropdown */}
+              {/* Actions: Inquiry Basket Button + Sort Dropdown */}
               <div className="flex items-center gap-2 self-end sm:self-auto">
-                <span className="text-xs text-[#6B6560] flex items-center gap-1 font-medium">
-                  <ArrowUpDown className="size-3.5 text-[#9E5338]" />
-                  Sort:
-                </span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  aria-label="Sort marketplace listings"
-                  className="bg-white border border-[#E8E2D9] text-[#221F1C] text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#9E5338] cursor-pointer shadow-xs hover:border-[#9E5338]/40 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setIsBroadcastInquiryOpen(true)}
+                  className={`h-9 px-3 sm:px-3.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
+                    comparedVendors.length > 0
+                      ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-xs hover:bg-[#86442B]'
+                      : 'bg-white border-[#E8E2D9] text-[#221F1C] hover:bg-[#FAF7F2] hover:border-[#9E5338]/40'
+                  }`}
+                  title="Open Multi-Vendor Inquiry Basket"
                 >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  <Send className={`size-3.5 ${comparedVendors.length > 0 ? 'text-white' : 'text-[#9E5338]'}`} />
+                  <span>Inquiry Basket</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    comparedVendors.length > 0 ? 'bg-white/25 text-white' : 'bg-[#F3EADF] text-[#9E5338]'
+                  }`}>
+                    {comparedVendors.length}
+                  </span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#6B6560] flex items-center gap-1 font-medium">
+                    <ArrowUpDown className="size-3.5 text-[#9E5338]" />
+                    Sort:
+                  </span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    aria-label="Sort marketplace listings"
+                    className="bg-white border border-[#E8E2D9] text-[#221F1C] text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#9E5338] cursor-pointer shadow-xs hover:border-[#9E5338]/40 transition-colors"
+                  >
+                    {SORT_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -1342,6 +1477,15 @@ function MarketplaceContent() {
                   </span>
                 )}
 
+                {selectedDate && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
+                    Date: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    <button onClick={() => setSelectedDate('')} aria-label="Remove date filter" className="hover:text-black cursor-pointer">
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                )}
+
                 <button
                   onClick={resetAllFilters}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-[#9E5338] hover:underline cursor-pointer ml-1"
@@ -1365,28 +1509,90 @@ function MarketplaceContent() {
               </div>
             ) : sortedVendors.length === 0 ? (
               <div className="space-y-8 mt-4">
+                {/* Smart Filter Relaxer - Helps users recover with 1 click */}
+                {hasActiveFilters && (
+                  <div className="bg-white border border-[#E8E2D9] rounded-2xl p-5 sm:p-6 shadow-xs space-y-3.5 text-center max-w-xl mx-auto">
+                    <div className="size-10 rounded-full bg-[#F3EADF] text-[#9E5338] flex items-center justify-center mx-auto shadow-2xs">
+                      <SlidersHorizontal className="size-4" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-serif font-bold text-[#221F1C]">
+                        No exact matches for your active filters
+                      </h3>
+                      <p className="text-xs text-[#6B6560]">
+                        Try relaxing your budget, location, or occasion to find available creative partners.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      {(minPrice || maxPrice) && (
+                        <button
+                          type="button"
+                          onClick={() => { setMinPrice(''); setMaxPrice(''); }}
+                          className="px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338] transition-colors cursor-pointer"
+                        >
+                          Clear Budget Filter
+                        </button>
+                      )}
+                      {selectedLocation !== 'all' && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLocation('all')}
+                          className="px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338] transition-colors cursor-pointer"
+                        >
+                          Show All Locations
+                        </button>
+                      )}
+                      {selectedDate && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDate('')}
+                          className="px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338] transition-colors cursor-pointer"
+                        >
+                          Clear Date Filter
+                        </button>
+                      )}
+                      {selectedCategory !== 'all' && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCategory('all')}
+                          className="px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338] transition-colors cursor-pointer"
+                        >
+                          Show All Categories
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={resetAllFilters}
+                        className="px-3.5 py-1.5 rounded-full bg-[#9E5338] text-xs font-semibold text-white hover:bg-[#86442B] transition-colors cursor-pointer"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Transparent Ayoj City Network Building Box */}
-                <div className="text-center py-12 px-6 sm:px-12 border border-[#E8E2D9] rounded-3xl space-y-6 bg-[#FAF7F2] shadow-sm relative overflow-hidden">
+                <div className="text-center py-10 px-6 sm:px-12 border border-[#E8E2D9] rounded-3xl space-y-5 bg-[#FAF7F2] shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 bg-[#F3EADF] rounded-full blur-2xl pointer-events-none opacity-60" />
                   <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-44 h-44 bg-[#9E5338]/5 rounded-full blur-2xl pointer-events-none" />
 
                   {/* Icon Badge */}
-                  <div className="size-14 rounded-2xl bg-[#F3EADF] border border-[#E8DACB] flex items-center justify-center mx-auto text-[#9E5338] shadow-2xs">
-                    <Building2 className="size-6 text-[#9E5338]" />
+                  <div className="size-12 rounded-2xl bg-[#F3EADF] border border-[#E8DACB] flex items-center justify-center mx-auto text-[#9E5338] shadow-2xs">
+                    <Building2 className="size-5 text-[#9E5338]" />
                   </div>
 
                   {/* Headline & Subtitle */}
-                  <div className="space-y-2 max-w-xl mx-auto">
-                    <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#221F1C] tracking-tight">
+                  <div className="space-y-1.5 max-w-xl mx-auto">
+                    <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#221F1C] tracking-tight">
                       We&apos;re building Ayoj in {currentCityForCopy || 'your city'}
                     </h3>
-                    <p className="text-sm text-[#6B6560] leading-relaxed max-w-lg mx-auto">
+                    <p className="text-xs sm:text-sm text-[#6B6560] leading-relaxed max-w-lg mx-auto">
                       Tell us what you&apos;re planning, and we&apos;ll work to connect you with suitable local event professionals.
                     </p>
                   </div>
 
                   {/* Services Prompt & Interactive Chips */}
-                  <div className="space-y-3 pt-1 max-w-lg mx-auto">
+                  <div className="space-y-2.5 pt-1 max-w-lg mx-auto">
                     <p className="text-xs font-bold uppercase tracking-wider text-[#9E5338]">
                       What service do you need?
                     </p>
@@ -1413,9 +1619,9 @@ function MarketplaceContent() {
                     <button
                       type="button"
                       onClick={() => handleOpenRequestModal()}
-                      className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white text-sm font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 px-7 py-2.5 rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
                     >
-                      <Sparkles className="size-4" />
+                      <Sparkles className="size-3.5" />
                       <span>Request a vendor</span>
                     </button>
                   </div>
@@ -1424,29 +1630,27 @@ function MarketplaceContent() {
                   <p className="text-xs text-[#8A847E] italic pt-1 max-w-md mx-auto">
                     No guarantee of a match. We&apos;ll contact you if we find a suitable provider.
                   </p>
-
-                  {/* Reset Filters Link */}
-                  <div className="pt-2 border-t border-[#E8E2D9]/70 max-w-xs mx-auto">
-                    <button
-                      type="button"
-                      onClick={resetAllFilters}
-                      className="text-xs text-[#6B6560] hover:text-[#9E5338] transition-colors underline cursor-pointer"
-                    >
-                      Clear all filters to view partners in all locations
-                    </button>
-                  </div>
                 </div>
 
                 {/* Recommended Top Verified Partners Section */}
                 {allVendors.length > 0 && (
                   <div className="space-y-4 pt-2">
-                    <div className="border-b border-[#E8E2D9] pb-2">
-                      <h4 className="text-sm font-serif font-bold text-[#221F1C]">
-                        Recommended Creative Partners You Might Like
-                      </h4>
-                      <p className="text-xs text-[#6B6560]">
-                        Explore these top-rated partners across popular categories
-                      </p>
+                    <div className="border-b border-[#E8E2D9] pb-2 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-serif font-bold text-[#221F1C]">
+                          Recommended Creative Partners You Might Like
+                        </h4>
+                        <p className="text-xs text-[#6B6560]">
+                          Explore top-rated partners across popular categories
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={resetAllFilters}
+                        className="text-xs text-[#9E5338] font-semibold hover:underline cursor-pointer"
+                      >
+                        View all partners
+                      </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                       {allVendors.slice(0, 3).map((vendor, index) => (
@@ -1456,7 +1660,12 @@ function MarketplaceContent() {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.25, delay: index * 0.05 }}
                         >
-                          <PhotographerCard photographer={vendor} />
+                          <PhotographerCard 
+                            photographer={vendor} 
+                            isCompared={comparedVendors.some(v => v.id === vendor.id)}
+                            onToggleCompare={handleToggleCompare}
+                            onQuickInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}
+                          />
                         </motion.div>
                       ))}
                     </div>
@@ -1472,7 +1681,12 @@ function MarketplaceContent() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.3) }}
                   >
-                    <PhotographerCard photographer={vendor} />
+                    <PhotographerCard 
+                      photographer={vendor} 
+                      isCompared={comparedVendors.some(v => v.id === vendor.id)}
+                      onToggleCompare={handleToggleCompare}
+                      onQuickInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}
+                    />
                   </motion.div>
                 ))}
               </div>
@@ -1480,6 +1694,16 @@ function MarketplaceContent() {
           </main>
         </div>
       </section>
+
+      {/* Multi-Vendor Comparison & Inquiry Basket Floating Tray & Modal */}
+      <VendorCompareDrawer
+        vendors={comparedVendors}
+        onRemove={handleRemoveCompare}
+        onClear={handleClearCompare}
+        onOpenInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}
+        isOpenInquireModal={isBroadcastInquiryOpen}
+        onToggleInquireModal={setIsBroadcastInquiryOpen}
+      />
 
       {/* Modern Marketplace Footer */}
       <Footer />
