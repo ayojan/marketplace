@@ -14,6 +14,8 @@ cloudflare:
   bucket: <%= ENV.fetch("CLOUDFLARE_R2_BUCKET", "ayoj-media") %>
   endpoint: <%= ENV["CLOUDFLARE_R2_ENDPOINT"] || (ENV["CLOUDFLARE_ACCOUNT_ID"].present? ? "https://#{ENV['CLOUDFLARE_ACCOUNT_ID']}.r2.cloudflarestorage.com" : nil) %>
   force_path_style: true
+  request_checksum_calculation: "when_required"
+  response_checksum_validation: "when_required"
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
