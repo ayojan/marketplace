@@ -30,8 +30,8 @@ Rails.application.configure do
     config.cache_store = :null_store
   end
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Store uploaded files on the local file system (or Cloudflare R2 if ACTIVE_STORAGE_SERVICE=cloudflare)
+  config.active_storage.service = ENV['ACTIVE_STORAGE_SERVICE']&.to_sym || :local
 
   # Configure Action Mailer for development
   config.action_mailer.raise_delivery_errors = false
