@@ -7,7 +7,6 @@ Rails.application.routes.draw do
 
   root to: 'rails/health#show'
 
-
   if defined?(ActiveAdmin)
     devise_for :admin_users, ActiveAdmin::Devise.config
     ActiveAdmin.routes(self)
