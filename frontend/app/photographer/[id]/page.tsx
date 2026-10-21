@@ -25,25 +25,11 @@ export default function PhotographerDetail() {
   const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
-    const fetchPhotographer = async () => {
-      if (!id) return;
-      
-      setIsLoading(true);
-      setError(null);
-      try {
-        const photographerId = Array.isArray(id) ? id[0] : id;
-        const response = await apiService.vendors.getById(photographerId);
-        setPhotographer(response.data.vendor || response.data);
-      } catch (err: any) {
-        console.error('Error fetching photographer:', err);
-        setError('Photographer not found or failed to load.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPhotographer();
-  }, [id]);
+    if (id) {
+      const vendorId = Array.isArray(id) ? id[0] : id;
+      router.replace(`/vendors/${vendorId}`);
+    }
+  }, [id, router]);
 
   const handleBooking = async () => {
     setIsBooking(true);

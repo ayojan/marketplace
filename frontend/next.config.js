@@ -18,6 +18,16 @@ const nextConfig = {
       },
     ],
   },
+
+  async redirects() {
+    return [
+      {
+        source: '/photographer/:id',
+        destination: '/vendors/:id',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

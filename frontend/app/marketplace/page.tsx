@@ -44,6 +44,7 @@ import { toast } from 'sonner';
 import Footer from '@/components/Footer';
 import VendorCompareDrawer, { CompareVendor } from '@/components/VendorCompareDrawer';
 import RecentlyViewedStrip from '@/components/RecentlyViewedStrip';
+import { TextLoop, Magnetic } from '@/components/motion';
 
 // Quick Budget Presets for Instant 1-Tap Filtering
 const QUICK_BUDGET_PRESETS = [
@@ -328,37 +329,53 @@ function MarketplaceContent() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Sync state if URL query params change externally
+  // Track last URL search string to detect genuine external Next.js navigation (e.g. from navbar/footer)
+  // without fighting user actions inside the page
+  const lastKnownSearchStr = useRef(searchParams.toString());
   useEffect(() => {
-    if (matchedCategoryId !== 'all' && matchedCategoryId !== selectedCategory) {
-      setSelectedCategory(matchedCategoryId);
-    }
-  }, [matchedCategoryId, selectedCategory]);
+    const currentSearchStr = searchParams.toString();
+    if (currentSearchStr !== lastKnownSearchStr.current) {
+      lastKnownSearchStr.current = currentSearchStr;
+      const cat = searchParams.get('category') || searchParams.get('trade') || 'all';
+      const occ = searchParams.get('occasion') || 'all';
+      const loc = searchParams.get('location') || 'all';
+      const q = searchParams.get('search') || searchParams.get('q') || '';
+      const minP = searchParams.get('min_price') || '';
+      const maxP = searchParams.get('max_price') || '';
+      const dt = searchParams.get('date') || '';
+      const s = searchParams.get('sort') || 'featured';
+      const pt = searchParams.get('pricing_type') || 'all';
 
-  useEffect(() => {
-    if (matchedOccasionId !== 'all' && matchedOccasionId !== selectedOccasion) {
-      setSelectedOccasion(matchedOccasionId);
-    }
-  }, [matchedOccasionId, selectedOccasion]);
+      const normalizedCat = cat.toLowerCase().trim();
+      const foundCat = TRADE_CATEGORIES.find(
+        c => c.id === normalizedCat || c.slug === normalizedCat || c.name.toLowerCase() === normalizedCat
+      );
+      setSelectedCategory(foundCat ? foundCat.slug : 'all');
 
-  const locationParam = searchParams.get('location') || 'all';
-  useEffect(() => {
-    if (locationParam !== selectedLocation) {
-      setSelectedLocation(locationParam);
-    }
-  }, [locationParam, selectedLocation]);
+      const normalizedOcc = occ.toLowerCase().trim();
+      const foundOcc = OCCASIONS.find(
+        o => o.id === normalizedOcc || o.name.toLowerCase() === normalizedOcc
+      );
+      setSelectedOccasion(foundOcc ? foundOcc.id : 'all');
 
-  useEffect(() => {
-    if (initialSearchParam && initialSearchParam !== searchQuery) {
-      setSearchQuery(initialSearchParam);
+      setSelectedLocation(loc);
+      setSearchQuery(q);
+      setMinPrice(minP);
+      setMaxPrice(maxP);
+      setSelectedDate(dt);
+      setSortBy(s);
+      setSelectedPricingType(pt);
     }
-  }, [initialSearchParam, searchQuery]);
+  }, [searchParams]);
 
   // Fetch from backend
   useEffect(() => {
     let isMounted = true;
     const fetchVendors = async () => {
-      setIsLoading(true);
+      // Only show full skeleton placeholder on initial load when no vendors have loaded yet
+      if (apiVendors.length === 0) {
+        setIsLoading(true);
+      }
       try {
         const params: any = {};
         if (searchQuery) params.q = searchQuery;
@@ -592,7 +609,7 @@ function MarketplaceContent() {
     window.history.replaceState(null, '', '/marketplace');
   };
 
-  const FilterSidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+  const renderFilterSidebar = (isMobile = false) => (
     <div className="space-y-5">
       
       {/* Category Section with Accordion */}
@@ -631,43 +648,51 @@ function MarketplaceContent() {
           </div>
         </button>
 
-        {openSections.category && (
-          <div className="space-y-1 pt-1 animate-in fade-in-0 duration-150">
-            {TRADE_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = selectedCategory === cat.slug;
-              const count = getCategoryCount(cat.slug);
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory(cat.slug);
-                    if (isMobile) setIsMobileFilterOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer text-left ${
-                    isSelected
-                      ? 'bg-[#F3EADF] text-[#86442B] font-semibold border border-[#E8E2D9]'
-                      : 'text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`size-3.5 ${isSelected ? 'text-[#86442B]' : 'text-[#6B6560]'}`} />
-                    <span>{cat.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                      isSelected ? 'bg-white/70 text-[#86442B] font-bold' : 'text-[#6B6560]'
-                    }`}>
-                      {count}
-                    </span>
-                    {isSelected && <Check className="size-3.5 text-[#86442B]" />}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {openSections.category && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden space-y-1 pt-1"
+            >
+              {TRADE_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const isSelected = selectedCategory === cat.slug;
+                const count = getCategoryCount(cat.slug);
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(cat.slug);
+                      if (isMobile) setIsMobileFilterOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors duration-150 cursor-pointer text-left border ${
+                      isSelected
+                        ? 'bg-[#F3EADF] text-[#86442B] font-semibold border-[#E8E2D9]'
+                        : 'border-transparent text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className={`size-3.5 ${isSelected ? 'text-[#86442B]' : 'text-[#6B6560]'}`} />
+                      <span>{cat.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                        isSelected ? 'bg-white/70 text-[#86442B] font-bold' : 'text-[#6B6560]'
+                      }`}>
+                        {count}
+                      </span>
+                      {isSelected && <Check className="size-3.5 text-[#86442B]" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="border-t border-[#E8E2D9]" />
@@ -708,32 +733,40 @@ function MarketplaceContent() {
           </div>
         </button>
 
-        {openSections.occasion && (
-          <div className="flex flex-wrap gap-1.5 pt-1 animate-in fade-in-0 duration-150">
-            {OCCASIONS.map((occ) => {
-              const Icon = occ.icon;
-              const isSelected = selectedOccasion === occ.id;
-              return (
-                <button
-                  key={occ.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedOccasion(occ.id);
-                    if (isMobile) setIsMobileFilterOpen(false);
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 cursor-pointer ${
-                    isSelected
-                      ? 'bg-[#9E5338] text-white shadow-xs font-semibold'
-                      : 'bg-[#FAF7F2] text-[#6B6560] border border-[#E8E2D9] hover:bg-[#F3EADF] hover:text-[#221F1C]'
-                  }`}
-                >
-                  <Icon className="size-3" />
-                  <span>{occ.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {openSections.occasion && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden flex flex-wrap gap-1.5 pt-1"
+            >
+              {OCCASIONS.map((occ) => {
+                const Icon = occ.icon;
+                const isSelected = selectedOccasion === occ.id;
+                return (
+                  <button
+                    key={occ.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedOccasion(occ.id);
+                      if (isMobile) setIsMobileFilterOpen(false);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors duration-150 cursor-pointer border ${
+                      isSelected
+                        ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-xs font-semibold'
+                        : 'bg-[#FAF7F2] text-[#6B6560] border-[#E8E2D9] hover:bg-[#F3EADF] hover:text-[#221F1C]'
+                    }`}
+                  >
+                    <Icon className="size-3" />
+                    <span>{occ.name}</span>
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="border-t border-[#E8E2D9]" />
@@ -774,28 +807,36 @@ function MarketplaceContent() {
           </div>
         </button>
 
-        {openSections.date && (
-          <div className="space-y-2 pt-1 animate-in fade-in-0 duration-150">
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9E5338] pointer-events-none" />
-              <Input
-                type="date"
-                value={selectedDate}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  if (isMobile) setIsMobileFilterOpen(false);
-                }}
-                className="pl-8 bg-[#FAF7F2] border-[#E8E2D9] h-9 rounded-xl text-xs cursor-pointer text-[#221F1C]"
-              />
-            </div>
-            {selectedDate && (
-              <p className="text-[11px] text-[#6B6560] italic">
-                Filtering pros for {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
-            )}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {openSections.date && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden space-y-2 pt-1"
+            >
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9E5338] pointer-events-none" />
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    if (isMobile) setIsMobileFilterOpen(false);
+                  }}
+                  className="pl-8 bg-[#FAF7F2] border-[#E8E2D9] h-9 rounded-xl text-xs cursor-pointer text-[#221F1C]"
+                />
+              </div>
+              {selectedDate && (
+                <p className="text-[11px] text-[#6B6560] italic">
+                  Filtering pros for {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="border-t border-[#E8E2D9]" />
@@ -836,65 +877,73 @@ function MarketplaceContent() {
           </div>
         </button>
 
-        {openSections.location && (
-          <div className="space-y-1 pt-1 animate-in fade-in-0 duration-150">
-            {/* Quick GPS auto-detect button */}
-            <button
-              type="button"
-              disabled={isDetecting}
-              onClick={() => handleDetectLocationMarketplace(isMobile)}
-              className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#9E5338] bg-[#F3EADF] border border-[#9E5338]/30 hover:bg-[#9E5338] hover:text-white transition-colors cursor-pointer"
+        <AnimatePresence initial={false}>
+          {openSections.location && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden space-y-1 pt-1"
             >
-              {isDetecting ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Navigation className="size-3.5" />
-              )}
-              <span>{isDetecting ? 'Detecting Hub...' : 'Detect My Location'}</span>
-            </button>
-
-            {['all', ...CITIES].map((city) => {
-              const isAll = city === 'all';
-              const displayName = isAll ? 'All Locations' : city;
-              const isSelected = isAll ? selectedLocation === 'all' : selectedLocation.toLowerCase() === city.toLowerCase();
-              return (
-                <button
-                  key={city}
-                  type="button"
-                  onClick={() => {
-                    setSelectedLocation(city);
-                    if (!isAll) setSelectedCity(city, { silentToast: true });
-                    if (isMobile) setIsMobileFilterOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer text-left ${
-                    isSelected
-                      ? 'bg-[#F3EADF] text-[#86442B] font-semibold border border-[#E8E2D9]'
-                      : 'text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <MapPin className={`size-3.5 ${isSelected ? 'text-[#86442B]' : 'text-[#6B6560]'}`} />
-                    <span>{displayName}</span>
-                  </div>
-                  {isSelected && <Check className="size-3 text-[#86442B]" />}
-                </button>
-              );
-            })}
-
-            <div className="pt-1 mt-1 border-t border-[#E8E2D9]/80">
+              {/* Quick GPS auto-detect button */}
               <button
                 type="button"
-                onClick={() => {
-                  if (isMobile) setIsMobileFilterOpen(false);
-                  openLocationPrompt();
-                }}
-                className="w-full px-3 py-1 text-[11px] font-medium text-[#6B6560] hover:text-[#9E5338] text-left cursor-pointer transition-colors"
+                disabled={isDetecting}
+                onClick={() => handleDetectLocationMarketplace(isMobile)}
+                className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#9E5338] bg-[#F3EADF] border border-[#9E5338]/30 hover:bg-[#9E5338] hover:text-white transition-colors cursor-pointer"
               >
-                Change celebration hub...
+                {isDetecting ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Navigation className="size-3.5" />
+                )}
+                <span>{isDetecting ? 'Detecting Hub...' : 'Detect My Location'}</span>
               </button>
-            </div>
-          </div>
-        )}
+
+              {['all', ...CITIES].map((city) => {
+                const isAll = city === 'all';
+                const displayName = isAll ? 'All Locations' : city;
+                const isSelected = isAll ? selectedLocation === 'all' : selectedLocation.toLowerCase() === city.toLowerCase();
+                return (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => {
+                      setSelectedLocation(city);
+                      if (!isAll) setSelectedCity(city, { silentToast: true });
+                      if (isMobile) setIsMobileFilterOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs transition-colors duration-150 cursor-pointer text-left border ${
+                      isSelected
+                        ? 'bg-[#F3EADF] text-[#86442B] font-semibold border-[#E8E2D9]'
+                        : 'border-transparent text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className={`size-3.5 ${isSelected ? 'text-[#86442B]' : 'text-[#6B6560]'}`} />
+                      <span>{displayName}</span>
+                    </div>
+                    {isSelected && <Check className="size-3 text-[#86442B]" />}
+                  </button>
+                );
+              })}
+
+              <div className="pt-1 mt-1 border-t border-[#E8E2D9]/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isMobile) setIsMobileFilterOpen(false);
+                    openLocationPrompt();
+                  }}
+                  className="w-full px-3 py-1 text-[11px] font-medium text-[#6B6560] hover:text-[#9E5338] text-left cursor-pointer transition-colors"
+                >
+                  Change celebration hub...
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="border-t border-[#E8E2D9]" />
@@ -936,66 +985,74 @@ function MarketplaceContent() {
           </div>
         </button>
 
-        {openSections.price && (
-          <div className="space-y-3 pt-1 animate-in fade-in-0 duration-150">
-            {/* Min / Max Inputs */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <span className="text-[11px] text-[#6B6560]">Min (₹)</span>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  className="bg-[#FAF7F2] border-[#E8E2D9] h-8 rounded-lg text-xs"
-                />
+        <AnimatePresence initial={false}>
+          {openSections.price && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden space-y-3 pt-1"
+            >
+              {/* Min / Max Inputs */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[11px] text-[#6B6560]">Min (₹)</span>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="bg-[#FAF7F2] border-[#E8E2D9] h-8 rounded-lg text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-[#6B6560]">Max (₹)</span>
+                  <Input
+                    type="number"
+                    placeholder="1,00,000+"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="bg-[#FAF7F2] border-[#E8E2D9] h-8 rounded-lg text-xs"
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <span className="text-[11px] text-[#6B6560]">Max (₹)</span>
-                <Input
-                  type="number"
-                  placeholder="1,00,000+"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  className="bg-[#FAF7F2] border-[#E8E2D9] h-8 rounded-lg text-xs"
-                />
-              </div>
-            </div>
 
-            {/* Quick Presets */}
-            <div className="space-y-1">
-              <span className="text-[11px] text-[#6B6560] block font-medium">Quick Presets:</span>
-              <div className="grid grid-cols-1 gap-1">
-                {[
-                  { label: 'Under ₹25,000', min: '', max: '25000' },
-                  { label: '₹25,000 - ₹50,000', min: '25000', max: '50000' },
-                  { label: '₹50,000 - ₹1,00,000', min: '50000', max: '100000' },
-                  { label: 'Above ₹1,00,000', min: '100000', max: '' },
-                ].map((preset) => {
-                  const isActive = minPrice === preset.min && maxPrice === preset.max;
-                  return (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => {
-                        setMinPrice(preset.min);
-                        setMaxPrice(preset.max);
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left ${
-                        isActive
-                          ? 'bg-[#F3EADF] text-[#86442B] font-semibold border border-[#E8E2D9]'
-                          : 'text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
-                      }`}
-                    >
-                      <span>{preset.label}</span>
-                      {isActive && <Check className="size-3 text-[#86442B]" />}
-                    </button>
-                  );
-                })}
+              {/* Quick Presets */}
+              <div className="space-y-1">
+                <span className="text-[11px] text-[#6B6560] block font-medium">Quick Presets:</span>
+                <div className="grid grid-cols-1 gap-1">
+                  {[
+                    { label: 'Under ₹25,000', min: '', max: '25000' },
+                    { label: '₹25,000 - ₹50,000', min: '25000', max: '50000' },
+                    { label: '₹50,000 - ₹1,00,000', min: '50000', max: '100000' },
+                    { label: 'Above ₹1,00,000', min: '100000', max: '' },
+                  ].map((preset) => {
+                    const isActive = minPrice === preset.min && maxPrice === preset.max;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          setMinPrice(preset.min);
+                          setMaxPrice(preset.max);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors duration-150 cursor-pointer text-left border ${
+                          isActive
+                            ? 'bg-[#F3EADF] text-[#86442B] font-semibold border-[#E8E2D9]'
+                            : 'border-transparent text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
+                        }`}
+                      >
+                        <span>{preset.label}</span>
+                        {isActive && <Check className="size-3 text-[#86442B]" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="border-t border-[#E8E2D9]" />
@@ -1036,28 +1093,36 @@ function MarketplaceContent() {
           </div>
         </button>
 
-        {openSections.pricingType && (
-          <div className="space-y-1 pt-1 animate-in fade-in-0 duration-150">
-            {pricingTypes.map((type) => {
-              const isSelected = selectedPricingType === type.id;
-              return (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => setSelectedPricingType(type.id)}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left ${
-                    isSelected
-                      ? 'bg-[#F3EADF] text-[#86442B] font-semibold border border-[#E8E2D9]'
-                      : 'text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
-                  }`}
-                >
-                  <span>{type.name}</span>
-                  {isSelected && <Check className="size-3 text-[#86442B]" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {openSections.pricingType && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden space-y-1 pt-1"
+            >
+              {pricingTypes.map((type) => {
+                const isSelected = selectedPricingType === type.id;
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() => setSelectedPricingType(type.id)}
+                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-colors duration-150 cursor-pointer text-left border ${
+                      isSelected
+                        ? 'bg-[#F3EADF] text-[#86442B] font-semibold border-[#E8E2D9]'
+                        : 'border-transparent text-[#6B6560] hover:bg-[#FAF7F2] hover:text-[#221F1C]'
+                    }`}
+                  >
+                    <span>{type.name}</span>
+                    {isSelected && <Check className="size-3 text-[#86442B]" />}
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
     </div>
@@ -1085,8 +1150,19 @@ function MarketplaceContent() {
               <span>Discover · Trust · Celebrate</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-serif font-normal tracking-tight text-[#221F1C]">
-              Find & Book Top Event Pros
+            <h1 className="text-3xl sm:text-4xl lg:text-[2.6rem] font-serif font-normal tracking-tight text-[#221F1C] flex flex-wrap items-center justify-center gap-x-2.5">
+              <span>Find & Book Top</span>
+              <TextLoop
+                interval={2.8}
+                className="text-[#9E5338] italic font-serif"
+              >
+                <span>Photographers</span>
+                <span>Cinematographers</span>
+                <span>Bridal Artists</span>
+                <span>Live DJs</span>
+                <span>Decorators</span>
+                <span>Mehendi Pros</span>
+              </TextLoop>
             </h1>
             <p className="text-xs sm:text-sm text-[#6B6560] font-normal max-w-lg mx-auto">
               Explore authentic portfolios, transparent pricing, and live availability across verified celebration artists.
@@ -1168,7 +1244,7 @@ function MarketplaceContent() {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.slug)}
-                    className={`snap-start shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 cursor-pointer border ${
+                    className={`snap-start shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 cursor-pointer border ${
                       isSelected
                         ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-xs'
                         : 'bg-white text-[#221F1C] border-[#E8E2D9] hover:border-[#9E5338]/40 hover:bg-[#FAF7F2]'
@@ -1202,9 +1278,9 @@ function MarketplaceContent() {
                       setMinPrice(preset.min);
                       setMaxPrice(preset.max);
                     }}
-                    className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-95 cursor-pointer border ${
+                    className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors duration-150 cursor-pointer border ${
                       isActive
-                        ? 'bg-[#9E5338] text-white border-[#9E5338] font-semibold shadow-2xs'
+                        ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-2xs'
                         : 'bg-white/90 text-[#4A4540] border-[#E8E2D9] hover:border-[#9E5338]/40 hover:bg-white hover:text-[#221F1C]'
                     }`}
                   >
@@ -1261,7 +1337,7 @@ function MarketplaceContent() {
 
               {/* Drawer Scrollable Content */}
               <div className="flex-1 overflow-y-auto p-4">
-                <FilterSidebarContent isMobile />
+                {renderFilterSidebar(true)}
               </div>
 
               {/* Drawer Sticky Bottom Footer */}
@@ -1316,7 +1392,7 @@ function MarketplaceContent() {
                   </button>
                 )}
               </div>
-              <FilterSidebarContent />
+              {renderFilterSidebar(false)}
             </aside>
           )}
 
@@ -1369,24 +1445,35 @@ function MarketplaceContent() {
 
               {/* Actions: Inquiry Basket Button + Sort Dropdown */}
               <div className="flex items-center gap-2 self-end sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => setIsBroadcastInquiryOpen(true)}
-                  className={`h-9 px-3 sm:px-3.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
-                    comparedVendors.length > 0
-                      ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-xs hover:bg-[#86442B]'
-                      : 'bg-white border-[#E8E2D9] text-[#221F1C] hover:bg-[#FAF7F2] hover:border-[#9E5338]/40'
-                  }`}
-                  title="Open Multi-Vendor Inquiry Basket"
-                >
-                  <Send className={`size-3.5 ${comparedVendors.length > 0 ? 'text-white' : 'text-[#9E5338]'}`} />
-                  <span>Inquiry Basket</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    comparedVendors.length > 0 ? 'bg-white/25 text-white' : 'bg-[#F3EADF] text-[#9E5338]'
-                  }`}>
-                    {comparedVendors.length}
-                  </span>
-                </button>
+                <Magnetic intensity={0.25} range={65}>
+                  <button
+                    type="button"
+                    onClick={() => setIsBroadcastInquiryOpen(true)}
+                    className={`h-9 px-3 sm:px-3.5 rounded-xl border text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
+                      comparedVendors.length > 0
+                        ? 'bg-[#9E5338] text-white border-[#9E5338] shadow-xs hover:bg-[#86442B]'
+                        : 'bg-white border-[#E8E2D9] text-[#221F1C] hover:bg-[#FAF7F2] hover:border-[#9E5338]/40'
+                    }`}
+                    title="Open Multi-Vendor Inquiry Basket"
+                  >
+                    <Send className={`size-3.5 ${comparedVendors.length > 0 ? 'text-white' : 'text-[#9E5338]'}`} />
+                    <span>Inquiry Basket</span>
+                    <AnimatePresence mode="popLayout">
+                      <motion.span
+                        key={comparedVendors.length}
+                        initial={{ scale: 0.6, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.6, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                          comparedVendors.length > 0 ? 'bg-white/25 text-white' : 'bg-[#F3EADF] text-[#9E5338]'
+                        }`}
+                      >
+                        {comparedVendors.length}
+                      </motion.span>
+                    </AnimatePresence>
+                  </button>
+                </Magnetic>
 
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-[#6B6560] flex items-center gap-1 font-medium">
@@ -1410,91 +1497,208 @@ function MarketplaceContent() {
             </div>
 
             {/* Active Filter Chips */}
-            {hasActiveFilters && (
-              <div className="flex items-center gap-2 flex-wrap py-1">
-                <span className="text-[11px] font-bold text-[#6B6560] uppercase tracking-wider">Active:</span>
-
-                {selectedCategory !== 'all' && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    Category: {activeCategoryObj?.name}
-                    <button onClick={() => setSelectedCategory('all')} aria-label="Remove category filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                {selectedOccasion !== 'all' && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    Occasion: {activeOccasionObj?.name}
-                    <button onClick={() => setSelectedOccasion('all')} aria-label="Remove occasion filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                {selectedLocation !== 'all' && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    City: {selectedLocation}
-                    <button onClick={() => setSelectedLocation('all')} aria-label="Remove city filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                {searchQuery && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    Query: &ldquo;{searchQuery}&rdquo;
-                    <button onClick={() => setSearchQuery('')} aria-label="Remove query filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                {minPrice && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    Min: ₹{Number(minPrice).toLocaleString()}
-                    <button onClick={() => setMinPrice('')} aria-label="Remove minimum price filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                {maxPrice && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    Max: ₹{Number(maxPrice).toLocaleString()}
-                    <button onClick={() => setMaxPrice('')} aria-label="Remove maximum price filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                {selectedPricingType !== 'all' && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    Model: {pricingTypes.find(t => t.id === selectedPricingType)?.name}
-                    <button onClick={() => setSelectedPricingType('all')} aria-label="Remove pricing model filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                {selectedDate && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]">
-                    Date: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    <button onClick={() => setSelectedDate('')} aria-label="Remove date filter" className="hover:text-black cursor-pointer">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                )}
-
-                <button
-                  onClick={resetAllFilters}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#9E5338] hover:underline cursor-pointer ml-1"
+            <AnimatePresence initial={false}>
+              {hasActiveFilters && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="overflow-hidden"
                 >
-                  <RotateCcw className="size-3" />
-                  <span>Clear all</span>
-                </button>
-              </div>
-            )}
+                  <div className="flex items-center gap-2 flex-wrap py-1">
+                    <span className="text-[11px] font-bold text-[#6B6560] uppercase tracking-wider">Active:</span>
+
+                    <AnimatePresence mode="popLayout">
+                      {selectedCategory !== 'all' && (
+                        <motion.span
+                          layout
+                          key="active-cat"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>Category: {activeCategoryObj?.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCategory('all')}
+                            aria-label="Remove category filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+
+                      {selectedOccasion !== 'all' && (
+                        <motion.span
+                          layout
+                          key="active-occ"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>Occasion: {activeOccasionObj?.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOccasion('all')}
+                            aria-label="Remove occasion filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+
+                      {selectedLocation !== 'all' && (
+                        <motion.span
+                          layout
+                          key="active-loc"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>City: {selectedLocation}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLocation('all')}
+                            aria-label="Remove city filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+
+                      {searchQuery && (
+                        <motion.span
+                          layout
+                          key="active-query"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>Query: &ldquo;{searchQuery}&rdquo;</span>
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            aria-label="Remove query filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+
+                      {minPrice && (
+                        <motion.span
+                          layout
+                          key="active-min"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>Min: ₹{Number(minPrice).toLocaleString()}</span>
+                          <button
+                            type="button"
+                            onClick={() => setMinPrice('')}
+                            aria-label="Remove minimum price filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+
+                      {maxPrice && (
+                        <motion.span
+                          layout
+                          key="active-max"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>Max: ₹{Number(maxPrice).toLocaleString()}</span>
+                          <button
+                            type="button"
+                            onClick={() => setMaxPrice('')}
+                            aria-label="Remove maximum price filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+
+                      {selectedPricingType !== 'all' && (
+                        <motion.span
+                          layout
+                          key="active-type"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>Model: {pricingTypes.find(t => t.id === selectedPricingType)?.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPricingType('all')}
+                            aria-label="Remove pricing model filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+
+                      {selectedDate && (
+                        <motion.span
+                          layout
+                          key="active-date"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.15 }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-medium text-[#86442B]"
+                        >
+                          <span>Date: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDate('')}
+                            aria-label="Remove date filter"
+                            className="hover:text-black cursor-pointer p-0.5 rounded-full hover:bg-black/5 transition-colors"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+
+                    <button
+                      type="button"
+                      onClick={resetAllFilters}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-[#9E5338] hover:underline cursor-pointer ml-1"
+                    >
+                      <RotateCcw className="size-3" />
+                      <span>Clear all</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Vendor Grid */}
             {isLoading ? (
@@ -1653,20 +1857,14 @@ function MarketplaceContent() {
                       </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {allVendors.slice(0, 3).map((vendor, index) => (
-                        <motion.div
-                          key={`rec-${vendor.id}-${index}`}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.25, delay: index * 0.05 }}
-                        >
-                          <PhotographerCard 
-                            photographer={vendor} 
-                            isCompared={comparedVendors.some(v => v.id === vendor.id)}
-                            onToggleCompare={handleToggleCompare}
-                            onQuickInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}
-                          />
-                        </motion.div>
+                      {allVendors.slice(0, 3).map((vendor) => (
+                        <PhotographerCard 
+                          key={`rec-${vendor.id}`}
+                          photographer={vendor} 
+                          isCompared={comparedVendors.some(v => v.id === vendor.id)}
+                          onToggleCompare={handleToggleCompare}
+                          onQuickInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}
+                        />
                       ))}
                     </div>
                   </div>
@@ -1674,20 +1872,14 @@ function MarketplaceContent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">
-                {sortedVendors.map((vendor, index) => (
-                  <motion.div
-                    key={`${vendor.id}-${index}`}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.3) }}
-                  >
-                    <PhotographerCard 
-                      photographer={vendor} 
-                      isCompared={comparedVendors.some(v => v.id === vendor.id)}
-                      onToggleCompare={handleToggleCompare}
-                      onQuickInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}
-                    />
-                  </motion.div>
+                {sortedVendors.map((vendor) => (
+                  <PhotographerCard 
+                    key={vendor.id}
+                    photographer={vendor} 
+                    isCompared={comparedVendors.some(v => v.id === vendor.id)}
+                    onToggleCompare={handleToggleCompare}
+                    onQuickInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}
+                  />
                 ))}
               </div>
             )}
