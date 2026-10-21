@@ -268,9 +268,6 @@ export const apiService = {
     markAsRead: (id) => api.patch(`/in_app_notifications/${id}/read`),
     markAllRead: () => api.post('/in_app_notifications/read_all'),
   },
-
-  // GraphQL
-  graphql: (query, variables = {}) => api.post('/graphql', { query, variables }),
 };
 
 export default api;

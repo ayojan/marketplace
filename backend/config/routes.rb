@@ -7,14 +7,6 @@ Rails.application.routes.draw do
 
   root to: 'rails/health#show'
 
-  post '/graphql', to: 'graphql#execute'
-  if Rails.env.development?
-    begin
-      mount GraphiQL::Rails::Engine, at: '/graphiql', graphql_path: '/graphql'
-    rescue NameError
-      # GraphiQL not available, skip mounting
-    end
-  end
   if defined?(ActiveAdmin)
     devise_for :admin_users, ActiveAdmin::Devise.config
     ActiveAdmin.routes(self)

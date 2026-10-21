@@ -23,11 +23,9 @@ flowchart LR
         UI --> Client
     end
     Browser --> Routes
-    Client -->|Bearer JWT over HTTPS| REST[REST endpoints]:::api
-    Client -->|Queries / mutations| GraphQL[POST /graphql]:::api
+    Client -->|Bearer JWT over HTTPS| REST[REST API endpoints]:::api
     REST --> Rails[Rails application]:::api
-    GraphQL --> Rails
-    Rails --> Data[(PostgreSQL / Redis / Active Storage)]:::data
+    Rails --> Data[(PostgreSQL / Solid Queue / Active Storage)]:::data
 ```
 
 ## Frontend Layers

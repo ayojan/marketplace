@@ -3,7 +3,6 @@ plugins:
   - rubocop-rspec
   - rubocop-performance
   - rubocop-factory_bot
-  - rubocop-graphql
   - rubocop-rspec_rails
 
 AllCops:
@@ -84,14 +83,3 @@ RSpec/ExampleLength:
 RSpec/MultipleMemoizedHelpers:
   Max: 12
 
-GraphQL/ExtractType:
-  Enabled: false
-
-GraphQL/ExtractInputType:
-  Enabled: false
-
-GraphQL/ObjectDescription:
-  Exclude:
-    - 'app/graphql/sources/**/*'
-    - 'app/graphql/*_schema.rb'
-    - 'app/graphql/**/base_*.rb'

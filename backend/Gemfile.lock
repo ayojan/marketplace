@@ -179,7 +179,6 @@ GEM
       net-http (~> 0.5)
     ffi (1.17.4-arm64-darwin)
     ffi (1.17.4-x86_64-linux-gnu)
-    fiber-storage (1.0.1)
     formtastic (6.0.0)
       actionpack (>= 7.2.0)
     formtastic_i18n (0.7.0)
@@ -202,10 +201,6 @@ GEM
       signet (>= 0.16, < 2.a)
     graphiql-rails (1.10.5)
       railties
-    graphql (2.6.12)
-      base64
-      fiber-storage
-      logger
     has_scope (0.9.0)
       actionpack (>= 7.0)
       activesupport (>= 7.0)
@@ -423,9 +418,6 @@ GEM
     rubocop-factory_bot (2.28.0)
       lint_roller (~> 1.1)
       rubocop (~> 1.72, >= 1.72.1)
-    rubocop-graphql (1.8.0)
-      lint_roller (~> 1.1)
-      rubocop (>= 1.89, < 2)
     rubocop-performance (1.27.0)
       lint_roller (~> 1.1)
       rubocop (>= 1.89.0, < 2.0)
@@ -532,7 +524,6 @@ DEPENDENCIES
   faker
   googleauth (~> 1.8)
   graphiql-rails
-  graphql
   image_processing (~> 1.2)
   json (< 3.0.0)
   jwt
@@ -548,7 +539,6 @@ DEPENDENCIES
   rspec-rails
   rubocop (~> 1.62)
   rubocop-factory_bot
-  rubocop-graphql
   rubocop-performance
   rubocop-rails
   rubocop-rspec
