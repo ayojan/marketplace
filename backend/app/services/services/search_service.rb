@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Services
-  # rubocop:disable Metrics/ClassLength
+  # rubocop:disable-next Metrics/ClassLength
   class SearchService
     include ActiveModel::Model
     include ActiveModel::Attributes
@@ -28,6 +28,7 @@ module Services
     attribute :per_page, :integer, default: DEFAULT_PER_PAGE
     attribute :sort_by, :string, default: 'created_at'
     attribute :sort_direction, :string, default: 'desc'
+    attribute :include_facets, :boolean, default: false
 
     validates :page, numericality: { greater_than_or_equal_to: 1 }
     validates :per_page, numericality: { greater_than_or_equal_to: 1, less_than_or_equal_to: MAX_PER_PAGE }
@@ -38,7 +39,7 @@ module Services
     end
 
     def call
-      {
+      response = {
         services: paginated_services,
         total_count: total_count,
         page: page,
@@ -46,9 +47,10 @@ module Services
         total_pages: total_pages,
         pagination: pagination_info,
         filters: applied_filters,
-        facets: facets,
         applied_filters: applied_filters
       }
+      response[:facets] = facets if include_facets
+      response
     end
 
     def base_scope
@@ -63,12 +65,23 @@ module Services
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       scope = base_scope
 
-      # Text search
+      # Text search (searches service name, description, vendor business name, and category names)
       if query.present?
-        scope = scope.where(
-          'services.name ILIKE ? OR services.description ILIKE ? OR vendors.business_name ILIKE ?',
-          "%#{query}%", "%#{query}%", "%#{query}%"
-        )
+        clean_q = query.to_s.strip
+        stem = clean_q.sub(/(ers|er|or|ors|ies|s)$/i, '')
+        terms = [clean_q]
+        terms << stem if stem.length >= 3 && stem != clean_q
+        terms << 'photograph' if clean_q.downcase.start_with?('photo')
+        terms << 'cater' if clean_q.downcase.start_with?('cater')
+        terms << 'decor' if clean_q.downcase.start_with?('decor')
+        terms = terms.uniq
+
+        conditions = terms.map do
+          '(services.name ILIKE ? OR services.description ILIKE ? OR vendors.business_name ILIKE ? OR categories.name ILIKE ?)'
+        end.join(' OR ')
+        query_params = terms.flat_map { |t| ["%#{t}%", "%#{t}%", "%#{t}%", "%#{t}%"] }
+
+        scope = scope.left_joins(:categories).where(conditions, *query_params)
       end
 
       # Category filter
@@ -211,5 +224,4 @@ module Services
       []
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end

@@ -377,7 +377,7 @@ function MarketplaceContent() {
         setIsLoading(true);
       }
       try {
-        const params: any = {};
+        const params: any = { per_page: 100 };
         if (searchQuery) params.q = searchQuery;
         if (minPrice) params.min_price = minPrice;
         if (maxPrice) params.max_price = maxPrice;
@@ -412,12 +412,18 @@ function MarketplaceContent() {
         });
 
         if (isMounted) {
-          setApiVendors(uniqueVendors);
+          setApiVendors((prev) => {
+            // If this was a query and results returned, merge with previous catalog
+            if (uniqueVendors.length > 0) {
+              const prevMap = new Map(prev.map((v) => [v.id, v]));
+              uniqueVendors.forEach((v) => prevMap.set(v.id, v));
+              return Array.from(prevMap.values());
+            }
+            return prev.length > 0 ? prev : uniqueVendors;
+          });
         }
       } catch (err: any) {
-        if (isMounted) {
-          setApiVendors([]);
-        }
+        console.warn('Background vendor fetch failed:', err);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -425,7 +431,8 @@ function MarketplaceContent() {
       }
     };
 
-    const timer = setTimeout(fetchVendors, 250);
+    const debounceMs = searchQuery ? 600 : 0;
+    const timer = setTimeout(fetchVendors, debounceMs);
     return () => {
       isMounted = false;
       clearTimeout(timer);
@@ -518,12 +525,20 @@ function MarketplaceContent() {
 
       // 4. Search Query Filter
       if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchesQuery = 
-          vendorName.includes(query) ||
-          vendorDesc.includes(query) ||
-          vendorLoc.includes(query) ||
-          vendorCategories.some((c: string) => c.includes(query));
+        const rawQuery = searchQuery.toLowerCase().trim();
+        const stemQuery = rawQuery.replace(/(ers|er|or|ors|ies|s)$/i, '');
+        const queryVariants = [rawQuery];
+        if (stemQuery.length >= 3 && stemQuery !== rawQuery) queryVariants.push(stemQuery);
+        if (rawQuery.startsWith('photo')) queryVariants.push('photo', 'photograph');
+        if (rawQuery.startsWith('cater')) queryVariants.push('cater');
+        if (rawQuery.startsWith('decor')) queryVariants.push('decor');
+
+        const matchesQuery = queryVariants.some(q => 
+          vendorName.includes(q) ||
+          vendorDesc.includes(q) ||
+          vendorLoc.includes(q) ||
+          vendorCategories.some((c: string) => c.includes(q))
+        );
         if (!matchesQuery) return false;
       }
 
