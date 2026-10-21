@@ -43,6 +43,10 @@ This guide explains how to deploy the Ayoj full-stack application for free using
    - `RAILS_ENV`: `production`
    - `RAILS_SERVE_STATIC_FILES`: `true`
    - `PORT`: `3000`
+   - `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID
+   - `CLOUDFLARE_R2_ACCESS_KEY_ID`: R2 API Token Access Key ID
+   - `   `: R2 API Token Secret Access Key
+   - `CLOUDFLARE_R2_BUCKET`: `ayoj-media` (or your bucket name)
 
 ---
 

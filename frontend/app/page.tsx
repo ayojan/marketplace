@@ -51,6 +51,7 @@ import { useLocation } from '@/lib/contexts/LocationContext';
 import Footer from '@/components/Footer';
 import RecentlyViewedStrip from '@/components/RecentlyViewedStrip';
 import CelebrationMatchmaker from '@/components/CelebrationMatchmaker';
+import { TextLoop, Magnetic, InView } from '@/components/motion';
 
 const TRENDING_SEARCHES = [
   { label: 'Candid Wedding Photographers', category: 'photographer', icon: Camera, tag: 'High Demand' },
@@ -271,13 +272,25 @@ export default function Landing() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-normal text-[#221F1C] leading-[1.12] tracking-tight">
               Find the people <br />
               behind your <br />
-              best moments.
+              <span className="text-[#9E5338] italic">best moments.</span>
             </h1>
 
-            {/* Subheading */}
-            <p className="text-sm sm:text-base text-[#6B6560] max-w-lg font-normal leading-relaxed">
-              Discover and book trusted photographers, makeup artists, decorators, planners and more — all in one place.
-            </p>
+            {/* Subheading with Motion Primitives TextLoop */}
+            <div className="text-sm sm:text-base text-[#6B6560] max-w-xl font-normal leading-relaxed flex items-center flex-wrap gap-x-1.5 gap-y-1">
+              <span>Discover &amp; book trusted</span>
+              <TextLoop 
+                className="font-semibold text-[#9E5338] bg-[#F3EADF] px-2.5 py-0.5 rounded-lg border border-[#E8E2D9] shadow-2xs"
+                interval={2.8}
+              >
+                <span>Candid Photographers</span>
+                <span>Bridal Makeup Artists</span>
+                <span>Luxury Stage Decorators</span>
+                <span>Royal Event Planners</span>
+                <span>Sangeet DJs &amp; Beats</span>
+                <span>Heritage Banquet Venues</span>
+              </TextLoop>
+              <span>— all in one place.</span>
+            </div>
 
             {/* Main Search Pill Capsule */}
             <div className="relative max-w-xl pt-2" ref={searchContainerRef}>
@@ -390,13 +403,15 @@ export default function Landing() {
                     )}
                   </div>
 
-                  {/* Solid Terracotta Search Pill Button */}
-                  <Button 
-                    type="submit"
-                    className="w-full sm:w-auto bg-[#9E5338] hover:bg-[#86442B] active:scale-95 text-white rounded-full text-xs font-medium px-7 h-10 min-h-[44px] sm:min-h-[40px] transition-all shrink-0 cursor-pointer"
-                  >
-                    Search
-                  </Button>
+                  {/* Solid Terracotta Search Pill Button with Motion Primitives Magnetic */}
+                  <Magnetic intensity={0.25} range={75} className="w-full sm:w-auto">
+                    <Button 
+                      type="submit"
+                      className="w-full sm:w-auto bg-[#9E5338] hover:bg-[#86442B] active:scale-95 text-white rounded-full text-xs font-medium px-7 h-10 min-h-[44px] sm:min-h-[40px] transition-all shrink-0 cursor-pointer shadow-md shadow-[#9E5338]/20"
+                    >
+                      Search
+                    </Button>
+                  </Magnetic>
 
                 </div>
               </form>
@@ -518,8 +533,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Circular Icon Categories Bar */}
-      <section className="py-8 bg-[#FBF8F4] border-b border-[#E8E2D9]">
+      {/* Circular Icon Categories Bar with Motion Primitives InView & Magnetic */}
+      <InView as="section" className="py-8 bg-[#FBF8F4] border-b border-[#E8E2D9]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 text-center">
             {categoryIcons.map((cat) => {
@@ -531,9 +546,11 @@ export default function Landing() {
                   className="flex flex-col items-center gap-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9E5338] rounded-2xl p-1 active:scale-95 transition-transform"
                   aria-label={`Browse ${cat.name}`}
                 >
-                  <div className="size-14 rounded-full bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-[#221F1C] group-hover:bg-[#9E5338] group-hover:text-white group-hover:border-[#9E5338] group-hover:scale-105 group-hover:shadow-md transition-all duration-200 shadow-xs">
-                    <Icon className="size-5 transition-transform duration-200 group-hover:scale-110" />
-                  </div>
+                  <Magnetic intensity={0.3} range={60}>
+                    <div className="size-14 rounded-full bg-[#F3EADF] border border-[#E8E2D9] flex items-center justify-center text-[#221F1C] group-hover:bg-[#9E5338] group-hover:text-white group-hover:border-[#9E5338] group-hover:scale-105 group-hover:shadow-md transition-all duration-200 shadow-xs">
+                      <Icon className="size-5 transition-transform duration-200 group-hover:scale-110" />
+                    </div>
+                  </Magnetic>
                   <span className="text-xs font-medium text-[#221F1C] group-hover:text-[#9E5338] transition-colors leading-tight max-w-[85px]">
                     {cat.name}
                   </span>
@@ -542,11 +559,11 @@ export default function Landing() {
             })}
           </div>
         </div>
-      </section>
+      </InView>
 
       {/* Popular Occasions Section - Placed right after categories for natural browsing */}
       <section id="occasions" className="scroll-mt-20 py-12 px-4 sm:px-6 bg-[#FAF7F2] border-b border-[#E8E2D9]">
-        <div className="max-w-7xl mx-auto space-y-6">
+        <InView className="max-w-7xl mx-auto space-y-6">
           
           <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-4">
             <div>
@@ -607,7 +624,7 @@ export default function Landing() {
             ))}
           </div>
 
-        </div>
+        </InView>
       </section>
 
       {/* Pick Up Where You Left Off Strip (Self-hides if no history) */}
@@ -615,7 +632,7 @@ export default function Landing() {
 
       {/* Top rated vendors in Selected City Section - Immediate inventory proof */}
       <section className="py-14 px-4 sm:px-6 bg-[#FBF8F4]">
-        <div className="max-w-7xl mx-auto space-y-6 relative">
+        <InView className="max-w-7xl mx-auto space-y-6 relative">
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E8E2D9] pb-4">
             <div>
@@ -742,7 +759,7 @@ export default function Landing() {
             );
           })()}
 
-        </div>
+        </InView>
       </section>
 
       {/* 60-Second Celebration Budget & Pro Matchmaker Wizard */}
@@ -750,7 +767,7 @@ export default function Landing() {
 
       {/* Unified "How Ayoj Works & Transparent Marketplace" Section */}
       <section className="py-16 px-4 sm:px-6 bg-[#FAF7F2] border-t border-[#E8E2D9]">
-        <div className="max-w-7xl mx-auto space-y-10">
+        <InView className="max-w-7xl mx-auto space-y-10">
           
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#F3EADF] text-[#9E5338] text-[10px] font-bold uppercase tracking-wider border border-[#E8E2D9]">
@@ -892,12 +909,12 @@ export default function Landing() {
             })}
           </div>
 
-        </div>
+        </InView>
       </section>
 
       {/* Real Celebrations, Real Stories Testimonial Section */}
       <section id="reviews" className="scroll-mt-20 py-16 px-4 sm:px-6 bg-[#FAF7F2] border-t border-[#E8E2D9]">
-        <div className="max-w-7xl mx-auto space-y-10">
+        <InView className="max-w-7xl mx-auto space-y-10">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E8E2D9] pb-6">
             <div className="space-y-2">
@@ -1007,12 +1024,12 @@ export default function Landing() {
             ))}
           </div>
 
-        </div>
+        </InView>
       </section>
 
       {/* Grow Your Business On Ayoj - Compact Vendor Partner Banner */}
       <section className="py-10 px-4 sm:px-6 bg-[#FBF8F4] border-t border-[#E8E2D9]">
-        <div className="max-w-7xl mx-auto">
+        <InView className="max-w-7xl mx-auto">
           <div className="bg-white border border-[#E8E2D9] rounded-2xl p-6 sm:p-8 shadow-xs">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               
@@ -1069,7 +1086,7 @@ export default function Landing() {
 
             </div>
           </div>
-        </div>
+        </InView>
       </section>
       </main>
 

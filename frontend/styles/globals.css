@@ -57,7 +57,7 @@
 
   html {
     font-size: var(--font-size);
-    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
 
   h1 {

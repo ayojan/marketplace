@@ -595,7 +595,7 @@ const PortfolioManager = () => {
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <Link
-            href="/photographer/1"
+            href="/vendors/1"
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 sm:flex-initial"

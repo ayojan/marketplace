@@ -10,6 +10,7 @@ import { tokenService } from '@/lib/tokenService';
 import { toast } from 'sonner';
 import VerifiedPartnerBadge from './VerifiedPartnerBadge';
 import { saveRecentlyViewedVendor } from '@/lib/recentlyViewed';
+import { Spotlight } from '@/components/motion';
 
 interface PortfolioImage {
   id: number;
@@ -309,10 +310,17 @@ export default function PhotographerCard({
 
   return (
     <div
-      className="vendor-card-root bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-500 group relative"
+      className="vendor-card-root bg-white border border-[#E8E2D9] rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-[#9E5338]/30 transition-[box-shadow,border-color] duration-200 group relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Motion Primitives Cursor Spotlight (only active on hover for peak scroll performance) */}
+      {isHovered && (
+        <Spotlight
+          size={320}
+          className="from-[#9E5338]/18 via-[#9E5338]/6 to-transparent"
+        />
+      )}
       
       {/* Photo carousel header */}
       <div className="relative aspect-[4/3] overflow-hidden bg-[#F3EADF]">
