@@ -1,3 +1,5 @@
+export { default as VendorOnboardingWizard } from '../VendorOnboardingWizard';
+export { default } from '../VendorOnboardingWizard';
 export { default as OnboardingProgressHeader } from './OnboardingProgressHeader';
 export { default as Step1AccountDetails } from './Step1AccountDetails';
 export { default as Step2BusinessProfile } from './Step2BusinessProfile';
