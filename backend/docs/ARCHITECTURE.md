@@ -70,7 +70,7 @@ The codebase is organized as a modular Rails application through these directori
 - Rails uses Solid Queue as its Active Job adapter and Solid Cache for key-value caching (both PostgreSQL-backed; no Redis dependency).
 - Background jobs include image processing, notification delivery, booking reminders, and vendor-stat recalculation.
 - PostgreSQL is the primary transactional data store and backing engine for queues and cache.
-- Active Storage owns attached service, portfolio, and review media. Its storage service is environment-configured.
+- Active Storage owns attached service, portfolio, review, and avatar media. Upload keys are partitioned by `<environment>/<domain>/<year>/<month>/<token>.<ext>` using `ActiveStorageKeyGenerator` to maintain clear isolation, lifecycle governance, and CDN caching boundaries in cloud storage (Cloudflare R2 / S3).
 - Mailers deliver transactional and notification email through the configured SMTP/Resend provider.
 
 ## Local Development
