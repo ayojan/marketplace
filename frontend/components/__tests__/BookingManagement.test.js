@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import VendorBookings from '../VendorBookings';
+import VendorBookings from '../vendor/bookings/VendorBookings';
 import { apiService } from '../../lib/api';
 
 // Mock the API service

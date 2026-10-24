@@ -1,0 +1,9 @@
+export { default as VendorSettings } from './VendorSettings';
+export { default } from './VendorSettings';
+export { default as VendorSettingsNav } from './VendorSettingsNav';
+export { default as VendorSettingsProfileTab } from './VendorSettingsProfileTab';
+export { default as VendorSettingsPoliciesTab } from './VendorSettingsPoliciesTab';
+export { default as VendorSettingsVerificationTab } from './VendorSettingsVerificationTab';
+export { default as VendorSettingsNotificationsTab } from './VendorSettingsNotificationsTab';
+export { default as VendorSettingsSidebar } from './VendorSettingsSidebar';
+export * from './constants';

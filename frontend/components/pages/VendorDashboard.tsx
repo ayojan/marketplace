@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { apiService } from '@/lib/api';
-import ServiceManagement from '../ServiceManagement';
-import PortfolioManager from '../PortfolioManager';
-import BookingCalendar from '../BookingCalendar';
+import {
+  ServiceManagement,
+  PortfolioManager,
+  BookingCalendar,
+  VendorSettings,
+  VendorBookings
+} from '@/components/vendor';
 import AyojLogo from '@/components/AyojLogo';
 import Link from 'next/link';
-import VendorSettings from '../VendorSettings';
-import VendorBookings from '../VendorBookings';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
 import { Button } from '@/components/ui/button';
 import { 

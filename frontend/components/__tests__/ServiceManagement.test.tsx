@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ServiceManagement from '../ServiceManagement';
+import ServiceManagement from '../vendor/services/ServiceManagement';
 import { apiService } from '@/lib/api';
 
 jest.mock('@/lib/api', () => ({
