@@ -86,7 +86,61 @@ ActiveAdmin.register User do
           end
         end
       else
-        'Standard User Account'
+        para 'Standard Customer Account', style: 'color: #64748B; padding: 6px 0;'
+      end
+    end
+
+    panel "Authentication & OAuth Identities (#{user.auth_identities.count})" do
+      if user.auth_identities.any?
+        table_for user.auth_identities do
+          column :provider do |identity|
+            status_tag identity.provider, class: :ok
+          end
+          column :uid
+          column :email
+          column :created_at
+        end
+      else
+        para 'Standard email and password authentication (no external OAuth linked).',
+             style: 'color: #64748B; padding: 6px 0;'
+      end
+    end
+
+    panel 'Email Notification Preferences' do
+      prefs = user.email_notification_preference
+      if prefs
+        attributes_table_for prefs do
+          [
+            ['Booking Request Received', :booking_created?],
+            ['Booking Confirmed', :booking_accepted?],
+            ['Booking Rejected', :booking_rejected?],
+            ['Booking Cancelled', :booking_cancelled?],
+            ['Booking Reminder', :booking_reminder?],
+            ['New Chat Message', :new_message?],
+            ['Review Received', :review_received?]
+          ].each do |label, method|
+            row(label) do |p|
+              val = p.public_send(method)
+              status_tag(val ? 'Enabled' : 'Disabled', class: val ? :ok : :warn)
+            end
+          end
+        end
+      else
+        para 'Default preferences active (no custom record saved).', style: 'color: #64748B;'
+      end
+    end
+
+    if user.customer? && user.customer_favorites.any?
+      panel "Saved Favorite Vendors (#{user.customer_favorites.count})" do
+        table_for user.customer_favorites.includes(vendor: :user) do
+          column :vendor do |fav|
+            link_to fav.vendor.business_name, admin_vendor_path(fav.vendor) if fav.vendor
+          end
+          column 'Location' do |fav|
+            fav.vendor&.location
+          end
+          column 'Saved On', :created_at
+        end
       end
     end
   end

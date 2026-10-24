@@ -375,9 +375,8 @@ app/
 │   │   ├── resource_finder.rb       # Resource lookups (404 handling)
 │   │   ├── parse_params.rb          # Parameter parsing/validation
 │   │   └── booking_management/
-│   │       └── booking_actions.rb   # Refactored (now thin)
-│   └── api/
-│       └── bookings_controller.rb   # Uses new concerns
+│   │       └── pagination_helper.rb     # Pagination metadata
+│   └── bookings_controller.rb       # Skinny delegated controller
 └── presenters/
     ├── booking_presenter.rb         # JSON serialization
     └── message_presenter.rb

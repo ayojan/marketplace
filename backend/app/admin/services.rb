@@ -5,7 +5,7 @@ ActiveAdmin.register Service do
 
   permit_params :name, :description, :vendor_id, :base_price, :pricing_type, :status, category_ids: []
 
-  includes :vendor, :categories
+  includes :vendor, :categories, :service_images
 
   scope :all, default: true
   scope :active
@@ -38,6 +38,9 @@ ActiveAdmin.register Service do
     end
     column :average_rating
     column :total_reviews
+    column 'Images' do |s|
+      s.service_images.count
+    end
     column :created_at
     actions
   end
@@ -75,6 +78,40 @@ ActiveAdmin.register Service do
       row :updated_at
     end
 
+    panel "Media Gallery (#{service.service_images.count})" do
+      if service.service_images.any?
+        table_for service.service_images.ordered do
+          column 'Preview' do |img|
+            if img.image.attached?
+              image_tag url_for(img.image),
+                        style: 'height: 60px; width: 90px; object-fit: cover; border-radius: 4px;'
+            else
+              status_tag 'No image', class: :warn
+            end
+          end
+          column :title
+          column 'Primary?' do |img|
+            status_tag(img.primary? ? 'Primary' : 'Secondary', class: img.primary? ? :ok : nil)
+          end
+          column :display_order
+          column 'Dimensions' do |img|
+            dims = img.image_dimensions
+            dims ? "#{dims['width']}x#{dims['height']}" : '-'
+          end
+          column :created_at
+          column 'Actions' do |img|
+            link_to 'Delete Image',
+                    delete_image_admin_service_path(service, image_id: img.id),
+                    method: :delete,
+                    data: { confirm: 'Are you sure you want to remove this service image?' },
+                    class: 'member_link'
+          end
+        end
+      else
+        para 'No images uploaded for this service yet.', style: 'padding: 10px; color: #64748B;'
+      end
+    end
+
     panel "Bookings (#{service.bookings.count})" do
       table_for service.bookings.order(created_at: :desc).limit(10) do
         column :id do |b|
@@ -105,6 +142,15 @@ ActiveAdmin.register Service do
       f.input :description, as: :text, input_html: { rows: 5 }
     end
     f.actions
+  end
+
+  member_action :delete_image, method: :delete do
+    image = resource.service_images.find_by(id: params[:image_id])
+    if image&.destroy
+      redirect_to resource_path, notice: I18n.t('admin.services.image_removed')
+    else
+      redirect_to resource_path, alert: I18n.t('admin.services.image_remove_failed')
+    end
   end
 
   member_action :activate, method: :put do

@@ -54,7 +54,7 @@ RSpec.describe Reviews::RespondToReview do
         )
 
         expect(result[:success]).to be false
-        expect(result[:error]).to match(/already responded/)
+        expect(result[:error]).to include('already responded')
       end
     end
 
@@ -68,7 +68,7 @@ RSpec.describe Reviews::RespondToReview do
         )
 
         expect(result[:success]).to be false
-        expect(result[:error]).to match(/less than 1000/)
+        expect(result[:error]).to include('less than 1000')
       end
     end
   end

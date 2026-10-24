@@ -15,9 +15,8 @@ module Services
       count = stats[0].to_i
       avg = stats[1].to_f.round(2)
 
-      # rubocop:disable Rails/SkipsModelValidations
+      # rubocop:disable-next Rails/SkipsModelValidations
       service.update_columns(average_rating: avg, total_reviews: count)
-      # rubocop:enable Rails/SkipsModelValidations
 
       { count: count, average: avg }
     end
