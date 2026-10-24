@@ -45,3 +45,42 @@ export interface DreamTeamSlot {
     status: string;
   };
 }
+
+export interface DashboardStat {
+  label: string;
+  value: string;
+  icon: any;
+  trend: string;
+}
+
+export interface SavedVendor {
+  id: string;
+  slug?: string;
+  favorite_id?: number | string;
+  name: string;
+  category: string;
+  location: string;
+  rating: number;
+  reviewsCount: number;
+  price: string;
+  image: string;
+}
+
+export interface RecommendedPro {
+  id: string;
+  slug?: string;
+  name: string;
+  category: string;
+  location: string;
+  rating: number;
+  reviewsCount: number;
+  price: string;
+  image: string;
+}
+
+export interface ChecklistItem {
+  id: number | string;
+  title: string;
+  completed: boolean;
+}
+

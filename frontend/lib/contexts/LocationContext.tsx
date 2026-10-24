@@ -145,14 +145,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         setSelectedCityState(storedCity);
       }
 
-      const promptSeen = localStorage.getItem(LOCAL_STORAGE_PROMPT_SEEN_KEY);
-      if (!promptSeen) {
-        // Subtle delay for gentle, non-jarring appearance after initial page paint
-        const timer = setTimeout(() => {
-          setIsPromptOpen(true);
-        }, 1100);
-        return () => clearTimeout(timer);
-      }
+      // Set promptSeen to true so modal only opens upon explicit user request (e.g. clicking city pill)
+      localStorage.setItem(LOCAL_STORAGE_PROMPT_SEEN_KEY, 'true');
     } catch (e) {
       console.warn('LocalStorage is not accessible:', e);
     }

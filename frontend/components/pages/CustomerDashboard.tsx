@@ -1,56 +1,38 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { apiService } from '@/lib/api';
-import Header, { CITIES } from '@/components/Header';
-import AyojLogo from '@/components/AyojLogo';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { ReviewFormModal } from '@/components/ReviewFormModal';
-import { BookingMessageModal } from '@/components/BookingMessageModal';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Calendar as CalendarIcon,
   Heart,
   ShoppingBag,
-  Clock,
   Star,
-  MapPin,
-  ArrowRight,
-  User,
-  Settings,
-  Bell,
-  Search,
-  Camera,
-  CheckCircle2,
-  ChevronRight,
-  Sparkles,
-  Check,
-  Edit3,
-  MessageSquare,
-  FileText,
-  Mail,
-  Phone,
-  Trash2,
-  Filter,
-  Plus,
-  Loader2
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { apiService } from '@/lib/api';
+import Header from '@/components/Header';
+import AyojLogo from '@/components/AyojLogo';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ReviewFormModal } from '@/components/ReviewFormModal';
+import { BookingMessageModal } from '@/components/BookingMessageModal';
+import {
+  CustomerProfileHeader,
+  CustomerProfileView,
+  CustomerOverviewTab,
+  CustomerBookingsTab,
+  CustomerSavedTab,
+  CustomerReviewsTab,
+  CustomerProfileData,
+  DashboardStat,
+  SavedVendor,
+  RecommendedPro,
+  ChecklistItem,
+} from '@/components/customer';
 
-// Modular Customer Profile & Passport Components
-import CustomerProfileHeader from '@/components/customer/CustomerProfileHeader';
-import CustomerProfileView from '@/components/customer/CustomerProfileView';
-import CustomerDreamTeamTracker from '@/components/customer/CustomerDreamTeamTracker';
-import { CustomerProfileData } from '@/components/customer/types';
-
-const CustomerDashboard = () => {
+export default function CustomerDashboard() {
   const { user, updateUser } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams ? searchParams.get('tab') : null;
@@ -74,9 +56,10 @@ const CustomerDashboard = () => {
 
   const [bookingFilter, setBookingFilter] = useState('all');
   const [bookings, setBookings] = useState<any[]>([]);
-  const [savedVendors, setSavedVendors] = useState<any[]>([]);
-  const [recommendedPros, setRecommendedPros] = useState<any[]>([]);
-  const [checklist, setChecklist] = useState<any[]>([]);
+  const [savedVendors, setSavedVendors] = useState<SavedVendor[]>([]);
+  const [recommendedPros, setRecommendedPros] = useState<RecommendedPro[]>([]);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [newChecklistTitle, setNewChecklistTitle] = useState('');
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<any>(null);
   const [chatModalOpen, setChatModalOpen] = useState(false);
@@ -137,7 +120,7 @@ const CustomerDashboard = () => {
         firstName: prev.firstName || user.first_name || '',
         lastName: prev.lastName || user.last_name || '',
         email: user.email || prev.email || '',
-        phone: prev.phone || user.phone || '',
+        phone: user.phone || prev.phone || '',
         city: prev.city || user.location || 'Delhi NCR',
         avatarUrl: prev.avatarUrl || user.avatar_url || '',
       }));
@@ -147,14 +130,12 @@ const CustomerDashboard = () => {
   const isBookingUpcoming = (b: any) => {
     if (!b) return false;
     const s = String(b.status || '').toLowerCase();
-    if (s === 'completed' || s === 'cancelled' || s === 'declined') {
+    if (s === 'completed' || s === 'declined' || s === 'cancelled') {
       return false;
     }
-    // Any pending, accepted, confirmed, or in-progress booking is upcoming
     if (['confirmed', 'accepted', 'pending', 'counter_offered'].includes(s)) {
       return true;
     }
-    // Fallback date check: if event is today or future
     if (b.event_date) {
       const eventTime = new Date(b.event_date).getTime();
       const today = new Date();
@@ -166,50 +147,6 @@ const CustomerDashboard = () => {
 
   const isBookingCompleted = (b: any) => {
     return String(b?.status || '').toLowerCase() === 'completed';
-  };
-
-  const renderStatusBadge = (status: string) => {
-    const s = String(status || '').toLowerCase();
-    switch (s) {
-      case 'completed':
-        return (
-          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs px-3 py-1 font-semibold">
-            <CheckCircle2 size={12} className="mr-1" /> Completed
-          </Badge>
-        );
-      case 'confirmed':
-      case 'accepted':
-        return (
-          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs px-3 py-1 font-semibold">
-            <Sparkles size={12} className="mr-1" /> Confirmed
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge className="bg-[#F3EADF] text-[#9E5338] border-[#E8E2D9] text-xs px-3 py-1 font-semibold">
-            <Clock size={12} className="mr-1" /> Pending Approval
-          </Badge>
-        );
-      case 'counter_offered':
-        return (
-          <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-xs px-3 py-1 font-semibold">
-            Counter Offer
-          </Badge>
-        );
-      case 'declined':
-      case 'cancelled':
-        return (
-          <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-xs px-3 py-1 font-semibold capitalize">
-            {s}
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-[#FBF8F4] text-[#6B6560] border-[#E8E2D9] text-xs px-3 py-1 font-semibold capitalize">
-            {s}
-          </Badge>
-        );
-    }
   };
 
   const fetchSavedVendors = async () => {
@@ -249,18 +186,6 @@ const CustomerDashboard = () => {
     }
   };
 
-  const totalSpent = bookings.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
-  const reviewedBookings = bookings.filter(b => b.review);
-
-  const stats = [
-    { label: 'Total Reservations', value: bookings.length.toString(), icon: CalendarIcon, trend: `${bookings.filter(b => isBookingUpcoming(b)).length} Upcoming` },
-    { label: 'Saved Pros', value: savedVendors.length.toString(), icon: Heart, trend: 'Wishlist' },
-    { label: 'Total Investment', value: `₹${totalSpent.toLocaleString()}`, icon: ShoppingBag, trend: 'Lifetime' },
-    { label: 'Verified Reviews', value: `${reviewedBookings.length} Given`, icon: Star, trend: reviewedBookings.length > 0 ? 'Verified' : 'None yet' }
-  ];
-
-  const [newChecklistTitle, setNewChecklistTitle] = useState('');
-
   const fetchRecommendedPros = async () => {
     try {
       const response = await apiService.vendors.getAll({ per_page: 4, min_rating: 4.5 }).catch(() => null);
@@ -280,15 +205,6 @@ const CustomerDashboard = () => {
       setRecommendedPros([]);
     }
   };
-
-  useEffect(() => {
-    fetchBookings();
-    fetchSavedVendors();
-    fetchChecklist();
-    fetchCustomer();
-    fetchRecommendedPros();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const fetchCustomer = async () => {
     try {
@@ -338,6 +254,15 @@ const CustomerDashboard = () => {
       setChecklist([]);
     }
   };
+
+  useEffect(() => {
+    fetchBookings();
+    fetchSavedVendors();
+    fetchChecklist();
+    fetchCustomer();
+    fetchRecommendedPros();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleToggleChecklist = async (id: number | string) => {
     setChecklist(prev =>
@@ -411,7 +336,6 @@ const CustomerDashboard = () => {
 
       await apiService.customer.update(payload);
 
-      // Immediately sync with client AuthContext & localStorage
       if (updateUser) {
         updateUser({
           first_name: profileForm.firstName,
@@ -430,6 +354,16 @@ const CustomerDashboard = () => {
     }
   };
 
+  const totalSpent = bookings.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
+  const reviewedBookings = bookings.filter(b => b.review);
+
+  const stats: DashboardStat[] = [
+    { label: 'Total Reservations', value: bookings.length.toString(), icon: CalendarIcon, trend: `${bookings.filter(b => isBookingUpcoming(b)).length} Upcoming` },
+    { label: 'Saved Pros', value: savedVendors.length.toString(), icon: Heart, trend: 'Wishlist' },
+    { label: 'Total Investment', value: `₹${totalSpent.toLocaleString()}`, icon: ShoppingBag, trend: 'Lifetime' },
+    { label: 'Verified Reviews', value: `${reviewedBookings.length} Given`, icon: Star, trend: reviewedBookings.length > 0 ? 'Verified' : 'None yet' }
+  ];
+
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
       if (bookingFilter === 'upcoming') return isBookingUpcoming(b);
@@ -438,604 +372,11 @@ const CustomerDashboard = () => {
     });
   }, [bookings, bookingFilter]);
 
-  const renderOverview = () => (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <div key={i} className="p-5 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm hover:border-[#9E5338]/40 transition-all group">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B6560]">{stat.label}</span>
-              <stat.icon className="size-4 text-[#6B6560] group-hover:text-[#9E5338] transition-colors" />
-            </div>
-            <div className="flex items-end justify-between">
-              <h4 className="text-2xl font-serif font-bold text-[#221F1C] tracking-tight">{stat.value}</h4>
-              <span className="text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] px-2.5 py-0.5 rounded-full">{stat.trend}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Feed Column */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Celebration Dream Team Lineup Matrix */}
-          <CustomerDreamTeamTracker bookings={bookings} />
-
-          {/* Active Bookings Card */}
-          <div className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-5">
-            <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-4">
-              <div>
-                <h3 className="text-base font-serif font-bold text-[#221F1C]">Your Event Bookings</h3>
-                <p className="text-xs text-[#6B6560]">Manage upcoming reservations and review past sessions</p>
-              </div>
-              <Link href="/marketplace">
-                <Button variant="ghost" size="sm" className="text-xs font-bold text-[#9E5338] hover:bg-[#F3EADF]">
-                  + Book New Vendor
-                </Button>
-              </Link>
-            </div>
-
-            {bookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center border border-dashed border-[#E8E2D9] rounded-xl bg-[#FBF8F4]">
-                <div className="size-12 rounded-full bg-[#F3EADF] flex items-center justify-center mb-3 text-[#9E5338]">
-                  <ShoppingBag className="size-5" />
-                </div>
-                <h4 className="text-sm font-bold text-[#221F1C] mb-1">No bookings found yet</h4>
-                <p className="text-xs text-[#6B6560] mb-4 max-w-xs">
-                  Discover verified photographers, makeup artists, and event pros for your occasion.
-                </p>
-                <Link href="/marketplace">
-                  <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-6 h-9">
-                    Explore Marketplace
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {bookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="p-5 rounded-2xl border border-[#E8E2D9] bg-[#FBF8F4] hover:border-[#9E5338]/40 transition-all flex flex-col sm:flex-row gap-4 justify-between"
-                  >
-                    <div className="flex items-start gap-4">
-                      <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden shrink-0 border border-[#E8E2D9] group/vimg cursor-pointer">
-                        <ImageWithFallback
-                          src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'}
-                          alt={booking.vendor?.business_name || 'Vendor'}
-                          fill
-                          unoptimized
-                          className="object-cover group-hover/vimg:scale-105 transition-transform duration-300"
-                        />
-                      </Link>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-serif font-bold text-[#221F1C]">{booking.service?.name}</h4>
-                          {renderStatusBadge(booking.status)}
-                        </div>
-
-                        <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="inline-block hover:text-[#9E5338] transition-colors cursor-pointer">
-                          <p className="text-xs font-semibold text-[#6B6560]">
-                            {booking.vendor?.business_name} • <span className="text-[#9E5338] font-normal">{booking.vendor?.location}</span>
-                          </p>
-                        </Link>
-                        
-                        <div className="flex items-center gap-4 text-xs text-[#6B6560] pt-1">
-                          <span className="flex items-center gap-1 font-medium">
-                            <CalendarIcon className="size-3.5 text-[#9E5338]" />
-                            {new Date(booking.event_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                          </span>
-                          <span className="font-bold text-[#221F1C]">₹{booking.total_amount?.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0 sm:self-center">
-                      {booking.review ? (
-                        <span className="text-xs font-bold text-[#D97706] bg-amber-50 border border-amber-200 px-3 py-1 rounded-full flex items-center gap-1">
-                          <Star className="size-3.5 fill-[#D97706]" /> Reviewed (5.0)
-                        </span>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedBookingForReview(booking);
-                            setReviewModalOpen(true);
-                          }}
-                          className="text-xs font-bold rounded-full border-[#E8E2D9] bg-white text-[#221F1C] hover:border-[#9E5338] hover:text-[#9E5338]"
-                        >
-                          Write Review
-                        </Button>
-                      )}
-                      <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 1}`}>
-                        <Button size="sm" variant="ghost" className="text-xs text-[#6B6560] hover:text-[#221F1C] rounded-full">
-                          View Vendor
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Recommendations Bar */}
-          {recommendedPros.length > 0 && (
-            <div className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-serif font-bold text-[#221F1C]">Top Verified Pros For You</h3>
-                <Link href="/marketplace" className="text-xs font-bold text-[#9E5338] hover:underline flex items-center gap-1">
-                  View All <ChevronRight size={14} />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {recommendedPros.map((vendor) => (
-                  <Link
-                    key={vendor.id}
-                    href={`/vendors/${vendor.slug || vendor.id}`}
-                    className="p-4 rounded-xl border border-[#E8E2D9] bg-[#FBF8F4] flex gap-3.5 items-center hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
-                  >
-                    <div className="relative size-14 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
-                      <ImageWithFallback 
-                        src={vendor.image} 
-                        alt={vendor.name} 
-                        fill 
-                        unoptimized 
-                        className="object-cover group-hover:scale-105 transition-transform duration-300" 
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-xs font-bold text-[#221F1C] truncate group-hover:text-[#9E5338] transition-colors">
-                        {vendor.name}
-                      </h4>
-                      {vendor.reviewsCount > 0 && Number(vendor.rating) > 0 ? (
-                        <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-[#221F1C]">
-                          <Star size={12} className="fill-[#D97706] text-[#D97706]" />
-                          <span>{Number(vendor.rating).toFixed(1)}</span>
-                          <span className="text-[#6B6560] font-normal">({vendor.reviewsCount})</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 mt-1 text-[10px] text-[#6B6560]">
-                          <Sparkles size={11} className="text-[#9E5338]" />
-                          <span className="font-medium">New on Ayoj</span>
-                        </div>
-                      )}
-                    </div>
-                    <ChevronRight size={16} className="text-[#9E5338] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* Sidebar Column */}
-        <div className="space-y-6">
-          
-          {/* Wedding Planning Progress Checklist */}
-          <div className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-3">
-              <h3 className="text-xs font-bold text-[#221F1C] uppercase tracking-wider">Event Milestone Checklist</h3>
-              <span className="text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full">
-                {checklist.filter(c => c.completed).length}/{checklist.length} Done
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {checklist.length === 0 ? (
-                <div className="p-3.5 text-center border border-dashed border-[#E8E2D9] rounded-xl bg-[#FBF8F4]">
-                  <p className="text-xs text-[#6B6560]">No tasks yet. Add a custom milestone below!</p>
-                </div>
-              ) : (
-                checklist.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleToggleChecklist(item.id)}
-                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      item.completed 
-                        ? 'bg-emerald-50/60 border-emerald-200 text-[#221F1C]' 
-                        : 'bg-[#FBF8F4] border-[#E8E2D9] text-[#6B6560] hover:border-[#9E5338]/40'
-                    }`}
-                  >
-                    <div className={`size-5 rounded-full flex items-center justify-center border shrink-0 transition-colors ${
-                      item.completed ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-[#E8E2D9] bg-white'
-                    }`}>
-                      {item.completed && <Check size={12} />}
-                    </div>
-                    <span className={`text-xs font-medium ${item.completed ? 'line-through opacity-75' : ''}`}>
-                      {item.title}
-                    </span>
-                  </button>
-                ))
-              )}
-            </div>
-
-            <form onSubmit={handleAddChecklistTask} className="flex gap-2 pt-2 border-t border-[#E8E2D9]">
-              <input
-                type="text"
-                placeholder="Add custom task..."
-                value={newChecklistTitle}
-                onChange={(e) => setNewChecklistTitle(e.target.value)}
-                className="flex-1 bg-[#FBF8F4] border border-[#E8E2D9] rounded-lg px-3 py-1.5 text-xs text-[#221F1C] placeholder:text-[#6B6560] focus:outline-none focus:border-[#9E5338]"
-              />
-              <Button type="submit" size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-lg text-xs font-medium px-3 h-8 shrink-0">
-                <Plus size={14} />
-              </Button>
-            </form>
-          </div>
-
-          {/* Saved Pros Wishlist Widget */}
-          <div className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-3">
-              <h3 className="text-xs font-bold text-[#221F1C] uppercase tracking-wider">Saved Wishlist</h3>
-              <button onClick={() => setActiveTab('saved')} className="text-xs font-bold text-[#9E5338] hover:underline">
-                See All
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {savedVendors.length === 0 ? (
-                <div className="p-4 text-center border border-dashed border-[#E8E2D9] rounded-xl bg-[#FBF8F4]">
-                  <p className="text-xs text-[#6B6560]">No saved vendors yet</p>
-                  <Link href="/marketplace" className="text-[11px] font-bold text-[#9E5338] hover:underline mt-1 inline-block">
-                    Explore vendors
-                  </Link>
-                </div>
-              ) : (
-                savedVendors.slice(0, 3).map((pro) => (
-                  <Link 
-                    key={pro.id} 
-                    href={`/vendors/${pro.slug || pro.id}`}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#FBF8F4] border border-[#E8E2D9] hover:border-[#9E5338]/50 hover:bg-white hover:shadow-xs transition-all group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="relative size-10 rounded-lg overflow-hidden shrink-0 border border-[#E8E2D9]">
-                        <ImageWithFallback src={pro.image} alt={pro.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-[#221F1C] group-hover:text-[#9E5338] transition-colors truncate max-w-[130px]">{pro.name}</p>
-                        <p className="text-[10px] text-[#6B6560] truncate">{pro.category}</p>
-                      </div>
-                    </div>
-                    <div className="size-8 rounded-full flex items-center justify-center text-[#9E5338] group-hover:bg-[#F3EADF] transition-colors shrink-0">
-                      <ChevronRight size={16} />
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Become a Partner Promo Card */}
-          <div className="p-6 rounded-2xl bg-[#F3EADF] border border-[#E8E2D9] space-y-3 relative overflow-hidden">
-            <div className="relative z-10">
-              <Camera className="size-7 text-[#9E5338] mb-2" />
-              <h4 className="text-base font-serif font-bold text-[#221F1C]">Are you an Event Vendor?</h4>
-              <p className="text-xs text-[#6B6560] leading-relaxed mb-4">
-                Join Ayoj to list your photography, makeup, decor, or catering packages and get booked by premium clients.
-              </p>
-              <Link href="/register?role=vendor">
-                <Button size="sm" className="w-full bg-[#9E5338] hover:bg-[#86442B] text-white font-medium text-xs rounded-full h-9">
-                  List Your Business
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderBookingsTab = () => (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D9]">
-        <div>
-          <h3 className="text-lg font-serif font-bold text-[#221F1C]">My Event Bookings</h3>
-          <p className="text-xs text-[#6B6560]">Track reserved vendor sessions, payment status, and invoices</p>
-        </div>
-
-        <div className="flex items-center gap-2 bg-[#FBF8F4] p-1 rounded-xl border border-[#E8E2D9]">
-          <button
-            onClick={() => setBookingFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-              bookingFilter === 'all' ? 'bg-[#9E5338] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#221F1C]'
-            }`}
-          >
-            All ({bookings.length})
-          </button>
-          <button
-            onClick={() => setBookingFilter('upcoming')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-              bookingFilter === 'upcoming' ? 'bg-[#9E5338] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#221F1C]'
-            }`}
-          >
-            Upcoming ({bookings.filter(b => isBookingUpcoming(b)).length})
-          </button>
-          <button
-            onClick={() => setBookingFilter('completed')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-              bookingFilter === 'completed' ? 'bg-[#9E5338] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#221F1C]'
-            }`}
-          >
-            Completed ({bookings.filter(b => isBookingCompleted(b)).length})
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {filteredBookings.length === 0 ? (
-          <div className="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-[#E8E2D9] space-y-3">
-            <div className="size-12 rounded-full bg-[#F3EADF] text-[#9E5338] flex items-center justify-center mx-auto">
-              <CalendarIcon className="size-6" />
-            </div>
-            <h4 className="font-serif font-bold text-base text-[#221F1C]">
-              {bookingFilter === 'upcoming' 
-                ? 'No Upcoming Bookings Found' 
-                : bookingFilter === 'completed' 
-                  ? 'No Completed Bookings Found' 
-                  : 'No Event Bookings Found'}
-            </h4>
-            <p className="text-xs text-[#6B6560] max-w-sm mx-auto">
-              {bookingFilter === 'upcoming'
-                ? 'You do not have any upcoming bookings scheduled. Explore verified marketplace pros to book for your celebration!'
-                : 'Browse our directory to reserve verified photographers, makeup artists, and event specialists.'}
-            </p>
-            <Link href="/vendors" className="inline-block mt-2">
-              <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs">
-                Explore Verified Pros
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          filteredBookings.map((booking) => (
-            <div key={booking.id} className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm hover:border-[#9E5338]/40 transition-all space-y-4">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E2D9]">
-                <div className="flex items-center gap-4">
-                  <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="relative size-16 rounded-xl overflow-hidden border border-[#E8E2D9] shrink-0 group/vimg cursor-pointer">
-                    <ImageWithFallback 
-                      src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'} 
-                      alt={booking.vendor?.business_name || 'Vendor'} 
-                      fill 
-                      unoptimized 
-                      className="object-cover group-hover/vimg:scale-105 transition-transform duration-300" 
-                    />
-                  </Link>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-md">
-                      {booking.vendor?.category || 'Creative Partner'}
-                    </span>
-                    <h4 className="text-base font-serif font-bold text-[#221F1C] mt-1">{booking.service?.name}</h4>
-                    <Link href={`/vendors/${booking.vendor?.slug || booking.vendor?.id || 4}`} className="hover:text-[#9E5338] transition-colors cursor-pointer inline-block">
-                      <p className="text-xs text-[#6B6560] font-medium">{booking.vendor?.business_name} • {booking.vendor?.location}</p>
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 self-end md:self-center">
-                  {renderStatusBadge(booking.status)}
-                </div>
-              </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-[#FBF8F4] p-4 rounded-xl border border-[#E8E2D9]">
-              <div>
-                <span className="text-[#6B6560] block font-medium">Event Date</span>
-                <span className="font-bold text-[#221F1C] flex items-center gap-1.5 mt-0.5">
-                  <CalendarIcon size={14} className="text-[#9E5338]" />
-                  {booking.event_date ? new Date(booking.event_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Date TBD'}
-                </span>
-              </div>
-              <div>
-                <span className="text-[#6B6560] block font-medium">Payment Status</span>
-                <span className="font-bold text-[#221F1C] flex items-center gap-1.5 mt-0.5">
-                  <CheckCircle2 size={14} className="text-emerald-700" />
-                  {booking.payment_status || 'Paid'}
-                </span>
-              </div>
-              <div>
-                <span className="text-[#6B6560] block font-medium">Total Package Investment</span>
-                <span className="font-bold text-[#221F1C] text-sm mt-0.5 block">
-                  ₹{booking.total_amount ? Number(booking.total_amount).toLocaleString() : '0'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" className="text-xs font-medium rounded-full border-[#E8E2D9] text-[#221F1C] hover:bg-[#F3EADF]">
-                  <FileText size={14} className="mr-1.5 text-[#6B6560]" /> Receipt PDF
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => {
-                    setSelectedBookingForChat(booking);
-                    setChatModalOpen(true);
-                  }}
-                  className="text-xs font-medium rounded-full border-[#E8E2D9] text-[#221F1C] hover:bg-[#F3EADF] cursor-pointer"
-                >
-                  <MessageSquare size={14} className="mr-1.5 text-[#9E5338]" /> Contact Vendor
-                </Button>
-              </div>
-
-              <div>
-                {booking.review ? (
-                  <span className="text-xs font-bold text-[#D97706] bg-amber-50 border border-amber-200 px-3 py-1 rounded-full flex items-center gap-1">
-                    <Star className="size-3.5 fill-[#D97706]" /> Reviewed (5.0★)
-                  </span>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedBookingForReview(booking);
-                      setReviewModalOpen(true);
-                    }}
-                    className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-5"
-                  >
-                    Write Verified Review
-                  </Button>
-                )}
-              </div>
-            </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
-  const renderSavedTab = () => (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex justify-between items-center bg-white p-5 rounded-2xl border border-[#E8E2D9]">
-        <div>
-          <h3 className="text-lg font-serif font-bold text-[#221F1C]">Saved Professionals</h3>
-          <p className="text-xs text-[#6B6560]">Your curated wishlist of top wedding creative partners</p>
-        </div>
-        <Link href="/vendors">
-          <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-5">
-            + Explore More
-          </Button>
-        </Link>
-      </div>
-
-      {savedVendors.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-2xl border border-dashed border-[#E8E2D9]">
-          <Heart size={36} className="mx-auto text-[#6B6560] mb-3" />
-          <h4 className="text-sm font-bold text-[#221F1C] mb-1">Your Wishlist is Empty</h4>
-          <p className="text-xs text-[#6B6560] mb-4">Save photographers, makeup artists, and planners as you explore.</p>
-          <Link href="/vendors">
-            <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-6">
-              Browse Directory
-            </Button>
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {savedVendors.map((vendor) => (
-            <div key={vendor.id} className="bg-white rounded-2xl border border-[#E8E2D9] overflow-hidden shadow-sm hover:border-[#9E5338]/40 transition-all group flex flex-col justify-between">
-              <div>
-                <div className="relative aspect-[16/10] w-full bg-[#FBF8F4]">
-                  <Link href={`/vendors/${vendor.slug || vendor.id}`} className="block w-full h-full cursor-pointer">
-                    <ImageWithFallback src={vendor.image} alt={vendor.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <span className="absolute bottom-3 left-3 text-[10px] font-bold uppercase tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md pointer-events-none">
-                      {vendor.category}
-                    </span>
-                  </Link>
-                  <button
-                    onClick={() => handleRemoveSavedVendor(vendor.id)}
-                    className="absolute top-3 right-3 size-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-md z-10"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-
-                <div className="p-5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Link href={`/vendors/${vendor.slug || vendor.id}`}>
-                      <h4 className="text-base font-serif font-bold text-[#221F1C] hover:text-[#9E5338] transition-colors cursor-pointer">{vendor.name}</h4>
-                    </Link>
-                    <div className="flex items-center gap-1 text-xs font-bold text-[#221F1C]">
-                      <Star size={13} className="fill-[#D97706] text-[#D97706]" />
-                      {vendor.rating}
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-[#6B6560] flex items-center gap-1">
-                    <MapPin size={13} className="text-[#9E5338]" />
-                    {vendor.location}
-                  </p>
-
-                  <div className="pt-2 flex items-center justify-between text-xs border-t border-[#E8E2D9] mt-3">
-                    <span className="text-[#6B6560]">Starting Packages</span>
-                    <span className="font-bold text-[#221F1C]">{vendor.price}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0">
-                <Link href={`/vendors/${vendor.slug || vendor.id}`}>
-                  <Button size="sm" className="w-full bg-[#F3EADF] hover:bg-[#9E5338] hover:text-white text-[#9E5338] font-bold text-xs rounded-full h-9 transition-colors">
-                    View Vendor Profile
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderReviewsTab = () => {
-    const reviewedBookings = bookings.filter(b => b.review);
-
-    return (
-      <div className="space-y-6 animate-in fade-in duration-300">
-        <div className="bg-white p-5 rounded-2xl border border-[#E8E2D9]">
-          <h3 className="text-lg font-serif font-bold text-[#221F1C]">My Submitted Reviews</h3>
-          <p className="text-xs text-[#6B6560]">Honest ratings and testimonials shared with the Ayoj community</p>
-        </div>
-
-        {reviewedBookings.length === 0 ? (
-          <div className="py-16 text-center bg-white rounded-2xl border border-dashed border-[#E8E2D9]">
-            <Star size={36} className="mx-auto text-[#6B6560] mb-3" />
-            <h4 className="text-sm font-bold text-[#221F1C] mb-1">No Reviews Submitted Yet</h4>
-            <p className="text-xs text-[#6B6560] mb-4">Reviews will appear here after you complete bookings with verified vendors.</p>
-            <Link href="/marketplace">
-              <Button size="sm" className="bg-[#9E5338] hover:bg-[#86442B] text-white rounded-full text-xs font-medium px-6">
-                Explore Marketplace
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {reviewedBookings.map((booking) => (
-              <div key={booking.id} className="p-6 rounded-2xl border border-[#E8E2D9] bg-white shadow-sm space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <div className="relative size-12 rounded-xl overflow-hidden border border-[#E8E2D9]">
-                      <ImageWithFallback 
-                        src={booking.vendor?.image || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'} 
-                        alt={booking.vendor?.business_name || 'Vendor'} 
-                        fill 
-                        unoptimized 
-                        className="object-cover" 
-                      />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-serif font-bold text-[#221F1C]">{booking.vendor?.business_name}</h4>
-                      <p className="text-xs text-[#6B6560]">{booking.service?.name}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full text-xs font-bold">
-                    {[...Array(booking.review.rating)].map((_, i) => (
-                      <Star key={i} size={12} className="fill-[#D97706] text-[#D97706]" />
-                    ))}
-                    <span className="ml-1 text-[#221F1C]">{booking.review.rating}.0</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-[#221F1C] bg-[#FBF8F4] p-4 rounded-xl border border-[#E8E2D9] italic leading-relaxed">
-                  "{booking.review.comment}"
-                </p>
-
-                <div className="text-[11px] text-[#6B6560] flex items-center justify-between pt-1">
-                  <span>Reviewed after event completion on {booking.event_date}</span>
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Verified Review
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `/customer/dashboard?tab=${tab}`);
+    }
   };
 
   return (
@@ -1060,17 +401,12 @@ const CustomerDashboard = () => {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           
-          {/* Revamped Interactive Host Banner & Navigation */}
+          {/* Interactive Host Banner & Navigation */}
           <CustomerProfileHeader
             user={user}
             profileData={profileForm}
             activeTab={activeTab}
-            onTabChange={(tab) => {
-              setActiveTab(tab);
-              if (typeof window !== 'undefined') {
-                window.history.replaceState(null, '', `/customer/dashboard?tab=${tab}`);
-              }
-            }}
+            onTabChange={handleTabChange}
             onAvatarSelect={(url) => {
               setProfileForm((prev) => ({ ...prev, avatarUrl: url }));
               if (updateUser) {
@@ -1107,10 +443,57 @@ const CustomerDashboard = () => {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                {activeTab === 'overview' && renderOverview()}
-                {activeTab === 'bookings' && renderBookingsTab()}
-                {activeTab === 'saved' && renderSavedTab()}
-                {activeTab === 'reviews' && renderReviewsTab()}
+                {activeTab === 'overview' && (
+                  <CustomerOverviewTab
+                    stats={stats}
+                    bookings={bookings}
+                    savedVendors={savedVendors}
+                    recommendedPros={recommendedPros}
+                    checklist={checklist}
+                    newChecklistTitle={newChecklistTitle}
+                    setNewChecklistTitle={setNewChecklistTitle}
+                    onToggleChecklist={handleToggleChecklist}
+                    onAddChecklistTask={handleAddChecklistTask}
+                    onOpenReviewModal={(booking) => {
+                      setSelectedBookingForReview(booking);
+                      setReviewModalOpen(true);
+                    }}
+                    onNavigateTab={handleTabChange}
+                  />
+                )}
+
+                {activeTab === 'bookings' && (
+                  <CustomerBookingsTab
+                    bookings={bookings}
+                    filteredBookings={filteredBookings}
+                    bookingFilter={bookingFilter}
+                    setBookingFilter={setBookingFilter}
+                    upcomingCount={bookings.filter(b => isBookingUpcoming(b)).length}
+                    completedCount={bookings.filter(b => isBookingCompleted(b)).length}
+                    onOpenReviewModal={(booking) => {
+                      setSelectedBookingForReview(booking);
+                      setReviewModalOpen(true);
+                    }}
+                    onOpenChatModal={(booking) => {
+                      setSelectedBookingForChat(booking);
+                      setChatModalOpen(true);
+                    }}
+                  />
+                )}
+
+                {activeTab === 'saved' && (
+                  <CustomerSavedTab
+                    savedVendors={savedVendors}
+                    onRemoveSavedVendor={handleRemoveSavedVendor}
+                  />
+                )}
+
+                {activeTab === 'reviews' && (
+                  <CustomerReviewsTab
+                    bookings={bookings}
+                  />
+                )}
+
                 {(activeTab === 'profile' || activeTab === 'settings') && (
                   <CustomerProfileView
                     data={profileForm}
@@ -1139,6 +522,7 @@ const CustomerDashboard = () => {
           </div>
         </div>
       </footer>
+
       {/* Direct Messaging Chat Modal */}
       <BookingMessageModal
         isOpen={chatModalOpen}
@@ -1149,6 +533,4 @@ const CustomerDashboard = () => {
       />
     </div>
   );
-};
-
-export default CustomerDashboard;
+}
