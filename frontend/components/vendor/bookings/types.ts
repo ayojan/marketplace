@@ -23,14 +23,3 @@ export interface BookingType {
 }
 
 export type BookingTabType = 'all' | 'pending' | 'accepted' | 'completed' | 'declined';
-
-export const formatDate = (dateStr: string) => {
-  if (!dateStr) return 'TBD';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-IN', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-};

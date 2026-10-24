@@ -4,4 +4,5 @@ export { default as BookingStep2Schedule } from './BookingStep2Schedule';
 export { default as BookingStep3Review } from './BookingStep3Review';
 export { default as BookingOrderSummarySidebar } from './BookingOrderSummarySidebar';
 export { default as BookingMobileActionBar } from './BookingMobileActionBar';
-export * from './constants';
+export * from './types';
+export * from './presets';

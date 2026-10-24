@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building, IndianRupee, HelpCircle, Info } from 'lucide-react';
-import { Service } from './constants';
+import { Service } from './types';
 
 interface BookingOrderSummarySidebarProps {
   service: Service | null;

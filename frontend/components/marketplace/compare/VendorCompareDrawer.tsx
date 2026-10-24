@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { VendorCompareDrawerProps, CompareVendor } from './constants';
+import { VendorCompareDrawerProps, CompareVendor } from './types';
 import CompareFloatingDock from './CompareFloatingDock';
 import CompareModalTable from './CompareModalTable';
 import CompareInquiryModal from './CompareInquiryModal';

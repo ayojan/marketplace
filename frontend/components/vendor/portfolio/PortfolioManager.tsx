@@ -13,13 +13,9 @@ import PortfolioShowcaseGrid from './PortfolioShowcaseGrid';
 import PortfolioCreateModal from './PortfolioCreateModal';
 import PortfolioDetailModal from './PortfolioDetailModal';
 import PortfolioLightbox from './PortfolioLightbox';
-import {
-  DEFAULT_CATEGORIES,
-  INITIAL_SHOWCASES,
-  STORAGE_KEY,
-  PortfolioItemType,
-  PortfolioImage
-} from './constants';
+import { PortfolioItemType, PortfolioImage } from './types';
+import { DEFAULT_CATEGORIES, INITIAL_SHOWCASES } from './presets';
+import { STORAGE_KEY } from './config';
 
 const PortfolioManager = () => {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItemType[]>([]);

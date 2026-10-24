@@ -5,7 +5,9 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowLeftRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CompareVendor, FALLBACK_IMAGE } from './constants';
+import { CompareVendor } from './types';
+import { FALLBACK_IMAGE } from './presets';
+import { COMPARE_COPY } from './copy';
 
 interface CompareFloatingDockProps {
   vendors: CompareVendor[];
@@ -20,9 +22,11 @@ export default function CompareFloatingDock({
   onRemove,
   onClear,
   onOpenInquire,
-  onOpenModal
+  onOpenModal,
 }: CompareFloatingDockProps) {
   if (!vendors || vendors.length === 0) return null;
+
+  const copy = COMPARE_COPY.floatingDock;
 
   return (
     <AnimatePresence>
@@ -42,14 +46,14 @@ export default function CompareFloatingDock({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-[#221F1C]">
-                Inquiry Basket ({vendors.length}/3)
+                {copy.basketTitle(vendors.length)}
               </span>
               <button
                 type="button"
                 onClick={onClear}
                 className="text-[11px] text-[#6B6560] hover:text-[#9E5338] underline cursor-pointer"
               >
-                Clear all
+                {copy.clearAll}
               </button>
             </div>
 
@@ -97,8 +101,8 @@ export default function CompareFloatingDock({
             className="h-9 px-3.5 sm:px-4 bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0 gap-1.5"
           >
             <Send className="size-3" />
-            <span className="hidden sm:inline">Inquire All ({vendors.length})</span>
-            <span className="sm:hidden">Inquire ({vendors.length})</span>
+            <span className="hidden sm:inline">{copy.inquireAll(vendors.length)}</span>
+            <span className="sm:hidden">{copy.inquireMobile(vendors.length)}</span>
           </Button>
 
           <button
@@ -107,7 +111,7 @@ export default function CompareFloatingDock({
             className="h-9 px-3 bg-[#FAF7F2] hover:bg-[#F3EADF] text-[#221F1C] border border-[#E8E2D9] text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shrink-0"
           >
             <ArrowLeftRight className="size-3 text-[#9E5338]" />
-            <span className="hidden sm:inline">Compare</span>
+            <span className="hidden sm:inline">{copy.compareButton}</span>
           </button>
         </div>
       </motion.div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { CARD_COPY } from './copy';
 
 interface VendorCardPricingProps {
   priceRange: string;
@@ -20,7 +21,7 @@ export default function VendorCardPricing({
         : 'bg-black/40 text-white/90'
     } ${className}`}>
       <span>{priceRange}</span>
-      {hasBasePrice && <span className="text-[10px] font-normal text-[#6B6560]">onwards</span>}
+      {hasBasePrice && <span className="text-[10px] font-normal text-[#6B6560]">{CARD_COPY.onwards}</span>}
     </div>
   );
 }

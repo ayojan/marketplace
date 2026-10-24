@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { ChevronRight, ArrowLeftRight, Check, MessageSquare } from 'lucide-react';
-import { Vendor } from './constants';
+import { Vendor } from './types';
+import { CARD_COPY } from './copy';
 
 interface VendorCardActionsProps {
   vendor: Vendor;
@@ -30,7 +31,7 @@ export default function VendorCardActions({
         className="flex-1 block"
       >
         <span className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[#9E5338] bg-[#FAF7F2] border border-[#E8E2D9] hover:bg-[#9E5338] hover:text-white hover:border-[#9E5338] transition-all duration-300 cursor-pointer group/btn">
-          <span>View Profile</span>
+          <span>{CARD_COPY.viewProfile}</span>
           <ChevronRight className="size-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
         </span>
       </Link>
@@ -41,8 +42,8 @@ export default function VendorCardActions({
           onClick={() => onToggleCompare(vendor)}
           title={
             isCompared
-              ? 'Remove from inquiry basket & comparison'
-              : 'Add to inquiry basket & comparison'
+              ? CARD_COPY.removeComparison
+              : CARD_COPY.addComparison
           }
           className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
             isCompared
@@ -55,7 +56,7 @@ export default function VendorCardActions({
           ) : (
             <ArrowLeftRight className="size-3.5" />
           )}
-          <span className="hidden sm:inline">{isCompared ? 'In Basket' : 'Compare / Inquire'}</span>
+          <span className="hidden sm:inline">{isCompared ? CARD_COPY.inBasket : CARD_COPY.compareInquire}</span>
         </button>
       )}
 
@@ -63,11 +64,11 @@ export default function VendorCardActions({
         <button
           type="button"
           onClick={() => onQuickInquire(vendor)}
-          title="Quick Inquiry"
+          title={CARD_COPY.inquire}
           className="px-3 py-2 rounded-xl text-xs font-semibold border border-[#E8E2D9] bg-white text-[#221F1C] hover:bg-[#FAF7F2] hover:text-[#9E5338] transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
         >
           <MessageSquare className="size-3.5 text-[#9E5338]" />
-          <span className="hidden sm:inline">Inquire</span>
+          <span className="hidden sm:inline">{CARD_COPY.inquire}</span>
         </button>
       )}
     </div>

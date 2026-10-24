@@ -21,10 +21,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   CATEGORIES_NAV, 
   OCCASIONS_NAV, 
-  CITIES, 
+  CITIES 
+} from './presets';
+import { 
   getCategoryUrl, 
   getOccasionUrl 
-} from './constants';
+} from './navigation';
 
 interface HeaderMobileDrawerProps {
   isOpen: boolean;

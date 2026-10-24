@@ -3,7 +3,8 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, Grid, ArrowRight, Sparkles } from 'lucide-react';
-import { CATEGORIES_NAV, OCCASIONS_NAV, getCategoryUrl, getOccasionUrl } from './constants';
+import { CATEGORIES_NAV, OCCASIONS_NAV } from './presets';
+import { getCategoryUrl, getOccasionUrl } from './navigation';
 
 interface HeaderNavLinksProps {
   selectedCity: string;

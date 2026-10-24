@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Ban } from 'lucide-react';
-import { Slot } from './constants';
+import { Slot } from './types';
 
 interface CalendarMonthGridProps {
   currentDate: Date;

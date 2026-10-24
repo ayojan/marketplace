@@ -4,7 +4,7 @@ import React from 'react';
 import { SlidersHorizontal, ArrowUpDown, X, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { SORT_OPTIONS } from './constants';
+import { SORT_OPTIONS } from './presets';
 
 export interface MarketplaceControlsBarProps {
   selectedCategory: string;

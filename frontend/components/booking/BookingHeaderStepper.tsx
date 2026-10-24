@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ShieldCheck, Check } from 'lucide-react';
-import { Service } from './constants';
+import { Service } from './types';
 
 interface BookingHeaderStepperProps {
   service: Service | null;

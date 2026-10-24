@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, AlertCircle, Loader2, CheckCircle2, CalendarDays, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AlternativeSlot } from './constants';
+import { AlternativeSlot } from './types';
 
 interface BookingStep2ScheduleProps {
   bookingDate: string;

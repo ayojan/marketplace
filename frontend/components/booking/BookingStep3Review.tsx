@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, ShieldCheck, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Service } from './constants';
+import { Service } from './types';
 
 interface BookingStep3ReviewProps {
   service: Service | null;

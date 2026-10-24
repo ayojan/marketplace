@@ -7,4 +7,6 @@ export { default as VendorCardBadges } from './VendorCardBadges';
 export { default as VendorCardPricing } from './VendorCardPricing';
 export { default as VendorCardActions } from './VendorCardActions';
 
-export * from './constants';
+export * from './types';
+export * from './config';
+export * from './copy';

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Star, ArrowRight, Search } from 'lucide-react';
 import { InView } from '@/components/motion';
 import { VendorCard } from '@/components/marketplace/card';
-import { VENDOR_FILTER_TABS } from './constants';
+import { VENDOR_FILTER_TABS } from './presets';
 
 interface HomeFeaturedVendorsProps {
   selectedCity: string;

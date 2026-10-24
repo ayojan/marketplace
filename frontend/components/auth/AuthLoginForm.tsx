@@ -8,10 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import GoogleSignInButton from './GoogleSignInButton';
 
-export interface LoginFormData {
-  email: string;
-  password: string;
-}
+import { LoginFormData } from './types';
+export type { LoginFormData };
 
 interface AuthLoginFormProps {
   onSubmit: (formData: LoginFormData) => Promise<void>;

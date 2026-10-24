@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { MapPin, ChevronDown, Check, Navigation, Loader2 } from 'lucide-react';
-import { CITIES } from './constants';
+import { CITIES } from './presets';
 
 interface HeaderCityPickerProps {
   selectedCity: string;

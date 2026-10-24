@@ -3,6 +3,7 @@
 import React from 'react';
 import { SlidersHorizontal, Building2, Sparkles } from 'lucide-react';
 import { VendorCard } from './card';
+import { MARKETPLACE_EMPTY_STATE_COPY } from './copy';
 
 export interface MarketplaceEmptyStateProps {
   city: string;
@@ -35,6 +36,8 @@ export function MarketplaceEmptyState({
   onOpenRequestModal,
   recommendedVendors = [],
 }: MarketplaceEmptyStateProps) {
+  const { filterRecovery, networkBuilding, recommendations } = MARKETPLACE_EMPTY_STATE_COPY;
+
   return (
     <div className="space-y-8 mt-4">
       {/* Smart Filter Relaxer - Helps users recover with 1 click */}
@@ -45,10 +48,10 @@ export function MarketplaceEmptyState({
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-serif font-bold text-[#221F1C]">
-              No exact matches for your active filters
+              {filterRecovery.title}
             </h3>
             <p className="text-xs text-[#6B6560]">
-              Try relaxing your budget, location, or occasion to find available creative partners.
+              {filterRecovery.description}
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
@@ -61,7 +64,7 @@ export function MarketplaceEmptyState({
                 }}
                 className="px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338] transition-colors cursor-pointer"
               >
-                Clear Budget Filter
+                {filterRecovery.clearBudget}
               </button>
             )}
             {selectedLocation !== 'all' && (
@@ -70,7 +73,7 @@ export function MarketplaceEmptyState({
                 onClick={() => setSelectedLocation('all')}
                 className="px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338] transition-colors cursor-pointer"
               >
-                Show All Locations
+                {filterRecovery.showAllLocations}
               </button>
             )}
             {selectedCategory !== 'all' && (
@@ -79,7 +82,7 @@ export function MarketplaceEmptyState({
                 onClick={() => setSelectedCategory('all')}
                 className="px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#E8E2D9] text-xs font-medium text-[#221F1C] hover:text-[#9E5338] hover:border-[#9E5338] transition-colors cursor-pointer"
               >
-                Show All Categories
+                {filterRecovery.showAllCategories}
               </button>
             )}
             <button
@@ -87,7 +90,7 @@ export function MarketplaceEmptyState({
               onClick={resetAllFilters}
               className="px-3.5 py-1.5 rounded-full bg-[#9E5338] text-xs font-semibold text-white hover:bg-[#86442B] transition-colors cursor-pointer"
             >
-              Reset All Filters
+              {filterRecovery.resetFilters}
             </button>
           </div>
         </div>
@@ -106,20 +109,20 @@ export function MarketplaceEmptyState({
         {/* Headline & Subtitle */}
         <div className="space-y-1.5 max-w-xl mx-auto">
           <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#221F1C] tracking-tight">
-            We&apos;re building Ayoj in {city || 'your city'}
+            {networkBuilding.titleTemplate(city)}
           </h3>
           <p className="text-xs sm:text-sm text-[#6B6560] leading-relaxed max-w-lg mx-auto">
-            Tell us what you&apos;re planning, and we&apos;ll work to connect you with suitable local event professionals.
+            {networkBuilding.description}
           </p>
         </div>
 
         {/* Services Prompt & Interactive Chips */}
         <div className="space-y-2.5 pt-1 max-w-lg mx-auto">
           <p className="text-xs font-bold uppercase tracking-wider text-[#9E5338]">
-            What service do you need?
+            {networkBuilding.servicesPrompt}
           </p>
           <div className="flex items-center justify-center flex-wrap gap-2 text-xs text-[#221F1C]">
-            {['Photography', 'Decoration', 'Makeup', 'Catering', 'More'].map((service, index, arr) => (
+            {networkBuilding.servicesList.map((service, index, arr) => (
               <div key={service} className="inline-flex items-center">
                 <button
                   type="button"
@@ -144,13 +147,13 @@ export function MarketplaceEmptyState({
             className="inline-flex items-center justify-center gap-2 px-7 py-2.5 rounded-full bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
           >
             <Sparkles className="size-3.5" />
-            <span>Request a vendor</span>
+            <span>{networkBuilding.ctaButton}</span>
           </button>
         </div>
 
         {/* Honest Transparency Disclaimer */}
         <p className="text-xs text-[#8A847E] italic pt-1 max-w-md mx-auto">
-          No guarantee of a match. We&apos;ll contact you if we find a suitable provider.
+          {networkBuilding.disclaimer}
         </p>
       </div>
 
@@ -160,10 +163,10 @@ export function MarketplaceEmptyState({
           <div className="border-b border-[#E8E2D9] pb-2 flex items-center justify-between">
             <div>
               <h4 className="text-sm font-serif font-bold text-[#221F1C]">
-                Recommended Creative Partners You Might Like
+                {recommendations.title}
               </h4>
               <p className="text-xs text-[#6B6560]">
-                Explore top-rated partners across popular categories
+                {recommendations.subtitle}
               </p>
             </div>
             <button
@@ -171,7 +174,7 @@ export function MarketplaceEmptyState({
               onClick={resetAllFilters}
               className="text-xs text-[#9E5338] font-semibold hover:underline cursor-pointer"
             >
-              View all partners
+              {recommendations.viewAllAction}
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">

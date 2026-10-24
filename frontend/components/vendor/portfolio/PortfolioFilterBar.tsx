@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Star, Search, X } from 'lucide-react';
-import { DEFAULT_CATEGORIES } from './constants';
+import { DEFAULT_CATEGORIES } from './presets';
 
 interface PortfolioFilterBarProps {
   activeCategoryFilter: string;

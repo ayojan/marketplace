@@ -17,7 +17,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Service, ServiceImageItem, ServiceFormData } from './constants';
+import { Service, ServiceImageItem, ServiceFormData } from './types';
 
 interface ServiceCreateEditModalProps {
   editingService: Service | null;

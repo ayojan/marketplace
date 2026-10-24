@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Heart, Images, ArrowLeftRight, Check } from 'lucide-react';
 import VerifiedPartnerBadge from '@/components/VerifiedPartnerBadge';
 import VendorCardPricing from './VendorCardPricing';
-import { Vendor } from './constants';
+import { Vendor } from './types';
 
 interface VendorCardMediaProps {
   allImages: string[];

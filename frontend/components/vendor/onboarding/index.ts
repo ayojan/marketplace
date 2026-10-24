@@ -7,4 +7,5 @@ export { default as Step3CategoriesServices } from './Step3CategoriesServices';
 export { default as Step4ServiceLocations } from './Step4ServiceLocations';
 export { default as Step5PortfolioPackages } from './Step5PortfolioPackages';
 export { default as Step6CompletionCelebration } from './Step6CompletionCelebration';
-export * from './constants';
+export * from './types';
+export * from './presets';

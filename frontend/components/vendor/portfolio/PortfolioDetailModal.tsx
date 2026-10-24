@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, X, Plus, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PortfolioItemType } from './constants';
+import { PortfolioItemType } from './types';
 
 interface PortfolioDetailModalProps {
   collection: PortfolioItemType | null;

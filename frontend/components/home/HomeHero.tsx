@@ -19,7 +19,7 @@ import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { TextLoop, Magnetic } from '@/components/motion';
 import { CITIES } from '@/components/Header';
 import { useLocation } from '@/lib/contexts/LocationContext';
-import { TRENDING_SEARCHES, POPULAR_SEARCH_PILLS } from './constants';
+import { TRENDING_SEARCHES, POPULAR_SEARCH_PILLS } from './presets';
 
 interface HomeHeroProps {
   selectedCity: string;

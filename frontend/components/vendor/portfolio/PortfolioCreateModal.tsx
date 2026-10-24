@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Camera, Star, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DEFAULT_CATEGORIES } from './constants';
+import { DEFAULT_CATEGORIES } from './presets';
 
 interface PortfolioCreateModalProps {
   isOpen: boolean;

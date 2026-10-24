@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { InView, Magnetic } from '@/components/motion';
-import { CATEGORY_ICONS } from './constants';
+import { CATEGORY_ICONS } from './presets';
 
 interface HomeCategoryGridProps {
   onSelectCategory: (slug: string) => void;

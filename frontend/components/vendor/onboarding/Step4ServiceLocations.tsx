@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { CITIES_PRESETS, OnboardingLocationData } from './constants';
+import { OnboardingLocationData } from './types';
+import { CITIES_PRESETS } from './presets';
 
 interface Step4ServiceLocationsProps {
   locationData: OnboardingLocationData;
