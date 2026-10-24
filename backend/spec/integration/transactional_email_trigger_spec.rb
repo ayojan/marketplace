@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-# rubocop:disable RSpec/DescribeMethod, RSpec/SpecFilePathFormat
+# rubocop:disable-next RSpec/DescribeMethod, RSpec/SpecFilePathFormat
 RSpec.describe Bookings::UpdateBookingStatus, 'and User transactional email triggers' do
   include ActiveJob::TestHelper
 
@@ -71,4 +71,3 @@ RSpec.describe Bookings::UpdateBookingStatus, 'and User transactional email trig
     end
   end
 end
-# rubocop:enable RSpec/DescribeMethod, RSpec/SpecFilePathFormat
