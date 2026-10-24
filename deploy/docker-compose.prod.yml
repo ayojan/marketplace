@@ -1,6 +1,6 @@
 services:
   web:
-    image: ${DOCKER_IMAGE:-ghcr.io/jashni-fy/marketplace-backend:latest}
+    image: ${DOCKER_IMAGE:-ghcr.io/ayojan/marketplace-backend:latest}
     container_name: ayoj-backend-web
     restart: unless-stopped
     env_file:

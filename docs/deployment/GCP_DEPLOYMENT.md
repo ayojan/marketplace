@@ -132,7 +132,7 @@ Once inside the VM, run the automated bootstrap script:
 
 ```bash
 # 1. Download and run the setup script
-curl -fsSL https://raw.githubusercontent.com/jashni-fy/marketplace/main/deploy/setup-gcp-server.sh -o setup.sh
+curl -fsSL https://raw.githubusercontent.com/ayojan/marketplace/main/deploy/setup-gcp-server.sh -o setup.sh
 # (Or copy deploy/setup-gcp-server.sh to the server)
 sudo bash setup.sh
 
@@ -172,11 +172,11 @@ Update `/opt/ayoj-backend/.env` with:
 By default, Docker images pushed to GHCR are private. To allow your GCP server to pull the image:
 
 ### Option A: Make the Package Public (Recommended & Simplest)
-1. Go to your GitHub profile or organization: `https://github.com/orgs/jashni-fy/packages` (or `https://github.com/jashni-fy?tab=packages`).
+1. Go to your GitHub profile or organization: `https://github.com/orgs/ayojan/packages` (or `https://github.com/ayojan?tab=packages`).
 2. Once the first GitHub Action run pushes `marketplace-backend`, click on it.
 3. Click **Package settings** (on the right).
 4. Scroll to **Danger Zone** > Click **Change visibility** > Select **Public**.
-5. *Result:* Your server can pull `ghcr.io/jashni-fy/marketplace-backend:latest` without needing any Docker credentials!
+5. *Result:* Your server can pull `ghcr.io/ayojan/marketplace-backend:latest` without needing any Docker credentials!
 
 ### Option B: Private Authentication (If you keep the package private)
 On the GCP VM, authenticate Docker with a GitHub Personal Access Token (PAT with `read:packages` permission):
@@ -216,7 +216,7 @@ In your GitHub repository:
 2. Click **Run workflow** on `main` branch (or simply `git push origin main` after merging).
 3. The workflow will:
    - Build the optimized multi-stage Rails Docker image with jemalloc on GitHub cloud runners.
-   - Push to `ghcr.io/jashni-fy/marketplace-backend:latest`.
+   - Push to `ghcr.io/ayojan/marketplace-backend:latest`.
    - SSH into the GCP VM.
    - Sync `docker-compose.prod.yml`, `Caddyfile`, and `deploy.sh` to `/opt/ayoj-backend/`.
    - Run `/opt/ayoj-backend/deploy.sh`.
