@@ -44,7 +44,7 @@ end
 ```
 
 ### 4️⃣ HTTP LAYER (Thin)
-**File:** `app/controllers/concerns/booking_management/booking_actions.rb`
+**File:** `app/controllers/bookings_controller.rb`
 **Responsibility:** Request/response handling only
 ```ruby
 def create
@@ -258,9 +258,7 @@ app/
 │       ├── authorize_access.rb             # Authorization
 │       └── send_message.rb                 # Message service
 └── controllers/
-    └── concerns/
-        └── booking_management/
-            └── booking_actions.rb          # HTTP handler
+    └── bookings_controller.rb              # Thin HTTP handler
 ```
 
 ---

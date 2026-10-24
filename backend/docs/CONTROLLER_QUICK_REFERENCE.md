@@ -310,8 +310,8 @@ app/
 │   ├── resource_finder.rb
 │   ├── parse_params.rb
 │   └── booking_management/
-│       └── booking_actions.rb
-└── controllers/api/
+│       └── pagination_helper.rb
+└── controllers/
     └── bookings_controller.rb
 ```
 
