@@ -39,24 +39,27 @@ RUN bundle exec bootsnap precompile app/ lib/
 # Final stage for app image
 FROM base
 
-# Install packages needed for deployment
+# Install packages needed for deployment + jemalloc for memory optimization
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libvips postgresql-client && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Enable jemalloc to significantly reduce memory fragmentation on low-RAM VPS
+ENV LD_PRELOAD="libjemalloc.so.2"
 
 # Copy built artifacts: gems, application
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /rails /rails
 
-# Run and own only the runtime files as a non-root user for security
-RUN useradd rails --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
+# Run and own only runtime files as non-root user for security
+RUN mkdir -p /rails/db /rails/log /rails/storage /rails/tmp/pids /rails/tmp/cache /rails/tmp/sockets && \
+    chmod +x /rails/bin/docker-entrypoint && \
+    useradd rails --create-home --shell /bin/bash && \
+    chown -R rails:rails /rails/db /rails/log /rails/storage /rails/tmp
+
 USER rails:rails
 
-# Make entrypoint script executable
-RUN chmod +x /rails/bin/docker-entrypoint
-
-# Entrypoint prepares the database.
+# Entrypoint prepares the database
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 # Start the server by default, this can be overwritten at runtime

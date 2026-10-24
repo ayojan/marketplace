@@ -1,0 +1,45 @@
+{
+    email notifications@ayoj.in
+    admin off
+}
+
+{$DOMAIN:api.ayoj.in} {
+    # Encode with modern compression algorithms
+    encode zstd gzip
+
+    # Reverse proxy to the Rails Puma application
+    reverse_proxy web:3000 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Host {host}
+
+        # Upstream timeouts
+        transport http {
+            response_header_timeout 60s
+            dial_timeout 10s
+        }
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Request body limit for file uploads (Active Storage to Cloudflare R2)
+    request_body {
+        max_size 50MB
+    }
+
+    # Log to stdout for Docker logging
+    log {
+        output stdout
+        format json
+    }
+}

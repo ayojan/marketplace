@@ -1,0 +1,58 @@
+services:
+  web:
+    image: ${DOCKER_IMAGE:-ghcr.io/jashni-fy/marketplace-backend:latest}
+    container_name: ayoj-backend-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - RAILS_ENV=production
+      - RAILS_LOG_TO_STDOUT=true
+      - RAILS_SERVE_STATIC_FILES=true
+      - SOLID_QUEUE_IN_PUMA=true
+      - PORT=3000
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    volumes:
+      - app_storage:/rails/storage
+      - app_log:/rails/log
+    networks:
+      - app_network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ayoj-backend-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3 (QUIC)
+    environment:
+      - DOMAIN=${DOMAIN:-api.ayoj.in}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app_network
+    depends_on:
+      web:
+        condition: service_healthy
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  app_storage:
+  app_log:

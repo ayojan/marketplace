@@ -4,20 +4,28 @@ set -e
 # Remove a potentially pre-existing server.pid for Rails.
 rm -f /rails/tmp/pids/server.pid
 
-# Wait for database to be ready
-echo "Waiting for database..."
-until pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; do
-  echo "Database is unavailable - sleeping"
-  sleep 1
-done
-echo "Database is ready!"
+# Wait for database if DB_HOST is explicitly configured (e.g. docker-compose)
+if [ -n "$DB_HOST" ] && [ -n "$POSTGRES_USER" ]; then
+  echo "Waiting for database at $DB_HOST:${DB_PORT:-5432}..."
+  RETRIES=30
+  until pg_isready -h "$DB_HOST" -p "${DB_PORT:-5432}" -U "$POSTGRES_USER" || [ $RETRIES -le 0 ]; do
+    echo "Database is unavailable - sleeping ($RETRIES retries left)"
+    RETRIES=$((RETRIES - 1))
+    sleep 1
+  done
+  echo "Database connection check finished."
+elif [ -n "$DATABASE_URL" ]; then
+  echo "Database connection configured via DATABASE_URL."
+fi
 
-# Run database migrations
-echo "Running database setup..."
-bundle exec rails db:prepare
+# Run database migrations if enabled (default true)
+if [ "$AUTO_MIGRATE" != "false" ]; then
+  echo "Running database setup..."
+  bundle exec rails db:prepare || echo "Warning: db:prepare finished with non-zero exit code or schema was already current"
+fi
 
 # Create storage directory if it doesn't exist
-mkdir -p /rails/storage
+mkdir -p /rails/storage 2>/dev/null || true
 
 # Then exec the container's main process (what's set as CMD in the Dockerfile).
 exec "$@"

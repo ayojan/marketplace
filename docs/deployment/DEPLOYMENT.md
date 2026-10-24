@@ -5,9 +5,12 @@ This guide explains how to deploy the Ayoj full-stack application for free using
 ## 🏗 Architecture Overview
 
 - **Frontend:** Next.js on [Vercel](https://vercel.com) (`ayoj.in`)
-- **Backend:** Rails API on [Render](https://render.com) (`api.ayoj.in`)
+- **Backend:** Rails API on [Google Cloud Platform (GCP) Compute Engine e2-micro](GCP_DEPLOYMENT.md) (`api.ayoj.in`) *(Always Free Tier - 24/7 without sleeping)*
 - **Database:** PostgreSQL on [Supabase](https://supabase.com)
-- **Cache/Redis:** Redis on [Upstash](https://upstash.com)
+- **Object Storage:** Cloudflare R2 (`ayoj-media` - 10 GB free, $0 egress)
+
+> [!NOTE]
+> For step-by-step instructions on deploying the backend to GCP Compute Engine (`e2-micro`), refer to the dedicated **[GCP Deployment Runbook](GCP_DEPLOYMENT.md)**.
 
 ---
 
