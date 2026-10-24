@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/contexts/AuthContext';
 import { apiService } from '@/lib/api';
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import Header from '@/components/Header';
+import { MobileTopBar } from '@/components/layout';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -277,16 +278,49 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ params }) => {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#1C1B19] font-sans antialiased">
-      <Header />
+      {/* Mobile Top Bar */}
+      <div className="md:hidden">
+        <MobileTopBar
+          title={service.name || 'Reservation Request'}
+          subtitle={
+            service.vendor?.business_name 
+              ? `by ${service.vendor.business_name} • Step ${step} of 3`
+              : `Step ${step} of 3`
+          }
+          onBack={() => {
+            if (step > 1) {
+              setStep(step - 1);
+            } else {
+              router.back();
+            }
+          }}
+          actions={
+            <span className="text-[10px] font-bold text-[#9E5338] bg-[#F3EADF] px-2 py-0.5 rounded-full border border-[#E8E2D9]">
+              Step {step}/3
+            </span>
+          }
+        />
+      </div>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 md:py-12 pb-28 lg:pb-12">
-        {/* Back Link */}
+      {/* Desktop Header */}
+      <div className="hidden md:block">
+        <Header />
+      </div>
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 md:py-12 pb-28 lg:pb-12">
+        {/* Desktop Back Link */}
         <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#6B6560] hover:text-[#9E5338] transition-colors mb-6 cursor-pointer group"
+          onClick={() => {
+            if (step > 1) {
+              setStep(step - 1);
+            } else {
+              router.back();
+            }
+          }}
+          className="hidden md:inline-flex items-center gap-2 text-xs font-semibold text-[#6B6560] hover:text-[#9E5338] transition-colors mb-6 cursor-pointer group"
         >
           <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back to Service / Profile</span>
+          <span>{step > 1 ? 'Previous Step' : 'Back to Service / Profile'}</span>
         </button>
 
         <div className="space-y-8 animate-in fade-in duration-500">

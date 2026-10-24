@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Heart, Star, MapPin, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { SavedVendor } from './types';
 
 interface CustomerSavedTabProps {

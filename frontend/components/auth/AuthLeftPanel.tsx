@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Star, ShieldCheck, Briefcase } from 'lucide-react';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import AyojLogo from '@/components/AyojLogo';
 
 interface AuthLeftPanelProps {

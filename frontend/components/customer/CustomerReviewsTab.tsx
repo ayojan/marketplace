@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Star, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 
 interface CustomerReviewsTabProps {
   bookings: any[];

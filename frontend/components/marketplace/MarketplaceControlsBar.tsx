@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import { SlidersHorizontal, ArrowUpDown, X, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { SlidersHorizontal, ArrowUpDown, X, RotateCcw, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { SORT_OPTIONS } from './presets';
+import { MobileActionSheet } from '@/components/layout/MobileActionSheet';
 
 export interface MarketplaceControlsBarProps {
   selectedCategory: string;
@@ -57,6 +58,9 @@ export function MarketplaceControlsBar({
   activeCategoryName,
   activeOccasionName,
 }: MarketplaceControlsBarProps) {
+  const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
+  const currentSortOption = SORT_OPTIONS.find((o) => o.id === sortBy);
+
   return (
     <div className="space-y-4">
       {/* Top Bar with Filter Toggle, Results Count, and Sort Selector */}
@@ -103,9 +107,22 @@ export function MarketplaceControlsBar({
           </div>
         </div>
 
-        {/* Actions: Sort Dropdown */}
+        {/* Actions: Sort Controls */}
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          <div className="flex items-center gap-2">
+          {/* Mobile Bottom Sheet Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsSortSheetOpen(true)}
+            className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E8E2D9] rounded-xl text-xs font-semibold text-[#221F1C] active:scale-95 transition-all shadow-xs cursor-pointer"
+            aria-label={`Sort by: ${currentSortOption?.label || 'Sort'}`}
+          >
+            <ArrowUpDown className="size-3.5 text-[#9E5338]" />
+            <span className="truncate max-w-[130px]">{currentSortOption?.label || 'Sort'}</span>
+            <ChevronDown className="size-3 text-[#6B6560]" />
+          </button>
+
+          {/* Desktop Select Dropdown */}
+          <div className="hidden sm:flex items-center gap-2">
             <span className="text-xs text-[#6B6560] flex items-center gap-1 font-medium">
               <ArrowUpDown className="size-3.5 text-[#9E5338]" />
               Sort:
@@ -125,6 +142,20 @@ export function MarketplaceControlsBar({
           </div>
         </div>
       </div>
+
+      {/* Mobile Sort Action Sheet */}
+      <MobileActionSheet
+        isOpen={isSortSheetOpen}
+        onClose={() => setIsSortSheetOpen(false)}
+        title="Sort Listings"
+        subtitle="Order verified creative partners to your preference"
+        options={SORT_OPTIONS.map((opt) => ({
+          id: opt.id,
+          label: opt.label,
+          selected: sortBy === opt.id,
+          onClick: () => setSortBy(opt.id),
+        }))}
+      />
 
       {/* Active Filter Chips */}
       <AnimatePresence initial={false}>

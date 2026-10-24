@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Star, Heart, ArrowRight } from 'lucide-react';
 import { InView } from '@/components/motion';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { CORE_GUARANTEES, TESTIMONIAL_STORIES } from './presets';
 
 export function HomeTrustPromise() {

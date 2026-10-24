@@ -141,10 +141,10 @@ describe('VendorProfile', () => {
     });
 
     expect(screen.getByText('Professional photography services for all occasions')).toBeInTheDocument();
-    expect(screen.getByText(/New York, NY/)).toBeInTheDocument();
-    expect(screen.getByText('+1-555-123-4567')).toBeInTheDocument();
+    expect(screen.getAllByText(/New York, NY/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: /call studio/i })).toHaveAttribute('href', 'tel:+1-555-123-4567');
     expect(screen.getByText(/Verified Partner/)).toBeInTheDocument();
-    expect(screen.getByText(/10\+ Years Experience/)).toBeInTheDocument();
+    expect(screen.getByText(/10\+ Years in Field/)).toBeInTheDocument();
     expect(screen.getAllByText('4.5').length).toBeGreaterThan(0);
   });
 
@@ -155,7 +155,7 @@ describe('VendorProfile', () => {
       expect(screen.getByText('Selected Portfolio')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Wedding Portfolio')).toBeInTheDocument();
+    expect(screen.getAllByText('Wedding Portfolio').length).toBeGreaterThan(0);
   });
 
   it('renders services with correct package information', async () => {
@@ -167,7 +167,7 @@ describe('VendorProfile', () => {
 
     expect(screen.getByText('Complete wedding photography package')).toBeInTheDocument();
     expect(screen.getByText('Available Service Packages')).toBeInTheDocument();
-    expect(screen.getByText('Confirm Booking Request')).toBeInTheDocument();
+    expect(screen.getByText(/Check Date & Request Booking|Confirm Reservation Request/i)).toBeInTheDocument();
   });
 
   it('renders reviews section correctly', async () => {

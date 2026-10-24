@@ -19,7 +19,7 @@ import {
   Sparkles,
   ChevronDown
 } from 'lucide-react';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import Header from '@/components/Header';
 
 const MarketplaceHome = () => {
