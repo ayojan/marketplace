@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { X, Upload, Star, Trash2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Service } from './constants';
+import { Service } from './types';
 
 interface ServicePhotoManagerModalProps {
   service: Service | null;

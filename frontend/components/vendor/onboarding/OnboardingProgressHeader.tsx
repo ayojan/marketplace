@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { ONBOARDING_STEPS } from './constants';
+import { ONBOARDING_STEPS } from './presets';
 
 interface OnboardingProgressHeaderProps {
   currentStep: number;

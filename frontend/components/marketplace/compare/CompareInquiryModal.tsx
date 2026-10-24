@@ -17,13 +17,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import {
-  CompareVendor,
-  FALLBACK_IMAGE,
-  OCCASIONS_LIST,
-  GUEST_SCALES_LIST,
-  InquiryFormData
-} from './constants';
+import { CompareVendor, InquiryFormData } from './types';
+import { FALLBACK_IMAGE, OCCASIONS_LIST, GUEST_SCALES_LIST } from './presets';
+import { COMPARE_COPY } from './copy';
 
 interface CompareInquiryModalProps {
   isOpen: boolean;
@@ -36,6 +32,7 @@ export default function CompareInquiryModal({
   onClose,
   vendors
 }: CompareInquiryModalProps) {
+  const copy = COMPARE_COPY.inquiryModal;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -149,15 +146,15 @@ export default function CompareInquiryModal({
               <div>
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9E5338] uppercase tracking-wider mb-0.5">
                   <Send className="size-3.5" />
-                  <span>Multi-Vendor Inquiry Basket</span>
+                  <span>{copy.badge}</span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-serif font-bold text-[#221F1C]">
                   {vendors.length > 0
-                    ? `Inquire ${vendors.length} Shortlisted ${vendors.length === 1 ? 'Pro' : 'Pros'}`
-                    : 'Broadcast Celebration Inquiry'}
+                    ? copy.titleWithCount(vendors.length)
+                    : copy.titleBroadcast}
                 </h3>
                 <p className="text-xs text-[#6B6560] mt-0.5">
-                  Send your celebration requirements once to get personalized quotes with 0% markup.
+                  {copy.subtitle}
                 </p>
               </div>
 
@@ -182,12 +179,12 @@ export default function CompareInquiryModal({
 
                   <div className="space-y-1.5">
                     <h4 className="text-lg font-serif font-bold text-[#221F1C]">
-                      Inquiries Sent Successfully!
+                      {copy.successTitle}
                     </h4>
                     <p className="text-xs text-[#6B6560] max-w-sm mx-auto">
                       {vendors.length > 0
-                        ? `Your celebration details have been shared directly with ${vendors.length} creative partners. They will contact you shortly with customized proposals.`
-                        : 'Your celebration details have been broadcast to top verified partners in your area. They will reach out shortly with customized proposals.'}
+                        ? copy.successDescriptionWithCount(vendors.length)
+                        : copy.successDescriptionBroadcast}
                     </p>
                   </div>
 
@@ -195,7 +192,7 @@ export default function CompareInquiryModal({
                   {vendors.length > 0 && (
                     <div className="bg-[#FAF7F2] border border-[#E8E2D9] rounded-2xl p-4 text-left max-w-md mx-auto space-y-2">
                       <span className="text-[10px] font-bold text-[#6B6560] uppercase tracking-wider block">
-                        Contacted Pros:
+                        {copy.contactedProsLabel}
                       </span>
                       {vendors.map((v) => (
                         <div
@@ -219,7 +216,7 @@ export default function CompareInquiryModal({
                       onClick={handleModalClose}
                       className="h-10 px-6 bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold rounded-xl"
                     >
-                      Done &amp; Continue Browsing
+                      {copy.doneButton}
                     </Button>
                   </div>
                 </div>
@@ -229,7 +226,7 @@ export default function CompareInquiryModal({
                   {vendors.length > 0 ? (
                     <div className="p-3 rounded-2xl bg-[#FAF7F2] border border-[#E8E2D9] space-y-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B6560] block">
-                        Sending inquiry to:
+                        {copy.sendingToLabel}
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {vendors.map((v) => {
@@ -259,16 +256,10 @@ export default function CompareInquiryModal({
                     <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#E8E2D9] space-y-1.5">
                       <div className="flex items-center gap-2 text-xs font-bold text-[#9E5338]">
                         <Sparkles className="size-3.5" />
-                        <span>No specific pros selected yet</span>
+                        <span>{copy.emptyBasketBadge}</span>
                       </div>
                       <p className="text-xs text-[#6B6560] leading-relaxed">
-                        You can click{' '}
-                        <strong className="text-[#221F1C] font-semibold">
-                          &ldquo;Compare / Inquire&rdquo;
-                        </strong>{' '}
-                        on any vendor card to add up to 3 pros to your basket, or submit your
-                        celebration details below to send a broadcast inquiry to top verified pros
-                        in your city!
+                        {copy.emptyBasketDescription}
                       </p>
                     </div>
                   )}
@@ -278,7 +269,7 @@ export default function CompareInquiryModal({
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-[#221F1C] flex items-center gap-1.5">
                         <Calendar className="size-3.5 text-[#9E5338]" />
-                        Celebration Date
+                        {copy.dateLabel}
                       </label>
                       <input
                         type="date"
@@ -290,7 +281,7 @@ export default function CompareInquiryModal({
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-[#221F1C]">
-                        Occasion / Milestone
+                        {copy.occasionLabel}
                       </label>
                       <select
                         value={form.occasion}
@@ -311,7 +302,7 @@ export default function CompareInquiryModal({
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-[#221F1C] flex items-center gap-1.5">
                         <Users className="size-3.5 text-[#9E5338]" />
-                        Expected Guests
+                        {copy.guestsLabel}
                       </label>
                       <select
                         value={form.guests}
@@ -329,11 +320,11 @@ export default function CompareInquiryModal({
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-[#221F1C] flex items-center gap-1.5">
                         <MapPin className="size-3.5 text-[#9E5338]" />
-                        City / Venue Area
+                        {copy.cityLabel}
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. South Delhi, Gurgaon, Mumbai"
+                        placeholder={copy.cityPlaceholder}
                         value={form.city}
                         onChange={(e) => setForm({ ...form, city: e.target.value })}
                         className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
@@ -344,11 +335,11 @@ export default function CompareInquiryModal({
                   {/* Specific Requirements / Notes */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-[#221F1C]">
-                      Your Vision / Special Deliverables
+                      {copy.visionLabel}
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="Tell the pros about your schedule, style preferences (e.g. candid only, drone coverage, 2 day events)..."
+                      placeholder={copy.visionPlaceholder}
                       value={form.notes}
                       onChange={(e) => setForm({ ...form, notes: e.target.value })}
                       className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] focus:outline-none focus:border-[#9E5338] resize-none"
@@ -358,16 +349,16 @@ export default function CompareInquiryModal({
                   {/* Host Contact Details */}
                   <div className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8E2D9] space-y-3">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#9E5338] block">
-                      Your Contact Information (for direct reply)
+                      {copy.contactSectionTitle}
                     </span>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-medium text-[#6B6560]">Full Name *</label>
+                        <label className="text-[11px] font-medium text-[#6B6560]">{copy.nameLabel}</label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Ananya Sharma"
+                          placeholder={copy.namePlaceholder}
                           value={form.hostName}
                           onChange={(e) => setForm({ ...form, hostName: e.target.value })}
                           className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
@@ -376,11 +367,11 @@ export default function CompareInquiryModal({
 
                       <div className="space-y-1">
                         <label className="text-[11px] font-medium text-[#6B6560]">
-                          Phone / WhatsApp *
+                          {copy.phoneLabel}
                         </label>
                         <input
                           type="tel"
-                          placeholder="+91 98765 43210"
+                          placeholder={copy.phonePlaceholder}
                           value={form.hostPhone}
                           onChange={(e) => setForm({ ...form, hostPhone: e.target.value })}
                           className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
@@ -390,11 +381,11 @@ export default function CompareInquiryModal({
 
                     <div className="space-y-1">
                       <label className="text-[11px] font-medium text-[#6B6560]">
-                        Email (Optional)
+                        {copy.emailLabel}
                       </label>
                       <input
                         type="email"
-                        placeholder="ananya@example.com"
+                        placeholder={copy.emailPlaceholder}
                         value={form.hostEmail}
                         onChange={(e) => setForm({ ...form, hostEmail: e.target.value })}
                         className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9] text-[#221F1C] focus:outline-none focus:border-[#9E5338]"
@@ -405,10 +396,7 @@ export default function CompareInquiryModal({
                   {/* Trust guarantee badge */}
                   <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9] text-[11px] text-[#6B6560]">
                     <ShieldCheck className="size-4 text-[#9E5338] shrink-0" />
-                    <span>
-                      Zero middleman commission. Artists respond directly to your inquiry with
-                      transparent quotes.
-                    </span>
+                    <span>{copy.guaranteeText}</span>
                   </div>
 
                   {/* Actions */}
@@ -419,7 +407,7 @@ export default function CompareInquiryModal({
                       onClick={handleModalClose}
                       className="h-10 text-xs rounded-xl border-[#E8E2D9]"
                     >
-                      Cancel
+                      {copy.cancelButton}
                     </Button>
                     <Button
                       type="submit"
@@ -429,15 +417,15 @@ export default function CompareInquiryModal({
                       {isSubmitting ? (
                         <>
                           <Loader2 className="size-3.5 animate-spin" />
-                          <span>Sending Inquiries...</span>
+                          <span>{copy.sendingButton}</span>
                         </>
                       ) : (
                         <>
                           <Send className="size-3.5" />
                           <span>
                             {vendors.length > 0
-                              ? `Send Inquiry to ${vendors.length} ${vendors.length === 1 ? 'Pro' : 'Pros'}`
-                              : 'Send Broadcast Inquiry'}
+                              ? copy.sendButtonWithCount(vendors.length)
+                              : copy.sendButtonBroadcast}
                           </span>
                         </>
                       )}

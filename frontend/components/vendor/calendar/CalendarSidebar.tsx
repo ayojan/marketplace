@@ -14,7 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Slot } from './constants';
+import { Slot } from './types';
 
 interface CalendarSidebarProps {
   selectedDate: Date | null;

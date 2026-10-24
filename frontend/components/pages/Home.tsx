@@ -21,7 +21,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { motion } from 'framer-motion';
 
 const Home = () => {

@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { CITIES } from '@/components/Header';
 import { useLocation } from '@/lib/contexts/LocationContext';
-import { TRADE_CATEGORIES, OCCASIONS } from './constants';
+import { TRADE_CATEGORIES, OCCASIONS } from './presets';
 
 export interface MarketplaceSidebarFiltersProps {
   selectedCategory: string;

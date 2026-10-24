@@ -17,14 +17,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import GoogleSignInButton from './GoogleSignInButton';
 
-export interface RegisterFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  passwordConfirmation: string;
-  businessName: string;
-}
+import { RegisterFormData } from './types';
+export type { RegisterFormData };
 
 interface AuthRegisterFormProps {
   role: 'customer' | 'vendor';

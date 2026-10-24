@@ -12,7 +12,7 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import { VendorSettingsFormData } from './constants';
+import { VendorSettingsFormData } from './types';
 
 interface VendorSettingsVerificationTabProps {
   formData: VendorSettingsFormData;

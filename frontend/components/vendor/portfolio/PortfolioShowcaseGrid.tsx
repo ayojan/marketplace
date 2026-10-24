@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Camera, Star, Trash2, Image as ImageIcon, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PortfolioItemType } from './constants';
+import { PortfolioItemType } from './types';
 
 interface PortfolioShowcaseGridProps {
   items: PortfolioItemType[];

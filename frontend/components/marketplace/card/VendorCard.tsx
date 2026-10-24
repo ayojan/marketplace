@@ -7,12 +7,9 @@ import { tokenService } from '@/lib/tokenService';
 import { toast } from 'sonner';
 import { saveRecentlyViewedVendor } from '@/lib/recentlyViewed';
 import { Spotlight } from '@/components/motion';
-import {
-  Vendor,
-  VendorCardProps,
-  CYCLE_INTERVAL,
-  FALLBACK_IMAGE
-} from './constants';
+import { Vendor, VendorCardProps } from './types';
+import { CYCLE_INTERVAL, FALLBACK_IMAGE } from './config';
+import { CARD_COPY } from './copy';
 import VendorCardMedia from './VendorCardMedia';
 import VendorCardBadges from './VendorCardBadges';
 import VendorCardActions from './VendorCardActions';
@@ -34,7 +31,7 @@ export default function VendorCard({
 
   const id = photographer.id;
   const slugOrId = photographer.slug || photographer.id;
-  const name = photographer.name || photographer.business_name || 'Creative Partner';
+  const name = photographer.name || photographer.business_name || CARD_COPY.defaultName;
   const defaultImage = photographer.image || photographer.profile_image_url || FALLBACK_IMAGE;
   const rawRating = photographer.rating ?? photographer.average_rating;
   const rating = rawRating ? Number(rawRating) : null;
@@ -55,7 +52,7 @@ export default function VendorCard({
     Number(photographer.base_price) > 0;
   const priceRange = hasBasePrice
     ? `₹${Number(photographer.base_price).toLocaleString('en-IN')}`
-    : 'Price on request';
+    : CARD_COPY.priceOnRequest;
 
   // Build portfolio image gallery from featured_portfolio and service images
   const portfolioImages: string[] = [];
@@ -210,7 +207,7 @@ export default function VendorCard({
 
     const isAuthed = tokenService.hasToken() && !tokenService.isTokenExpired();
     if (!isAuthed) {
-      toast.error('Please sign in to save favorite vendors', {
+      toast.error(CARD_COPY.signInToSave, {
         action: {
           label: 'Sign In',
           onClick: () => router.push('/login')
@@ -232,7 +229,7 @@ export default function VendorCard({
           String(currentUser.id) === String(photographer.user_id)));
 
     if (isOwnProfile) {
-      toast.info('You cannot favorite your own business profile');
+      toast.info(CARD_COPY.cannotFavoriteOwnProfile);
       return;
     }
 
@@ -244,7 +241,7 @@ export default function VendorCard({
       if (nextState) {
         await apiService.favorites.add(id);
         window.dispatchEvent(new Event('favorites-updated'));
-        toast.success(`Saved ${name} to favorites`, {
+        toast.success(CARD_COPY.savedToFavorites(name), {
           action: {
             label: 'View Favorites',
             onClick: () => router.push('/customer/dashboard?tab=saved')
@@ -253,14 +250,14 @@ export default function VendorCard({
       } else {
         await apiService.favorites.removeByVendor(id);
         window.dispatchEvent(new Event('favorites-updated'));
-        toast.success(`Removed ${name} from favorites`);
+        toast.success(CARD_COPY.removedFromFavorites(name));
       }
       onFavoriteToggle?.(id, nextState);
     } catch (err: any) {
       setIsLiked(!nextState);
       const isAuthError = err.response?.status === 401;
       if (isAuthError) {
-        toast.error('Please sign in to save favorite vendors', {
+        toast.error(CARD_COPY.signInToSave, {
           action: {
             label: 'Sign In',
             onClick: () => router.push('/login')
@@ -270,7 +267,7 @@ export default function VendorCard({
         const errorMsg =
           err.response?.data?.error ||
           err.extractedMessage ||
-          'Unable to update favorites. Please try again.';
+          CARD_COPY.favoritesError;
         toast.error(errorMsg);
       }
     } finally {

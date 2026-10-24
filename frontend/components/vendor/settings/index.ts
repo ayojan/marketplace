@@ -6,4 +6,5 @@ export { default as VendorSettingsPoliciesTab } from './VendorSettingsPoliciesTa
 export { default as VendorSettingsVerificationTab } from './VendorSettingsVerificationTab';
 export { default as VendorSettingsNotificationsTab } from './VendorSettingsNotificationsTab';
 export { default as VendorSettingsSidebar } from './VendorSettingsSidebar';
-export * from './constants';
+export * from './types';
+export * from './presets';

@@ -10,10 +10,11 @@ import {
   Gift 
 } from 'lucide-react';
 import { CITIES } from '@/lib/contexts/LocationContext';
+import type { HeaderCategoryItem, HeaderOccasionItem } from './types';
 
 export { CITIES };
 
-export const CATEGORIES_NAV = [
+export const CATEGORIES_NAV: HeaderCategoryItem[] = [
   {
     name: 'Photographers',
     slug: 'photographer',
@@ -58,7 +59,7 @@ export const CATEGORIES_NAV = [
   },
 ];
 
-export const OCCASIONS_NAV = [
+export const OCCASIONS_NAV: HeaderOccasionItem[] = [
   {
     name: 'Weddings',
     slug: 'wedding',
@@ -102,19 +103,3 @@ export const OCCASIONS_NAV = [
     description: 'Silver, golden & romantic celebration dates',
   },
 ];
-
-export const getCategoryUrl = (slug: string, selectedCity?: string) => {
-  const params = new URLSearchParams();
-  if (slug && slug !== 'all') params.set('category', slug);
-  if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
-  const qs = params.toString();
-  return qs ? `/marketplace?${qs}` : '/marketplace';
-};
-
-export const getOccasionUrl = (slug: string, selectedCity?: string) => {
-  const params = new URLSearchParams();
-  if (slug && slug !== 'all') params.set('occasion', slug);
-  if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
-  const qs = params.toString();
-  return qs ? `/marketplace?${qs}` : '/marketplace';
-};

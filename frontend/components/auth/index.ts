@@ -5,5 +5,5 @@ export { default as AuthPhoneOtpModal } from './AuthPhoneOtpModal';
 export { default as AuthRegisterForm } from './AuthRegisterForm';
 export { default as AuthLoginForm } from './AuthLoginForm';
 
-export type { RegisterFormData } from './AuthRegisterForm';
-export type { LoginFormData } from './AuthLoginForm';
+export * from './types';
+export * from './copy';

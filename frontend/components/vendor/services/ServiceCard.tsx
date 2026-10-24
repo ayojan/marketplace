@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, Camera, Edit2, Trash2, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Service } from './constants';
+import { Service } from './types';
 
 interface ServiceCardProps {
   service: Service;

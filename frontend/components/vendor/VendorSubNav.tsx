@@ -54,7 +54,7 @@ export default function VendorSubNav({
   return (
     <nav 
       aria-label="Vendor profile sections"
-      className="sticky top-16 z-30 bg-[#FBF8F4]/95 backdrop-blur-md border-b border-[#E8E2D9] -mx-4 sm:-mx-6 px-4 sm:px-6 mb-8 transition-shadow"
+      className="sticky top-14 sm:top-16 z-30 bg-[#FBF8F4]/95 backdrop-blur-md border-b border-[#E8E2D9] -mx-4 sm:-mx-6 px-4 sm:px-6 mb-8 transition-shadow"
     >
       <div className="max-w-7xl mx-auto flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-2.5">
         {navItems.map((item) => {

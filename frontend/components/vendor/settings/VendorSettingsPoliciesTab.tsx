@@ -4,7 +4,8 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { CheckCircle2 } from 'lucide-react';
-import { VendorSettingsFormData, CANCELLATION_POLICIES } from './constants';
+import { VendorSettingsFormData } from './types';
+import { CANCELLATION_POLICIES } from './presets';
 
 interface VendorSettingsPoliciesTabProps {
   formData: VendorSettingsFormData;

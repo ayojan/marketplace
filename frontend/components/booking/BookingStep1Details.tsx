@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { POPULAR_LOCATIONS, COMMON_REQUIREMENTS } from './constants';
+import { POPULAR_LOCATIONS, COMMON_REQUIREMENTS } from './presets';
 
 interface BookingStep1DetailsProps {
   location: string;

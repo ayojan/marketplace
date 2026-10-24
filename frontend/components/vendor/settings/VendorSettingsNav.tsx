@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Building2, CalendarClock, ShieldCheck, Bell } from 'lucide-react';
-import { SettingsTabType } from './constants';
+import { SettingsTabType } from './types';
 
 interface VendorSettingsNavProps {
   activeTab: SettingsTabType;

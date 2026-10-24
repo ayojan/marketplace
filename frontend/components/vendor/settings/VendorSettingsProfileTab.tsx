@@ -16,7 +16,7 @@ import {
   Star,
   Check
 } from 'lucide-react';
-import { VendorSettingsFormData, ServiceCategory } from './constants';
+import { VendorSettingsFormData, ServiceCategory } from './types';
 
 interface VendorSettingsProfileTabProps {
   formData: VendorSettingsFormData;

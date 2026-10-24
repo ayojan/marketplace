@@ -4,8 +4,8 @@ import React, { useRef } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { InView } from '@/components/motion';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { POPULAR_OCCASIONS } from './constants';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
+import { POPULAR_OCCASIONS } from './presets';
 
 interface HomeOccasionsSectionProps {
   onSelectOccasion: (slug: string) => void;

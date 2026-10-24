@@ -10,10 +10,12 @@ import {
   IndianRupee,
   ShieldCheck,
   ArrowRight,
-  MessageSquare
+  MessageSquare,
 } from 'lucide-react';
 import VerifiedPartnerBadge from '@/components/VerifiedPartnerBadge';
-import { CompareVendor, FALLBACK_IMAGE } from './constants';
+import { CompareVendor } from './types';
+import { FALLBACK_IMAGE } from './presets';
+import { COMPARE_COPY } from './copy';
 
 interface CompareVendorColumnProps {
   vendor: CompareVendor;
@@ -26,8 +28,9 @@ export default function CompareVendorColumn({
   vendor,
   onRemove,
   onOpenInquire,
-  onCloseModal
+  onCloseModal,
 }: CompareVendorColumnProps) {
+  const copy = COMPARE_COPY.vendorColumn;
   const name = vendor.name || vendor.business_name || 'Vendor';
   const img = vendor.image || vendor.profile_image_url || FALLBACK_IMAGE;
   const rating = vendor.rating ?? vendor.average_rating;
@@ -36,7 +39,7 @@ export default function CompareVendorColumn({
     vendor.base_price != null && !isNaN(Number(vendor.base_price)) && Number(vendor.base_price) > 0;
   const priceFormatted = hasBasePrice
     ? `₹${Number(vendor.base_price).toLocaleString('en-IN')}`
-    : 'On request';
+    : copy.onRequest;
 
   const primaryCat =
     vendor.primary_category?.name ||
@@ -87,7 +90,7 @@ export default function CompareVendorColumn({
         {/* Attribute 1: Rating */}
         <div className="p-3 rounded-xl bg-white border border-[#E8E2D9]/80 space-y-0.5">
           <span className="text-[10px] text-[#6B6560] uppercase font-bold tracking-wider block">
-            Client Rating
+            {copy.clientRatingLabel}
           </span>
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#221F1C]">
             {rating && rating > 0 ? (
@@ -99,7 +102,7 @@ export default function CompareVendorColumn({
                 </span>
               </>
             ) : (
-              <span className="text-[#6B6560] font-normal">New partner</span>
+              <span className="text-[#6B6560] font-normal">{copy.newPartner}</span>
             )}
           </div>
         </div>
@@ -107,7 +110,7 @@ export default function CompareVendorColumn({
         {/* Attribute 2: Starting Price */}
         <div className="p-3 rounded-xl bg-white border border-[#E8E2D9]/80 space-y-0.5">
           <span className="text-[10px] text-[#6B6560] uppercase font-bold tracking-wider block">
-            Starting Package
+            {copy.startingPackageLabel}
           </span>
           <div className="flex items-center gap-1 text-xs font-bold text-[#9E5338]">
             <IndianRupee className="size-3.5" />
@@ -118,22 +121,22 @@ export default function CompareVendorColumn({
         {/* Attribute 3: Location */}
         <div className="p-3 rounded-xl bg-white border border-[#E8E2D9]/80 space-y-0.5">
           <span className="text-[10px] text-[#6B6560] uppercase font-bold tracking-wider block">
-            Location Hub
+            {copy.locationHubLabel}
           </span>
           <div className="flex items-center gap-1.5 text-xs text-[#221F1C]">
             <MapPin className="size-3.5 text-[#9E5338] shrink-0" />
-            <span className="truncate">{vendor.location || 'Multiple Cities / Nationwide'}</span>
+            <span className="truncate">{vendor.location || copy.multipleLocations}</span>
           </div>
         </div>
 
         {/* Attribute 4: Guarantee */}
         <div className="p-3 rounded-xl bg-white border border-[#E8E2D9]/80 space-y-0.5">
           <span className="text-[10px] text-[#6B6560] uppercase font-bold tracking-wider block">
-            The Ayoj Standard
+            {copy.standardLabel}
           </span>
           <div className="flex items-center gap-1.5 text-xs text-[#221F1C]">
             <ShieldCheck className="size-3.5 text-[#9E5338] shrink-0" />
-            <span className="text-[11px]">0% Markup · Direct Chat</span>
+            <span className="text-[11px]">{copy.standardValue}</span>
           </div>
         </div>
       </div>
@@ -145,7 +148,7 @@ export default function CompareVendorColumn({
           onClick={onCloseModal}
           className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white bg-[#9E5338] hover:bg-[#86442B] transition-colors shadow-xs"
         >
-          <span>View Full Profile</span>
+          <span>{copy.viewProfile}</span>
           <ArrowRight className="size-3" />
         </Link>
 
@@ -159,7 +162,7 @@ export default function CompareVendorColumn({
             className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[#221F1C] bg-white border border-[#E8E2D9] hover:bg-[#F3EADF] transition-colors cursor-pointer"
           >
             <MessageSquare className="size-3 text-[#9E5338]" />
-            <span>Direct Inquiry</span>
+            <span>{copy.directInquiry}</span>
           </button>
         )}
       </div>

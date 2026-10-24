@@ -7,4 +7,6 @@ export { default as PortfolioShowcaseGrid } from './PortfolioShowcaseGrid';
 export { default as PortfolioCreateModal } from './PortfolioCreateModal';
 export { default as PortfolioDetailModal } from './PortfolioDetailModal';
 export { default as PortfolioLightbox } from './PortfolioLightbox';
-export * from './constants';
+export * from './types';
+export * from './presets';
+export * from './config';

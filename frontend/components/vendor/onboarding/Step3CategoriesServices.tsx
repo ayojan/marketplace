@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { CATEGORY_PRESETS, OnboardingOffering } from './constants';
+import { OnboardingOffering } from './types';
+import { CATEGORY_PRESETS } from './presets';
 
 interface Step3CategoriesServicesProps {
   selectedCategories: string[];

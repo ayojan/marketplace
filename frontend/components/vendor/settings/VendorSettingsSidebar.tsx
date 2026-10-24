@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import { VendorSettingsFormData } from './constants';
+import { VendorSettingsFormData } from './types';
 
 interface VendorSettingsSidebarProps {
   formData: VendorSettingsFormData;

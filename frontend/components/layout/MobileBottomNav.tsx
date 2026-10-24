@@ -2,25 +2,35 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { 
   Compass, 
-  Sparkles, 
   Heart, 
   CalendarDays, 
-  User 
+  User,
+  LayoutDashboard,
+  Inbox,
+  Package,
+  MoreHorizontal,
+  Settings,
+  Image as ImageIcon,
+  Store,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { tokenService } from '@/lib/tokenService';
 import { apiService } from '@/lib/api';
+import MobileActionSheet, { MobileActionSheetOption } from './MobileActionSheet';
 
 function MobileBottomNavInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuth();
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
   const [manualActive, setManualActive] = useState<string | null>(null);
   const [currentHash, setCurrentHash] = useState<string>('');
+  const [isVendorMoreOpen, setIsVendorMoreOpen] = useState<boolean>(false);
 
   // Track hash on client
   useEffect(() => {
@@ -61,29 +71,41 @@ function MobileBottomNavInner() {
     return () => window.removeEventListener('favorites-updated', loadFavorites);
   }, [user, isAuthenticated]);
 
-  // Hide the global bottom nav on full-screen booking flow so checkout CTA has 100% focus
-  if (pathname?.startsWith('/booking')) {
+  // Hide the global bottom nav on full-screen booking flow and vendor detail pages
+  // so the dedicated checkout CTA or VendorStickyMobileBar has 100% focus without collision
+  if (
+    pathname?.startsWith('/booking') ||
+    pathname?.startsWith('/vendors/') ||
+    pathname?.startsWith('/photographer/')
+  ) {
     return null;
   }
 
-  const isVendor = user?.role === 'vendor';
+  const isVendor = isAuthenticated && user?.role === 'vendor';
   const tabParam = searchParams?.get('tab');
 
-  // Compute active tab ID reliably based on route, params, hash, and manual selection
+  // Compute active tab ID reliably based on role, route, params, and hash
   const computeActiveId = (): string => {
     if (manualActive) return manualActive;
+
+    if (isVendor) {
+      if (pathname?.startsWith('/vendor/dashboard')) return 'dashboard';
+      if (pathname?.startsWith('/vendor/bookings')) return 'inquiries';
+      if (pathname?.startsWith('/vendor/calendar')) return 'calendar';
+      if (pathname?.startsWith('/vendor/services')) return 'services';
+      if (pathname?.startsWith('/vendor/portfolio') || pathname?.startsWith('/vendor/settings')) {
+        return 'more';
+      }
+      if (pathname?.startsWith('/vendor')) return 'dashboard';
+    }
 
     if (
       pathname?.startsWith('/marketplace') ||
       pathname?.startsWith('/photographer') ||
       pathname?.startsWith('/services') ||
-      pathname?.startsWith('/vendors')
+      pathname?.startsWith('/vendors') ||
+      pathname === '/'
     ) {
-      return 'explore';
-    }
-
-    if (pathname === '/') {
-      if (currentHash === '#occasions') return 'occasions';
       return 'explore';
     }
 
@@ -93,9 +115,8 @@ function MobileBottomNavInner() {
       return 'profile';
     }
 
-    if (pathname?.startsWith('/vendor')) {
-      return 'bookings';
-    }
+    if (pathname?.startsWith('/customer/favorites')) return 'saved';
+    if (pathname?.startsWith('/customer/bookings')) return 'bookings';
 
     if (pathname === '/login' || pathname === '/register') {
       return 'profile';
@@ -106,7 +127,54 @@ function MobileBottomNavInner() {
 
   const activeId = computeActiveId();
 
-  const navItems = [
+  // Vendor More Action Sheet Options
+  const vendorId = user?.vendor?.id || user?.vendor_id || user?.id;
+  const vendorMoreOptions: MobileActionSheetOption[] = [
+    {
+      id: 'portfolio',
+      label: 'Portfolio & Media',
+      description: 'Manage featured photos and albums',
+      icon: ImageIcon,
+      selected: pathname?.startsWith('/vendor/portfolio'),
+      onClick: () => router.push('/vendor/portfolio'),
+    },
+    {
+      id: 'settings',
+      label: 'Business Settings',
+      description: 'Profile details, pricing, and business info',
+      icon: Settings,
+      selected: pathname?.startsWith('/vendor/settings'),
+      onClick: () => router.push('/vendor/settings'),
+    },
+    {
+      id: 'storefront',
+      label: 'View Public Storefront',
+      description: 'See your profile as customers see it',
+      icon: Store,
+      onClick: () => router.push(`/vendors/${vendorId}`),
+    },
+    {
+      id: 'marketplace',
+      label: 'Explore Marketplace (Host View)',
+      description: 'Browse other celebration pros & ideas',
+      icon: Compass,
+      onClick: () => router.push('/marketplace'),
+    },
+    {
+      id: 'logout',
+      label: 'Sign Out',
+      description: 'Log out of your vendor account',
+      icon: LogOut,
+      destructive: true,
+      onClick: () => {
+        logout();
+        router.push('/');
+      },
+    },
+  ];
+
+  // Customer Tab Bar: Explore · Saved · Bookings · Profile
+  const customerNavItems = [
     {
       id: 'explore',
       label: 'Explore',
@@ -114,47 +182,65 @@ function MobileBottomNavInner() {
       icon: Compass,
     },
     {
-      id: 'occasions',
-      label: 'Occasions',
-      href: '/#occasions',
-      icon: Sparkles,
-      onClick: (e: React.MouseEvent) => {
-        setManualActive('occasions');
-        if (pathname === '/') {
-          e.preventDefault();
-          const el = document.getElementById('occasions');
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
-            window.history.pushState(null, '', '/#occasions');
-            setCurrentHash('#occasions');
-          }
-        }
-      },
-    },
-    {
       id: 'saved',
       label: 'Saved',
-      href: isAuthenticated ? '/customer/dashboard?tab=saved' : '/login',
+      href: isAuthenticated ? '/customer/dashboard?tab=saved' : '/login?redirect=/customer/dashboard?tab=saved',
       icon: Heart,
       badge: favoritesCount > 0 ? favoritesCount : null,
     },
     {
       id: 'bookings',
-      label: isVendor ? 'Requests' : 'Bookings',
-      href: isAuthenticated 
-        ? (isVendor ? '/vendor/dashboard' : '/customer/dashboard?tab=bookings') 
-        : '/login',
+      label: 'Bookings',
+      href: isAuthenticated ? '/customer/dashboard?tab=bookings' : '/login?redirect=/customer/dashboard?tab=bookings',
       icon: CalendarDays,
     },
     {
       id: 'profile',
-      label: isAuthenticated ? (isVendor ? 'Vendor' : 'Profile') : 'Log In',
-      href: isAuthenticated 
-        ? (isVendor ? '/vendor/dashboard' : '/customer/dashboard?tab=profile') 
-        : '/login',
+      label: isAuthenticated ? 'Profile' : 'Log In',
+      href: isAuthenticated ? '/customer/dashboard?tab=profile' : '/login',
       icon: User,
     },
   ];
+
+  // Vendor Tab Bar: Dashboard · Inquiries · Calendar · Services · More
+  const vendorNavItems = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      href: '/vendor/dashboard',
+      icon: LayoutDashboard,
+    },
+    {
+      id: 'inquiries',
+      label: 'Inquiries',
+      href: '/vendor/bookings',
+      icon: Inbox,
+    },
+    {
+      id: 'calendar',
+      label: 'Calendar',
+      href: '/vendor/calendar',
+      icon: CalendarDays,
+    },
+    {
+      id: 'services',
+      label: 'Services',
+      href: '/vendor/services',
+      icon: Package,
+    },
+    {
+      id: 'more',
+      label: 'More',
+      href: '#more',
+      icon: MoreHorizontal,
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsVendorMoreOpen(true);
+      },
+    },
+  ];
+
+  const currentNavItems = isVendor ? vendorNavItems : customerNavItems;
 
   return (
     <nav 
@@ -162,7 +248,7 @@ function MobileBottomNavInner() {
       className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-[#FAF7F2]/95 backdrop-blur-xl border-t border-[#E8E2D9] shadow-[0_-4px_20px_rgba(34,31,28,0.06)] pb-safe transition-transform duration-200"
     >
       <div className="flex items-center justify-around h-16 px-1.5">
-        {navItems.map((item) => {
+        {currentNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeId === item.id;
 
@@ -216,6 +302,17 @@ function MobileBottomNavInner() {
           );
         })}
       </div>
+
+      {/* Vendor Quick Actions Bottom Sheet */}
+      {isVendor && (
+        <MobileActionSheet
+          isOpen={isVendorMoreOpen}
+          onClose={() => setIsVendorMoreOpen(false)}
+          title="Vendor Portal & Tools"
+          subtitle="Quickly navigate your storefront, portfolio, and settings"
+          options={vendorMoreOptions}
+        />
+      )}
     </nav>
   );
 }

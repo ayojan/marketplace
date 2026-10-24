@@ -1,23 +1,6 @@
-export interface PortfolioImage {
-  id: string | number;
-  url: string;
-  thumbnail_url?: string;
-  filename?: string;
-  byte_size?: number;
-}
+import type { PortfolioItemType } from './types';
 
-export interface PortfolioItemType {
-  id: string | number;
-  title: string;
-  category: string;
-  description?: string;
-  is_featured?: boolean;
-  images: PortfolioImage[];
-  image_count?: number;
-  created_at?: string;
-}
-
-export const DEFAULT_CATEGORIES = [
+export const DEFAULT_CATEGORIES: string[] = [
   'Weddings',
   'Pre-Wedding',
   'Candid & Moments',
@@ -145,5 +128,3 @@ export const INITIAL_SHOWCASES: PortfolioItemType[] = [
     ]
   }
 ];
-
-export const STORAGE_KEY = 'ayoj_vendor_portfolio_v2';

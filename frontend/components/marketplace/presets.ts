@@ -10,34 +10,7 @@ import {
   Heart, 
   Gift 
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-
-export interface BudgetPreset {
-  id: string;
-  label: string;
-  min: string;
-  max: string;
-}
-
-export interface TradeCategory {
-  id: string;
-  name: string;
-  slug: string;
-  icon: LucideIcon;
-  matchKeys: string[];
-}
-
-export interface Occasion {
-  id: string;
-  name: string;
-  icon: LucideIcon;
-  matchKeys: string[];
-}
-
-export interface SortOption {
-  id: string;
-  label: string;
-}
+import type { BudgetPreset, TradeCategory, Occasion, SortOption } from './types';
 
 // Quick Budget Presets for Instant 1-Tap Filtering
 export const QUICK_BUDGET_PRESETS: BudgetPreset[] = [

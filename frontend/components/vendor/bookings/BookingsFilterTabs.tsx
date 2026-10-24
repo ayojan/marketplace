@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Search } from 'lucide-react';
-import { BookingTabType } from './constants';
+import { BookingTabType } from './types';
 
 interface BookingsFilterTabsProps {
   activeTab: BookingTabType;

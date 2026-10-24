@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Briefcase, Plus } from 'lucide-react';
-import { Service } from './constants';
+import { Service } from './types';
 import ServiceCard from './ServiceCard';
 
 interface ServiceListGridProps {

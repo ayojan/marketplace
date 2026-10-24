@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Switch } from '@/components/ui/switch';
-import { VendorSettingsFormData, NOTIFICATION_ITEMS } from './constants';
+import { VendorSettingsFormData } from './types';
+import { NOTIFICATION_ITEMS } from './presets';
 
 interface VendorSettingsNotificationsTabProps {
   formData: VendorSettingsFormData;

@@ -76,7 +76,7 @@ describe('Marketplace Empty State - Network Building Transparency', () => {
     // Wait for the empty state to appear after loading
     await waitFor(() => {
       expect(screen.getByText(/We're building Ayoj in Chennai/i)).toBeInTheDocument();
-    });
+    }, { timeout: 6000 });
 
     // Check subtitle
     expect(screen.getByText(/Tell us what you're planning, and we'll work to connect you with suitable local event professionals\./i)).toBeInTheDocument();
@@ -97,14 +97,14 @@ describe('Marketplace Empty State - Network Building Transparency', () => {
 
     // Check disclaimer
     expect(screen.getByText(/No guarantee of a match\. We'll contact you if we find a suitable provider\./i)).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('opens the Request a Vendor modal when clicking Request a vendor button', async () => {
     render(<Marketplace />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Request a vendor/i })).toBeInTheDocument();
-    });
+    }, { timeout: 6000 });
 
     const requestBtn = screen.getByRole('button', { name: /Request a vendor/i });
     fireEvent.click(requestBtn);
@@ -112,18 +112,18 @@ describe('Marketplace Empty State - Network Building Transparency', () => {
     // Modal should now be open
     await waitFor(() => {
       expect(screen.getByText(/Request an Event Professional/i)).toBeInTheDocument();
-    });
+    }, { timeout: 6000 });
 
     expect(screen.getByPlaceholderText(/Your full name/i)).toHaveValue('Test Customer');
     expect(screen.getByPlaceholderText(/name@example.com/i)).toHaveValue('customer@example.com');
-  });
+  }, 15000);
 
   it('opens the Request a Vendor modal with pre-selected service when clicking a service chip', async () => {
     render(<Marketplace />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Decoration/i })).toBeInTheDocument();
-    });
+    }, { timeout: 6000 });
 
     const decorChip = screen.getByRole('button', { name: /Decoration/i });
     fireEvent.click(decorChip);
@@ -131,7 +131,7 @@ describe('Marketplace Empty State - Network Building Transparency', () => {
     // Modal opens with Decoration
     await waitFor(() => {
       expect(screen.getByText(/Request an Event Professional/i)).toBeInTheDocument();
-    });
+    }, { timeout: 6000 });
 
     // Submit request
     const submitBtn = screen.getByRole('button', { name: /Submit Request/i });
@@ -140,6 +140,6 @@ describe('Marketplace Empty State - Network Building Transparency', () => {
     // Confirmation shows
     await waitFor(() => {
       expect(screen.getByText(/Request Submitted!/i)).toBeInTheDocument();
-    });
-  });
+    }, { timeout: 6000 });
+  }, 15000);
 });

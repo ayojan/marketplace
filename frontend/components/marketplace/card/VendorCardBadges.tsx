@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Star, MapPin, Sparkles } from 'lucide-react';
+import { CARD_COPY } from './copy';
 
 interface VendorCardBadgesProps {
   name: string;
@@ -51,7 +52,7 @@ export default function VendorCardBadges({
         ) : (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#FAF7F2] text-[10px] font-medium text-[#9E5338] border border-[#E8E2D9] shrink-0">
             <Sparkles className="size-2.5" />
-            New on Ayoj
+            {CARD_COPY.newOnAyoj}
           </span>
         )}
       </div>
@@ -65,10 +66,10 @@ export default function VendorCardBadges({
         )}
         {additionalCategoriesCount > 0 && (
           <span
-            title={`Also operates in: ${additionalCategoriesNames}`}
+            title={CARD_COPY.alsoOperatesIn(additionalCategoriesNames)}
             className="inline-flex items-center text-[10px] font-medium text-[#6B6560] bg-[#FAF7F2] px-1.5 py-0.5 rounded-md border border-[#E8E2D9] cursor-help"
           >
-            +{additionalCategoriesCount} more
+            {CARD_COPY.moreCategories(additionalCategoriesCount)}
           </span>
         )}
         {location && (

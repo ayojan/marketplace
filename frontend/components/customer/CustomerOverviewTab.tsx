@@ -13,7 +13,7 @@ import {
   Camera 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import CustomerDreamTeamTracker from './CustomerDreamTeamTracker';
 import { BookingStatusBadge } from './BookingStatusBadge';
 import { DashboardStat, SavedVendor, RecommendedPro, ChecklistItem } from './types';

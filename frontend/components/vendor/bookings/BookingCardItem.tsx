@@ -14,7 +14,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BookingType, formatDate } from './constants';
+import { BookingType } from './types';
+import { formatDate } from './utils';
 
 interface BookingCardItemProps {
   booking: BookingType;

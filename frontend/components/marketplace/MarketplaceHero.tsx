@@ -5,7 +5,8 @@ import { Search, Sparkles, X, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CITIES } from '@/components/Header';
 import { TextLoop } from '@/components/motion';
-import { TRADE_CATEGORIES, QUICK_BUDGET_PRESETS } from './constants';
+import { TRADE_CATEGORIES, QUICK_BUDGET_PRESETS } from './presets';
+import { MARKETPLACE_HERO_COPY } from './copy';
 import { useLocation } from '@/lib/contexts/LocationContext';
 
 interface MarketplaceHeroProps {
@@ -44,25 +45,22 @@ export function MarketplaceHero({
           
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F3EADF] border border-[#E8E2D9] text-xs font-semibold tracking-wider text-[#9E5338] uppercase">
             <Sparkles className="size-3.5 text-[#9E5338]" />
-            <span>Discover · Trust · Celebrate</span>
+            <span>{MARKETPLACE_HERO_COPY.badge}</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-[2.6rem] font-serif font-normal tracking-tight text-[#221F1C] flex flex-wrap items-center justify-center gap-x-2.5">
-            <span>Find & Book Top</span>
+            <span>{MARKETPLACE_HERO_COPY.titlePrefix}</span>
             <TextLoop
               interval={2.8}
               className="text-[#9E5338] italic font-serif"
             >
-              <span>Photographers</span>
-              <span>Cinematographers</span>
-              <span>Bridal Artists</span>
-              <span>Live DJs</span>
-              <span>Decorators</span>
-              <span>Mehendi Pros</span>
+              {MARKETPLACE_HERO_COPY.loopWords.map((word) => (
+                <span key={word}>{word}</span>
+              ))}
             </TextLoop>
           </h1>
           <p className="text-xs sm:text-sm text-[#6B6560] font-normal max-w-lg mx-auto">
-            Explore authentic portfolios, transparent pricing, and live availability across verified celebration artists.
+            {MARKETPLACE_HERO_COPY.subtitle}
           </p>
           
           {/* Search Input Bar with Integrated City Selector */}
@@ -81,7 +79,7 @@ export function MarketplaceHero({
                   aria-label="Filter by city"
                   className="w-full sm:w-auto bg-transparent text-xs font-medium text-[#221F1C] px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-[#E8E2D9] focus:outline-none cursor-pointer"
                 >
-                  <option value="all">📍 All Cities</option>
+                  <option value="all">{MARKETPLACE_HERO_COPY.allCitiesOption}</option>
                   {CITIES.map((city) => (
                     <option key={city} value={city}>
                       📍 {city}
@@ -99,7 +97,7 @@ export function MarketplaceHero({
                 <input
                   id="marketplace-search"
                   type="text"
-                  placeholder="Search by pro name, trade, or service..."
+                  placeholder={MARKETPLACE_HERO_COPY.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   aria-label="Search by pro name, trade, or service"

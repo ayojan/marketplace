@@ -3,7 +3,7 @@
 import React from 'react';
 import { Sparkles, Check, ArrowRight } from 'lucide-react';
 import { InView } from '@/components/motion';
-import { HOW_IT_WORKS_STEPS } from './constants';
+import { HOW_IT_WORKS_STEPS } from './presets';
 
 export function HomeHowItWorks() {
   return (

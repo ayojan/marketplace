@@ -11,7 +11,7 @@ import {
   VendorSettingsFormData,
   ServiceCategory,
   SettingsTabType
-} from './constants';
+} from './types';
 import VendorSettingsNav from './VendorSettingsNav';
 import VendorSettingsProfileTab from './VendorSettingsProfileTab';
 import VendorSettingsPoliciesTab from './VendorSettingsPoliciesTab';

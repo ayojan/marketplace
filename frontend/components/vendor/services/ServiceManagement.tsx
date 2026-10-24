@@ -9,7 +9,7 @@ import {
   ServiceImageItem,
   ServiceFormData,
   ServiceManagementProps
-} from './constants';
+} from './types';
 import ServiceListHeader from './ServiceListHeader';
 import ServiceListGrid from './ServiceListGrid';
 import ServiceCreateEditModal from './ServiceCreateEditModal';

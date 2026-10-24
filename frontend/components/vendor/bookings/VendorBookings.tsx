@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '@/lib/api';
 import { CalendarCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { BookingType, BookingTabType } from './constants';
+import { BookingType, BookingTabType } from './types';
 import BookingsStatsCards from './BookingsStatsCards';
 import BookingsFilterTabs from './BookingsFilterTabs';
 import BookingCardItem from './BookingCardItem';

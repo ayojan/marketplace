@@ -4,7 +4,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeftRight, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CompareVendor } from './constants';
+import { CompareVendor } from './types';
+import { COMPARE_COPY } from './copy';
 import CompareVendorColumn from './CompareVendorColumn';
 
 interface CompareModalTableProps {
@@ -24,9 +25,11 @@ export default function CompareModalTable({
   onRemove,
   onClear,
   onOpenInquireAll,
-  onOpenDirectInquire
+  onOpenDirectInquire,
 }: CompareModalTableProps) {
   if (!isOpen || !vendors || vendors.length === 0) return null;
+
+  const copy = COMPARE_COPY.modalTable;
 
   return (
     <AnimatePresence>
@@ -51,10 +54,10 @@ export default function CompareModalTable({
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9E5338] uppercase tracking-wider mb-0.5">
                 <ArrowLeftRight className="size-3.5" />
-                <span>Side-by-Side Comparison</span>
+                <span>{copy.badge}</span>
               </div>
               <h3 className="text-lg sm:text-xl font-serif font-bold text-[#221F1C]">
-                Comparing {vendors.length} Creative {vendors.length === 1 ? 'Partner' : 'Partners'}
+                {copy.title(vendors.length)}
               </h3>
             </div>
 
@@ -64,7 +67,7 @@ export default function CompareModalTable({
                 onClick={onClear}
                 className="text-xs text-[#6B6560] hover:text-[#9E5338] underline px-2 py-1 cursor-pointer"
               >
-                Clear selection
+                {copy.clearSelection}
               </button>
               <button
                 type="button"
@@ -102,9 +105,7 @@ export default function CompareModalTable({
 
           {/* Modal Footer */}
           <div className="p-4 border-t border-[#E8E2D9] bg-[#FAF7F2] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#6B6560]">
-            <span>
-              Tip: Compare verified reviews, published pricing, and portfolios before sending an inquiry.
-            </span>
+            <span>{copy.tip}</span>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button
                 type="button"
@@ -115,7 +116,7 @@ export default function CompareModalTable({
                 className="flex-1 sm:flex-none h-8 px-4 bg-[#9E5338] hover:bg-[#86442B] text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Send className="size-3" />
-                <span>Inquire All ({vendors.length})</span>
+                <span>{copy.inquireAll(vendors.length)}</span>
               </Button>
               <Button
                 type="button"
@@ -123,7 +124,7 @@ export default function CompareModalTable({
                 onClick={onClose}
                 className="h-8 text-xs rounded-xl border-[#E8E2D9]"
               >
-                Close
+                {copy.close}
               </Button>
             </div>
           </div>
