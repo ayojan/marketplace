@@ -35,9 +35,8 @@ module Vendors
       items = @vendor.portfolio_items.where(category: category).order(:display_order, :created_at)
 
       items.each_with_index do |item, index|
-        # rubocop:disable Rails/SkipsModelValidations
+        # rubocop:disable-next Rails/SkipsModelValidations
         item.update_column(:display_order, index + 1) if item.display_order != (index + 1)
-        # rubocop:enable Rails/SkipsModelValidations
       end
     end
   end

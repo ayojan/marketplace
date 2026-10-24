@@ -28,14 +28,18 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class InAppNotification < ApplicationRecord
+  NOTIFICATION_TYPES = %w[
+    booking_created booking_accepted booking_rejected booking_cancelled booking_reminder
+    new_message review_received system_announcement
+  ].freeze
+
   # == Associations ==
   belongs_to :user
 
   # == Validations ==
   validates :title, :message, :notification_type, presence: true
   validates :notification_type, inclusion: {
-    in: %w[booking_created booking_accepted booking_rejected booking_cancelled booking_reminder
-           new_message review_received],
+    in: NOTIFICATION_TYPES,
     message: :invalid_type
   }
 

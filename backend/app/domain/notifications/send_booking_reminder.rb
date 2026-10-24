@@ -11,9 +11,8 @@ module Notifications
       booking.reload
 
       if booking_reminder_already_sent?
-        # rubocop:disable Rails/EagerEvaluationLogMessage
+        # rubocop:disable-next Rails/EagerEvaluationLogMessage
         Rails.logger.debug("Booking reminder already sent for booking #{booking.id}")
-        # rubocop:enable Rails/EagerEvaluationLogMessage
         return { success: true, already_sent: true }
       end
 

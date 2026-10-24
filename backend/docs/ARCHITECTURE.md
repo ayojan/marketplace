@@ -58,20 +58,20 @@ flowchart TD
 |---|---|---|
 | Interface | `app/controllers/` | Request validation, response shaping, and REST entry points |
 | Access control | `app/controllers/concerns/`, `app/policies/`, JWT services | Authentication and authorization |
-| Business workflows | `app/domain/`, `app/services/`, `app/forms/` | Booking, availability, notification, review, favorites, and vendor-profile rules |
+| Domain logic & workflows | `app/domain/<bounded_context>/`, `app/forms/` | Canonical home for domain commands, queries, state machines, and business rules |
 | Read and presentation | `app/models/queries/`, `app/presenters/` | Reusable read models and response formatting |
 | Persistence | `app/models/`, `db/` | Active Record associations, validations, and database schema |
 | Async and integrations | `app/jobs/`, `app/mailers/`, Active Storage | Image processing, notifications, mail delivery, and media attachment handling |
 
-The codebase is organized as a modular Rails application through these directories. It does not currently include Packwerk configuration, so the documentation does not claim Packwerk-enforced package boundaries.
+The codebase is organized as a modular Rails application through these directories. `app/domain/<bounded_context>/` is the single canonical home for all domain logic.
 
 ## Background Work and Storage
 
-- Rails uses Sidekiq as its Active Job adapter. Redis is the queue backend.
+- Rails uses Solid Queue as its Active Job adapter and Solid Cache for key-value caching (both PostgreSQL-backed; no Redis dependency).
 - Background jobs include image processing, notification delivery, booking reminders, and vendor-stat recalculation.
-- PostgreSQL is the primary transactional data store.
+- PostgreSQL is the primary transactional data store and backing engine for queues and cache.
 - Active Storage owns attached service, portfolio, and review media. Its storage service is environment-configured.
-- Mailers deliver transactional and notification email through the configured SMTP provider.
+- Mailers deliver transactional and notification email through the configured SMTP/Resend provider.
 
 ## Local Development
 

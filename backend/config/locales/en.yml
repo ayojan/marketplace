@@ -60,3 +60,8 @@ en:
     services:
       activated: 'Service activated successfully'
       deactivated: 'Service deactivated'
+      image_removed: 'Image removed successfully.'
+      image_remove_failed: 'Failed to remove image.'
+    in_app_notifications:
+      marked_as_read: 'Notification marked as read.'
+      marked_as_unread: 'Notification marked as unread.'

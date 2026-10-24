@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bookings
-  # rubocop:disable Metrics/ClassLength
+  # rubocop:disable-next Metrics/ClassLength
   class BookingCreationService
     include ActiveModel::Model
     include ActiveModel::Attributes
@@ -166,5 +166,4 @@ module Bookings
       errors.add(:event_date, 'must be in the future') if event_date <= Time.current
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end

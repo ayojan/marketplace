@@ -76,9 +76,9 @@ module Services
         terms << 'decor' if clean_q.downcase.start_with?('decor')
         terms = terms.uniq
 
-        conditions = terms.map do
-          '(services.name ILIKE ? OR services.description ILIKE ? OR vendors.business_name ILIKE ? OR categories.name ILIKE ?)'
-        end.join(' OR ')
+        search_clause = '(services.name ILIKE ? OR services.description ILIKE ? OR ' \
+                        'vendors.business_name ILIKE ? OR categories.name ILIKE ?)'
+        conditions = Array.new(terms.size, search_clause).join(' OR ')
         query_params = terms.flat_map { |t| ["%#{t}%", "%#{t}%", "%#{t}%", "%#{t}%"] }
 
         scope = scope.left_joins(:categories).where(conditions, *query_params)

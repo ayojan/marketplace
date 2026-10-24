@@ -161,6 +161,30 @@ ActiveAdmin.register Vendor do
         end
       end
     end
+
+    upcoming_slots = vendor.availability_slots.upcoming.order(:date, :start_time).limit(10)
+    panel "Upcoming Availability Schedule (#{vendor.availability_slots.upcoming.count} slots)" do
+      if upcoming_slots.any?
+        table_for upcoming_slots do
+          column :id
+          column :date do |slot|
+            slot.date.strftime('%a, %b %d, %Y')
+          end
+          column 'Time Window' do |slot|
+            "#{slot.start_time.strftime('%I:%M %p')} - #{slot.end_time.strftime('%I:%M %p')}"
+          end
+          column 'Duration' do |slot|
+            "#{slot.duration_hours.round(1)} hrs"
+          end
+          column 'Availability' do |slot|
+            status_tag(slot.is_available? ? 'Available' : 'Blocked/Booked',
+                       class: slot.is_available? ? :ok : :warn)
+          end
+        end
+      else
+        para 'No upcoming availability slots defined.', style: 'padding: 10px; color: #64748B;'
+      end
+    end
   end
 
   # Form
@@ -194,7 +218,8 @@ ActiveAdmin.register Vendor do
                   notice: "Vendor '#{resource.business_name}' has been verified and awarded the Verified Partner badge!"
     else
       redirect_to resource_path,
-                  alert: "Vendor '#{resource.business_name}' is verified in system, but Verified Partner badge won't display until missing checks (license, phone, profile, service) are satisfied."
+                  alert: "Vendor '#{resource.business_name}' is verified, but Verified Partner badge " \
+                         "won't display until missing checks (license, phone, profile, service) are satisfied."
     end
   end
 
