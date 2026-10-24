@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Star, ArrowRight, Search } from 'lucide-react';
 import { InView } from '@/components/motion';
-import PhotographerCard from '@/components/PhotographerCard';
+import { VendorCard } from '@/components/marketplace/card';
 import { VENDOR_FILTER_TABS } from './constants';
 
 interface HomeFeaturedVendorsProps {
@@ -104,7 +104,7 @@ export function HomeFeaturedVendors({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative">
             {filtered.slice(0, 8).map((vendor) => (
-              <PhotographerCard key={vendor.id} photographer={vendor} />
+              <VendorCard key={vendor.id} photographer={vendor} />
             ))}
 
             {filtered.length === 0 && (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import PhotographerCard from '@/components/PhotographerCard';
+import { VendorCard } from '@/components/marketplace/card';
 import Header from '@/components/Header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlidersHorizontal, ArrowUpDown } from 'lucide-react';
@@ -576,7 +576,7 @@ function MarketplaceContent() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">
                 {sortedVendors.map((vendor) => (
-                  <PhotographerCard 
+                  <VendorCard 
                     key={vendor.id}
                     photographer={vendor} 
                     onQuickInquire={(v) => handleOpenRequestModal(v.name || v.business_name)}

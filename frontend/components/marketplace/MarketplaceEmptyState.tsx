@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { SlidersHorizontal, Building2, Sparkles } from 'lucide-react';
-import PhotographerCard from '@/components/PhotographerCard';
+import { VendorCard } from './card';
 
 export interface MarketplaceEmptyStateProps {
   city: string;
@@ -176,7 +176,7 @@ export function MarketplaceEmptyState({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {recommendedVendors.slice(0, 3).map((vendor) => (
-              <PhotographerCard 
+              <VendorCard 
                 key={`rec-${vendor.id}`}
                 photographer={vendor} 
                 onQuickInquire={(v) => onOpenRequestModal(v.name || v.business_name)}

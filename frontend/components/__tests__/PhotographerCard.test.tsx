@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import PhotographerCard from '../PhotographerCard';
+import { VendorCard as PhotographerCard } from '../marketplace/card';
 import { apiService } from '../../lib/api';
 import { tokenService } from '../../lib/tokenService';
 import { toast } from 'sonner';
