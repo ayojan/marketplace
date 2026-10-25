@@ -232,7 +232,7 @@ export default async function VendorProfilePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(vendorJsonLd) }}
         />
       )}
-      <VendorProfile params={params} />
+      <VendorProfile params={params} initialVendor={vendor} />
     </>
   );
 }

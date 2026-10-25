@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../api';
 import { tokenService } from '../tokenService';
 
@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login action
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     dispatch({ type: AUTH_ACTIONS.LOGIN_START });
     try {
       // Wrap credentials in auth key if not already wrapped
@@ -154,10 +154,10 @@ export const AuthProvider = ({ children }) => {
       });
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
 
   // Register action
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     dispatch({ type: AUTH_ACTIONS.REGISTER_START });
     try {
       // Wrap userData in auth key if not already wrapped
@@ -198,10 +198,10 @@ export const AuthProvider = ({ children }) => {
       });
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
 
   // Google sign-in action
-  const loginWithGoogle = async (googleData) => {
+  const loginWithGoogle = useCallback(async (googleData) => {
     dispatch({ type: AUTH_ACTIONS.LOGIN_START });
     try {
       const payload = googleData.auth ? googleData : { auth: googleData };
@@ -243,10 +243,10 @@ export const AuthProvider = ({ children }) => {
         details: data?.details
       };
     }
-  };
+  }, []);
 
   // Logout action
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await apiService.auth.logout();
     } catch (error) {
@@ -255,13 +255,13 @@ export const AuthProvider = ({ children }) => {
       tokenService.clearAuthData();
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
-  };
+  }, []);
 
-  const updateUser = (updatedUserData) => {
+  const updateUser = useCallback((updatedUserData) => {
     const currentUser = tokenService.getUser() || state.user || {};
     const newUser = { ...currentUser, ...updatedUserData };
     tokenService.setUser(newUser);
@@ -269,9 +269,9 @@ export const AuthProvider = ({ children }) => {
       type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
       payload: newUser,
     });
-  };
+  }, [state.user]);
 
-  const value = {
+  const value = useMemo(() => ({
     ...state,
     login,
     register,
@@ -279,7 +279,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     clearError,
     updateUser,
-  };
+  }), [state, login, register, loginWithGoogle, logout, clearError, updateUser]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -11,26 +11,53 @@ import {
   ShoppingBag,
   Star,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { apiService } from '@/lib/api';
 import Header from '@/components/Header';
 import AyojLogo from '@/components/AyojLogo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ReviewFormModal } from '@/components/ReviewFormModal';
-import { BookingMessageModal } from '@/components/BookingMessageModal';
 import {
   CustomerProfileHeader,
-  CustomerProfileView,
   CustomerOverviewTab,
-  CustomerBookingsTab,
-  CustomerSavedTab,
-  CustomerReviewsTab,
   CustomerProfileData,
   DashboardStat,
   SavedVendor,
   RecommendedPro,
   ChecklistItem,
 } from '@/components/customer';
+
+const TabLoadingFallback = () => (
+  <div className="space-y-4 animate-pulse p-4">
+    <div className="h-10 bg-white rounded-xl border border-[#E8E2D9] w-1/4" />
+    <div className="h-64 bg-white rounded-2xl border border-[#E8E2D9]" />
+  </div>
+);
+
+const CustomerBookingsTab = dynamic(
+  () => import('@/components/customer/CustomerBookingsTab').then((mod) => mod.CustomerBookingsTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const CustomerSavedTab = dynamic(
+  () => import('@/components/customer/CustomerSavedTab').then((mod) => mod.CustomerSavedTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const CustomerReviewsTab = dynamic(
+  () => import('@/components/customer/CustomerReviewsTab').then((mod) => mod.CustomerReviewsTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const CustomerProfileView = dynamic(
+  () => import('@/components/customer/CustomerProfileView').then((mod) => mod.default),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const ReviewFormModal = dynamic(
+  () => import('@/components/ReviewFormModal').then((mod) => mod.ReviewFormModal),
+  { ssr: false }
+);
+const BookingMessageModal = dynamic(
+  () => import('@/components/BookingMessageModal').then((mod) => mod.BookingMessageModal),
+  { ssr: false }
+);
 
 export default function CustomerDashboard() {
   const { user, updateUser } = useAuth();

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
-import { AppProvider } from '@/lib/contexts/AppContext';
 import { LocationProvider } from '@/lib/contexts/LocationContext';
 import LocationPromptModal from '@/components/LocationPromptModal';
 import { Toaster } from '@/components/ui/sonner';
@@ -149,13 +148,11 @@ export default function RootLayout({
       </head>
       <body className={`${plusJakartaSans.className} antialiased min-h-screen bg-[#FAF7F2] text-[#1C1B19] pb-16 md:pb-0`}>
         <AuthProvider>
-          <AppProvider>
-            <LocationProvider>
-              {children}
-              <MobileBottomNav />
-              <LocationPromptModal />
-            </LocationProvider>
-          </AppProvider>
+          <LocationProvider>
+            {children}
+            <MobileBottomNav />
+            <LocationPromptModal />
+          </LocationProvider>
         </AuthProvider>
         <Toaster />
       </body>

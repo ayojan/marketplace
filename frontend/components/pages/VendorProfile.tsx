@@ -22,7 +22,12 @@ import VendorLightboxModal from '@/components/vendor/VendorLightboxModal';
 import VendorStickyMobileBar from '@/components/vendor/VendorStickyMobileBar';
 import VendorInquiryModal from '@/components/vendor/VendorInquiryModal';
 
-const VendorProfile = ({ params }: { params: { id: string } }) => {
+interface VendorProfileProps {
+  params: { id: string };
+  initialVendor?: any;
+}
+
+const VendorProfile = ({ params, initialVendor }: VendorProfileProps) => {
   const router = useRouter();
   const { user, logout } = useAuth();
 
@@ -44,12 +49,14 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   const profileLink = user?.role === 'vendor' ? '/vendor/dashboard?tab=settings' : '/customer/dashboard?tab=profile';
   const bookingsLink = user?.role === 'vendor' ? '/vendor/dashboard?tab=calendar' : '/customer/dashboard?tab=bookings';
 
-  const [vendor, setVendor] = useState<any>(null);
+  const [vendor, setVendor] = useState<any>(initialVendor || null);
   const [services, setServices] = useState<Service[]>([]);
-  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [portfolio, setPortfolio] = useState<any[]>(
+    initialVendor?.featured_portfolio || []
+  );
   const [reviews, setReviews] = useState<any[]>([]);
   const [availabilitySlots, setAvailabilitySlots] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialVendor);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
@@ -68,11 +75,17 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const loadVendorData = useCallback(async () => {
-    setLoading(true);
+    if (!initialVendor) {
+      setLoading(true);
+    }
 
     try {
+      const fetchVendorPromise = (initialVendor && String(initialVendor.id) === String(params.id))
+        ? Promise.resolve({ data: { vendor: initialVendor } })
+        : apiService.vendors.getById(params.id).catch(() => null);
+
       const [vendorRes, servicesRes, portfolioRes, reviewsRes, availabilityRes] = await Promise.all([
-        apiService.vendors.getById(params.id).catch(() => null),
+        fetchVendorPromise,
         apiService.vendors.getServices(params.id).catch(() => null),
         apiService.vendors.getPortfolio(params.id).catch(() => null),
         apiService.vendors.getReviews(params.id).catch(() => null),
@@ -134,7 +147,7 @@ const VendorProfile = ({ params }: { params: { id: string } }) => {
     } finally {
       setLoading(false);
     }
-  }, [params?.id]);
+  }, [params?.id, initialVendor]);
 
   useEffect(() => {
     loadVendorData();

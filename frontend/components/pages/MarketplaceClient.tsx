@@ -183,10 +183,9 @@ function MarketplaceContent() {
   // Fetch from backend
   useEffect(() => {
     let isMounted = true;
+    setIsLoading(true);
+
     const fetchVendors = async () => {
-      if (apiVendors.length === 0) {
-        setIsLoading(true);
-      }
       try {
         const params: any = { per_page: 100 };
         if (searchQuery) params.q = searchQuery;
@@ -220,14 +219,7 @@ function MarketplaceContent() {
         });
 
         if (isMounted) {
-          setApiVendors((prev) => {
-            if (uniqueVendors.length > 0) {
-              const prevMap = new Map(prev.map((v) => [v.id, v]));
-              uniqueVendors.forEach((v) => prevMap.set(v.id, v));
-              return Array.from(prevMap.values());
-            }
-            return prev.length > 0 ? prev : uniqueVendors;
-          });
+          setApiVendors(uniqueVendors);
         }
       } catch (err: any) {
         console.warn('Background vendor fetch failed:', err);

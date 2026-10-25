@@ -53,7 +53,7 @@ export function MarketplaceRequestModal({
       setRequestSubmitted(false);
     }
     prevIsOpen.current = isOpen;
-  }, [isOpen, initialService, city]);
+  }, [isOpen, initialService, city, user]);
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

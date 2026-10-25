@@ -1,17 +1,39 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { apiService } from '@/lib/api';
-import {
-  ServiceManagement,
-  PortfolioManager,
-  BookingCalendar,
-  VendorSettings,
-  VendorBookings
-} from '@/components/vendor';
 import AyojLogo from '@/components/AyojLogo';
 import Link from 'next/link';
+
+const TabLoadingFallback = () => (
+  <div className="space-y-4 animate-pulse p-4">
+    <div className="h-10 bg-white rounded-xl border border-[#E8E2D9] w-1/4" />
+    <div className="h-64 bg-white rounded-2xl border border-[#E8E2D9]" />
+  </div>
+);
+
+const ServiceManagement = dynamic(
+  () => import('@/components/vendor/services').then((mod) => mod.ServiceManagement),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const PortfolioManager = dynamic(
+  () => import('@/components/vendor/portfolio').then((mod) => mod.PortfolioManager),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const BookingCalendar = dynamic(
+  () => import('@/components/vendor/calendar').then((mod) => mod.BookingCalendar),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const VendorSettings = dynamic(
+  () => import('@/components/vendor/settings').then((mod) => mod.VendorSettings),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const VendorBookings = dynamic(
+  () => import('@/components/vendor/bookings').then((mod) => mod.VendorBookings),
+  { loading: TabLoadingFallback, ssr: false }
+);
 import { NotificationDropdown } from '@/components/NotificationDropdown';
 import { Button } from '@/components/ui/button';
 import { 

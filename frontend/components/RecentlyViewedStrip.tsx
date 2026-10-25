@@ -71,7 +71,7 @@ export default function RecentlyViewedStrip() {
                     src={vendor.image || FALLBACK_IMAGE}
                     alt={vendor.name}
                     fill
-                    unoptimized
+                    sizes="56px"
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>

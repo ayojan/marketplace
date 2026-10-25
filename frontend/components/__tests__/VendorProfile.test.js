@@ -128,9 +128,12 @@ describe('VendorProfile', () => {
     jest.clearAllMocks();
   });
 
-  it('renders loading state initially', () => {
+  it('renders loading state initially', async () => {
     render(<VendorProfile params={mockParams} />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    });
   });
 
   it('renders vendor profile information', async () => {

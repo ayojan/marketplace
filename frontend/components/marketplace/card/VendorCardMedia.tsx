@@ -64,7 +64,7 @@ export default function VendorCardMedia({
             src={imgUrl}
             alt={`${name} portfolio ${idx + 1}`}
             fill
-            unoptimized
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className={`object-cover transition-all duration-700 ease-in-out absolute inset-0 ${
               idx === currentImageIndex
                 ? isTransitioning

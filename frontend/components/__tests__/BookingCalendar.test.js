@@ -62,15 +62,23 @@ describe('BookingCalendar', () => {
     api.get.mockResolvedValue({ data: {} });
   });
 
-  it('renders calendar header correctly', () => {
-    render(<BookingCalendar bookings={[]} />);
+  const renderCalendar = async (props = { bookings: [] }) => {
+    const view = render(<BookingCalendar {...props} />);
+    await waitFor(() => {
+      expect(screen.getByText('Booking Calendar')).toBeInTheDocument();
+    });
+    return view;
+  };
+
+  it('renders calendar header correctly', async () => {
+    await renderCalendar();
     
     expect(screen.getByText('Booking Calendar')).toBeInTheDocument();
     expect(screen.getByText('Manage your availability and view bookings')).toBeInTheDocument();
   });
 
-  it('displays current month and year', () => {
-    render(<BookingCalendar bookings={[]} />);
+  it('displays current month and year', async () => {
+    await renderCalendar();
     
     const currentDate = new Date();
     const monthNames = [
@@ -83,8 +91,8 @@ describe('BookingCalendar', () => {
     expect(screen.getByText(`${expectedMonth} ${expectedYear}`)).toBeInTheDocument();
   });
 
-  it('displays day headers', () => {
-    render(<BookingCalendar bookings={[]} />);
+  it('displays day headers', async () => {
+    await renderCalendar();
     
     const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     dayHeaders.forEach(day => {
