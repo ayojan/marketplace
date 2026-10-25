@@ -3,12 +3,13 @@
 class ApiController < ActionController::API
   include ExceptionHandler
 
-  # API controllers can selectively require authentication
+  # Require valid JWT token, halt request with 401 if missing or invalid
   def authenticate_user!
     @current_user = Auth::AuthorizeApiRequest.call(request.headers)[:user]
     render json: { message: 'Missing token' }, status: :unauthorized unless @current_user
   end
 
+  # Optional/memoized user lookup without halting for unauthenticated requests
   def current_user
     @current_user ||= begin
       Auth::AuthorizeApiRequest.call(request.headers)[:user]

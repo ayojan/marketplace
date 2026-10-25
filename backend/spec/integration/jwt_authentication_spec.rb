@@ -21,12 +21,58 @@ RSpec.describe 'JWT Authentication Integration' do
 
       expect(decoded[:user_id]).to eq(user.id)
       expect(decoded[:exp]).to be_present
+      expect(decoded[:jti]).to be_present
+    end
+
+    it 'generates unique jti claims for different tokens' do
+      token1 = Auth::JwtService.encode(user_id: user.id)
+      token2 = Auth::JwtService.encode(user_id: user.id)
+
+      jti1 = Auth::JwtService.decode(token1)[:jti]
+      jti2 = Auth::JwtService.decode(token2)[:jti]
+
+      expect(jti1).not_to eq(jti2)
     end
 
     it 'raises error for invalid token' do
       expect do
         Auth::JwtService.decode('invalid.token.here')
       end.to raise_error(ExceptionHandler::InvalidToken)
+    end
+  end
+
+  describe 'JWT token revocation' do
+    let(:test_token) { Auth::JwtService.encode(user_id: user.id) }
+    let(:decoded_token) { Auth::JwtService.decode(test_token) }
+    let(:jti) { decoded_token[:jti] }
+
+    before do
+      Rails.cache.clear
+    end
+
+    it 'revokes an active token by jti' do
+      expect(Auth::JwtService.revoked?(jti)).to be false
+      Auth::JwtService.revoke(jti)
+      expect(Auth::JwtService.revoked?(jti)).to be true
+    end
+
+    it 'raises ExceptionHandler::InvalidToken when decoding a revoked token' do
+      Auth::JwtService.revoke(jti)
+      expect do
+        Auth::JwtService.decode(test_token)
+      end.to raise_error(ExceptionHandler::InvalidToken, /Token has been revoked/)
+    end
+
+    it 'rejects AuthorizeApiRequest when using a revoked token' do
+      Auth::JwtService.revoke(jti)
+      expect do
+        Auth::AuthorizeApiRequest.new({ 'Authorization' => "Bearer #{test_token}" }).call
+      end.to raise_error(ExceptionHandler::InvalidToken, /Token has been revoked/)
+    end
+
+    it 'safely ignores blank jti for revocation' do
+      expect(Auth::JwtService.revoked?(nil)).to be false
+      expect(Auth::JwtService.revoked?('')).to be false
     end
   end
 

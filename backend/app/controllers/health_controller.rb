@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class HealthController < ActionController::API
+class HealthController < ApiController
   def show
     render json: {
       status: 'ok',
