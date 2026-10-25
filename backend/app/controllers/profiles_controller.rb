@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
+# rubocop:disable-next Metrics/ClassLength
 class ProfilesController < ApiController
-  include VendorSerializable
-
   before_action :authenticate_user!, except: [:service_categories]
   before_action :set_profile, only: %i[show update destroy]
   before_action :ensure_vendor_role, only: %i[me update_me create update destroy]
@@ -79,17 +77,14 @@ class ProfilesController < ApiController
     head :no_content
   end
 
+  VERIFICATION_SUBMISSION_MESSAGE = 'Verification request submitted successfully. Our trust operations ' \
+                                    'team will review your business credentials within 24-48 hours.'
+
   def request_verification
     @profile = current_user.vendor
     return render json: { error: 'Vendor profile not found' }, status: :not_found unless @profile
 
-    missing = []
-    missing << 'Business registration or GSTIN number' if @profile.business_license.blank?
-    missing << 'Contact phone number' if @profile.phone.blank?
-    missing << 'Operational location' if @profile.location.blank?
-    missing << 'Detailed profile description (at least 50 characters)' unless @profile.profile_complete?
-    missing << 'At least one service in your catalog' unless @profile.services.exists?
-
+    missing = missing_verification_requirements(@profile)
     if missing.any?
       render json: {
         error: "Cannot submit verification request yet. Please complete: #{missing.join(', ')}.",
@@ -99,15 +94,7 @@ class ProfilesController < ApiController
       return
     end
 
-    if @profile.request_verification!
-      render json: {
-        message: 'Verification request submitted successfully. Our trust operations team will review your business credentials within 24-48 hours.',
-        status: @profile.verification_status,
-        verification_checks: @profile.verification_checks
-      }
-    else
-      render json: { error: 'Failed to submit verification request' }, status: :unprocessable_content
-    end
+    render_verification_submission
   end
 
   def service_categories
@@ -118,6 +105,28 @@ class ProfilesController < ApiController
   end
 
   private
+
+  def render_verification_submission
+    if @profile.request_verification!
+      render json: {
+        message: VERIFICATION_SUBMISSION_MESSAGE,
+        status: @profile.verification_status,
+        verification_checks: @profile.verification_checks
+      }
+    else
+      render json: { error: 'Failed to submit verification request' }, status: :unprocessable_content
+    end
+  end
+
+  def missing_verification_requirements(profile)
+    [
+      ('Business registration or GSTIN number' if profile.business_license.blank?),
+      ('Contact phone number' if profile.phone.blank?),
+      ('Operational location' if profile.location.blank?),
+      ('Detailed profile description (at least 50 characters)' unless profile.profile_complete?),
+      ('At least one service in your catalog' unless profile.services.exists?)
+    ].compact
+  end
 
   def set_profile
     @profile = if params[:id]
@@ -181,32 +190,6 @@ class ProfilesController < ApiController
   end
 
   def profile_response(profile)
-    profile_base_attributes(profile).merge(
-      service_categories: profile.service_categories_list || [],
-      categories: vendor_categories_json(profile),
-      primary_category: vendor_primary_category_json(profile),
-      metadata: profile.metadata || {},
-      created_at: profile.created_at,
-      updated_at: profile.updated_at
-    )
-  end
-
-  def profile_base_attributes(profile)
-    {
-      id: profile.id,
-      slug: profile.slug,
-      user_id: profile.user_id,
-      business_name: profile.business_name,
-      description: profile.description,
-      location: profile.location,
-      phone: profile.phone,
-      website: profile.website,
-      instagram_handle: profile.instagram_handle,
-      cancellation_policy: profile.cancellation_policy,
-      business_license: profile.business_license,
-      verification_status: profile.verification_status,
-      years_experience: profile.years_experience
-    }
+    VendorSerializer.render_as_hash(profile, view: :profile)
   end
 end
-# rubocop:enable Metrics/ClassLength

@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
+# rubocop:disable-next Metrics/ClassLength
 class VendorsController < ApiController
-  include VendorSerializable
-
   # Public endpoints don't require authentication
   before_action :set_vendor, only: %i[show services availability portfolio vendor_reviews]
 
@@ -20,13 +18,13 @@ class VendorsController < ApiController
     @vendors = apply_pagination(@vendors)
 
     render json: {
-      vendors: @vendors.map { |vendor| vendor_summary_json(vendor) },
+      vendors: VendorSerializer.render_as_hash(@vendors, view: :summary),
       pagination: pagination_metadata(total_count)
     }
   end
 
   def show
-    data = vendor_detail_json(@vendor)
+    data = VendorSerializer.render_as_hash(@vendor, view: :detail)
     render json: { vendor: data }
   end
 
@@ -39,7 +37,7 @@ class VendorsController < ApiController
     services = services_scope.includes(:categories, :service_images).order(created_at: :desc)
 
     render json: {
-      services: services.map { |service| service_json(service) }
+      services: ServiceSerializer.render_as_hash(services)
     }
   end
 
@@ -57,7 +55,7 @@ class VendorsController < ApiController
                                 .reject(&:passed?)
 
     render json: {
-      availability_slots: availability_slots.map { |slot| availability_slot_json(slot) },
+      availability_slots: AvailabilitySlotSerializer.render_as_hash(availability_slots),
       date_range: {
         start_date: start_date,
         end_date: end_date
@@ -71,7 +69,7 @@ class VendorsController < ApiController
     portfolio_items = portfolio_items.featured if params[:featured] == 'true'
 
     render json: {
-      portfolio_items: portfolio_items.map { |item| portfolio_item_json(item) },
+      portfolio_items: PortfolioItemSerializer.render_as_hash(portfolio_items),
       categories: @vendor.portfolio_categories
     }
   end
@@ -79,21 +77,7 @@ class VendorsController < ApiController
   def vendor_reviews
     reviews = Review.published.where(vendor_id: @vendor.id).recent.includes(:customer, :service)
     render json: {
-      reviews: reviews.map do |r|
-        {
-          id: r.id,
-          rating: r.rating,
-          comment: r.comment,
-          customer: {
-            name: r.customer&.full_name || 'Verified Client',
-            first_name: r.customer&.first_name || 'Client'
-          },
-          service_name: r.service&.name,
-          vendor_response: r.vendor_response,
-          vendor_responded_at: r.vendor_responded_at,
-          created_at: r.created_at
-        }
-      end,
+      reviews: ReviewSerializer.render_as_hash(reviews, view: :vendor_review),
       average_rating: @vendor.average_rating,
       total_reviews: @vendor.total_reviews
     }
@@ -143,4 +127,3 @@ class VendorsController < ApiController
     render json: { error: 'Vendor not found' }, status: :not_found
   end
 end
-# rubocop:enable Metrics/ClassLength

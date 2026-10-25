@@ -13,8 +13,24 @@ module Services
     MAX_PER_PAGE = 100
 
     # Sort constants
-    VALID_SORT_FIELDS = %w[name base_price created_at updated_at].freeze
+    VALID_SORT_FIELDS = %w[relevance name base_price created_at updated_at].freeze
     VALID_SORT_DIRECTIONS = %w[asc desc].freeze
+
+    # Facet definitions
+    PRICE_RANGES = [
+      { id: 'under_1000', label: 'Under ₹1,000', min: nil, max: 1000 },
+      { id: '1000_to_5000', label: '₹1,000 - ₹5,000', min: 1000, max: 5000 },
+      { id: '5000_to_15000', label: '₹5,000 - ₹15,000', min: 5000, max: 15_000 },
+      { id: '15000_to_50000', label: '₹15,000 - ₹50,000', min: 15_000, max: 50_000 },
+      { id: 'above_50000', label: '₹50,000+', min: 50_000, max: nil }
+    ].freeze
+
+    RATING_RANGES = [
+      { id: '4_5_plus', label: '4.5 & above', min_rating: 4.5 },
+      { id: '4_0_plus', label: '4.0 & above', min_rating: 4.0 },
+      { id: '3_5_plus', label: '3.5 & above', min_rating: 3.5 },
+      { id: '3_0_plus', label: '3.0 & above', min_rating: 3.0 }
+    ].freeze
 
     # Search attributes
     attribute :query, :string
@@ -60,65 +76,26 @@ module Services
              .distinct
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def filtered_services
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       scope = base_scope
-
-      # Text search (searches service name, description, vendor business name, and category names)
-      if query.present?
-        clean_q = query.to_s.strip
-        stem = clean_q.sub(/(ers|er|or|ors|ies|s)$/i, '')
-        terms = [clean_q]
-        terms << stem if stem.length >= 3 && stem != clean_q
-        terms << 'photograph' if clean_q.downcase.start_with?('photo')
-        terms << 'cater' if clean_q.downcase.start_with?('cater')
-        terms << 'decor' if clean_q.downcase.start_with?('decor')
-        terms = terms.uniq
-
-        search_clause = '(services.name ILIKE ? OR services.description ILIKE ? OR ' \
-                        'vendors.business_name ILIKE ? OR categories.name ILIKE ?)'
-        conditions = Array.new(terms.size, search_clause).join(' OR ')
-        query_params = terms.flat_map { |t| ["%#{t}%", "%#{t}%", "%#{t}%", "%#{t}%"] }
-
-        scope = scope.left_joins(:categories).where(conditions, *query_params)
-      end
-
-      # Category filter
-      if category_id.present?
-        scope = scope.joins(:service_categories).where(service_categories: { category_id: category_id })
-      end
-
-      # Location filter
-      scope = scope.where('vendors.location ILIKE ?', "%#{location}%") if location.present?
-
-      # Price range filter
-      scope = scope.where(services: { base_price: min_price.. }) if min_price.present?
-      scope = scope.where(services: { base_price: ..max_price }) if max_price.present?
-
-      # Pricing type filter
-      if pricing_type.present? && Service.pricing_types.key?(pricing_type)
-        scope = scope.where(pricing_type: pricing_type)
-      end
-
-      # Vendor filter
-      scope = scope.where(services: { vendor_id: vendor_id }) if vendor_id.present?
-
-      scope
+      scope = apply_text_search(scope)
+      scope = apply_category_filter(scope)
+      scope = apply_location_filter(scope)
+      scope = apply_price_filter(scope)
+      scope = apply_pricing_type_filter(scope)
+      apply_vendor_filter(scope)
     end
 
     def sorted_services
       return filtered_services unless VALID_SORT_FIELDS.include?(sort_by)
 
       case sort_by
+      when 'relevance'
+        sort_by_relevance
       when 'name'
         filtered_services.order("services.name #{sort_direction}")
       when 'base_price'
-        # Use subquery to avoid DISTINCT + complex ORDER BY conflict in PostgreSQL
-        Service.where(id: filtered_services.select(:id)).order(
-          Arel.sql("CASE WHEN services.pricing_type = 'custom' THEN 1 ELSE 0 END"),
-          "services.base_price #{sort_direction}"
-        )
+        sort_by_base_price
       when 'updated_at'
         filtered_services.order("services.updated_at #{sort_direction}")
       else
@@ -128,8 +105,11 @@ module Services
 
     def paginated_services
       sorted_services
-        .includes(:categories, service_images: { image_attachment: :blob },
-                               vendor: { portfolio_items: { images_attachments: :blob } })
+        .includes(
+          :categories,
+          service_images: { image_attachment: :blob },
+          vendor: { portfolio_items: { images_attachments: :blob } }
+        )
         .limit(per_page)
         .offset((page - 1) * per_page)
     end
@@ -149,18 +129,16 @@ module Services
       }
     end
 
-    # rubocop:disable Metrics/CyclomaticComplexity
     def applied_filters
-      # rubocop:enable Metrics/CyclomaticComplexity
-      filters = {}
-      filters[:query] = query if query.present?
-      filters[:category_id] = category_id if category_id.present?
-      filters[:location] = location if location.present?
-      filters[:min_price] = min_price if min_price.present?
-      filters[:max_price] = max_price if max_price.present?
-      filters[:pricing_type] = pricing_type if pricing_type.present?
-      filters[:vendor_id] = vendor_id if vendor_id.present?
-      filters
+      {
+        query: query,
+        category_id: category_id,
+        location: location,
+        min_price: min_price,
+        max_price: max_price,
+        pricing_type: pricing_type,
+        vendor_id: vendor_id
+      }.compact_blank
     end
 
     def total_pages
@@ -188,6 +166,84 @@ module Services
       self.sort_by = 'created_at' unless VALID_SORT_FIELDS.include?(sort_by)
     end
 
+    def apply_text_search(scope)
+      return scope if query.blank?
+
+      tsquery = build_tsquery(query)
+      return scope if tsquery.blank?
+
+      scope.left_joins(:categories).where(full_text_search_clause, tsquery: tsquery)
+    end
+
+    def build_tsquery(input)
+      words = input.to_s.scan(/\w+/)
+      return nil if words.empty?
+
+      words.map { |w| "#{w}:*" }.join(' & ')
+    end
+
+    def vector_sql
+      Service.column_names.include?('search_vector') ? 'services.search_vector' : fallback_vector_sql
+    end
+
+    def fallback_vector_sql
+      "to_tsvector('english', coalesce(services.name, '') || ' ' || coalesce(services.description, ''))"
+    end
+
+    def full_text_search_clause
+      "(#{vector_sql} @@ to_tsquery('english', :tsquery) OR " \
+        "to_tsvector('english', coalesce(vendors.business_name, '')) @@ to_tsquery('english', :tsquery) OR " \
+        "to_tsvector('english', coalesce(categories.name, '')) @@ to_tsquery('english', :tsquery))"
+    end
+
+    def sort_by_relevance
+      tsquery = build_tsquery(query)
+      if tsquery.present?
+        sanitized_ts = Service.sanitize_sql_array(['?', tsquery])
+        rank_sql = "ts_rank(#{vector_sql}, to_tsquery('english', #{sanitized_ts}))"
+        filtered_services.order(Arel.sql("#{rank_sql} DESC"), 'services.created_at DESC')
+      else
+        filtered_services.order("services.created_at #{sort_direction}")
+      end
+    end
+
+    def sort_by_base_price
+      Service.where(id: filtered_services.select(:id)).order(
+        Arel.sql("CASE WHEN services.pricing_type = 'custom' THEN 1 ELSE 0 END"),
+        "services.base_price #{sort_direction}"
+      )
+    end
+
+    def apply_category_filter(scope)
+      return scope if category_id.blank?
+
+      scope.joins(:service_categories).where(service_categories: { category_id: category_id })
+    end
+
+    def apply_location_filter(scope)
+      return scope if location.blank?
+
+      scope.where('vendors.location ILIKE ?', "%#{location}%")
+    end
+
+    def apply_price_filter(scope)
+      scope = scope.where(services: { base_price: min_price.. }) if min_price.present?
+      scope = scope.where(services: { base_price: ..max_price }) if max_price.present?
+      scope
+    end
+
+    def apply_pricing_type_filter(scope)
+      return scope unless pricing_type.present? && Service.pricing_types.key?(pricing_type)
+
+      scope.where(pricing_type: pricing_type)
+    end
+
+    def apply_vendor_filter(scope)
+      return scope if vendor_id.blank?
+
+      scope.where(services: { vendor_id: vendor_id })
+    end
+
     def category_facets
       counts = filtered_services.except(:limit, :offset, :order)
                                 .joins(:service_categories)
@@ -203,7 +259,18 @@ module Services
     end
 
     def price_range_facets
-      []
+      base = filtered_services.except(:limit, :offset, :order)
+      PRICE_RANGES.filter_map do |range|
+        scope = base
+        scope = scope.where(services: { base_price: ..range[:max] }) if range[:min].nil?
+        scope = scope.where(services: { base_price: range[:min].. }) if range[:max].nil?
+        scope = scope.where(services: { base_price: range[:min]..range[:max] }) if range[:min] && range[:max]
+
+        count = scope.count
+        next if count.zero?
+
+        { id: range[:id], label: range[:label], min_price: range[:min], max_price: range[:max], count: count }
+      end
     end
 
     def location_facets
@@ -221,7 +288,13 @@ module Services
     end
 
     def vendor_rating_facets
-      []
+      base = filtered_services.except(:limit, :offset, :order)
+      RATING_RANGES.filter_map do |range|
+        count = base.where(vendors: { average_rating: (range[:min_rating]).. }).count
+        next if count.zero?
+
+        { id: range[:id], label: range[:label], min_rating: range[:min_rating], count: count }
+      end
     end
   end
 end

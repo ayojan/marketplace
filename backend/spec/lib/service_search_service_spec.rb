@@ -252,6 +252,20 @@ RSpec.describe ServiceSearchService, type: :service do
       end
     end
 
+    context 'with facets requested' do
+      it 'returns populated category, price_range, location, and rating facets' do
+        result = described_class.new(include_facets: true).call
+
+        expect(result).to have_key(:facets)
+        facets = result[:facets]
+        expect(facets[:categories]).to be_an(Array)
+        expect(facets[:locations]).to be_an(Array)
+        expect(facets[:pricing_types]).to be_an(Array)
+        expect(facets[:price_ranges]).to be_an(Array)
+        expect(facets[:vendor_ratings]).to be_an(Array)
+      end
+    end
+
     context 'when no services match filters' do
       it 'returns empty results' do
         result = described_class.new(query: 'NonExistentService').call

@@ -15,6 +15,9 @@ class BookingsController < ApiController
     'counter_offer' => 'Counter offer sent'
   }.freeze
 
+  apply_rate_limit to: 15, within: 1.minute, only: :create, by: :user_or_ip,
+                   message: 'Too many booking requests. Please try again later.'
+
   before_action :authenticate_user!
   before_action :ensure_vendor!, only: %i[respond]
   before_action :set_booking, only: %i[show update destroy respond messages send_message]

@@ -73,6 +73,9 @@ Rails.application.configure do
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true
 
+  # Log strict loading violations to detect N+1 queries during development
+  config.active_record.action_on_strict_loading_violation = :log
+
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 

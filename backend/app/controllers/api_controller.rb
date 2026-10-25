@@ -2,6 +2,9 @@
 
 class ApiController < ActionController::API
   include ExceptionHandler
+  include RateLimitable
+
+  apply_rate_limit to: 60, within: 1.minute
 
   # Require valid JWT token, halt request with 401 if missing or invalid
   def authenticate_user!

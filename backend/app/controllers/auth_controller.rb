@@ -3,11 +3,12 @@
 class AuthController < ApiController
   before_action :validate_auth_params, only: %i[login register]
 
-  rate_limit to: 30, within: 1.minute, only: :google,
-             unless: -> { Rails.env.test? },
-             with: lambda {
-               render json: { error: 'Too many requests. Please try again later.' }, status: :too_many_requests
-             }
+  apply_rate_limit to: 10, within: 1.minute, only: :login,
+                   message: 'Too many login attempts. Please try again later.'
+  apply_rate_limit to: 10, within: 1.minute, only: :register,
+                   message: 'Too many registration attempts. Please try again later.'
+  apply_rate_limit to: 30, within: 1.minute, only: :google,
+                   message: 'Too many requests. Please try again later.'
 
   def login
     result = Auth::LoginService.call(

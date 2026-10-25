@@ -67,4 +67,7 @@ Rails.application.configure do
   
   # Use inline job processing in tests
   config.active_job.queue_adapter = :inline
+
+  # Log strict loading violations to detect N+1 queries during test runs
+  config.active_record.action_on_strict_loading_violation = :log
 end
