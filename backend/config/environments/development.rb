@@ -27,7 +27,7 @@ Rails.application.configure do
   else
     config.action_controller.perform_caching = false
 
-    config.cache_store = :null_store
+    config.cache_store = :memory_store
   end
 
   # Store uploaded files on the local file system (or Cloudflare R2 if ACTIVE_STORAGE_SERVICE=cloudflare)
