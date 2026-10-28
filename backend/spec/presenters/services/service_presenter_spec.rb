@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe Services::ServicePresenter do
   subject(:presenter) { described_class.new(service, include_details: include_details) }
 
-  let(:service) { create(:service) }
+  let(:service) { build_stubbed(:service) }
   let(:include_details) { false }
 
   describe '#as_json' do
@@ -25,6 +25,7 @@ RSpec.describe Services::ServicePresenter do
 
     context 'with details' do
       let(:include_details) { true }
+      let(:service) { create(:service) }
 
       it 'appends extended details' do
         json = presenter.as_json

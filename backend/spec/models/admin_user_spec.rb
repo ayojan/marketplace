@@ -21,5 +21,26 @@
 require 'rails_helper'
 
 RSpec.describe AdminUser do
-  pending "add some examples to (or delete) #{__FILE__}"
+  describe 'validations' do
+    subject(:admin_user) { build(:admin_user) }
+
+    it { is_expected.to validate_presence_of(:email) }
+    it { is_expected.to validate_uniqueness_of(:email).case_insensitive }
+
+    it 'requires passwords to be at least six characters long' do
+      admin_user.password = 'short'
+      admin_user.password_confirmation = 'short'
+
+      expect(admin_user).not_to be_valid
+      expect(admin_user.errors[:password]).to be_present
+    end
+  end
+
+  describe '.ransackable_attributes' do
+    it 'allows searching only the intended admin user attributes' do
+      expect(described_class.ransackable_attributes).to contain_exactly(
+        'id', 'email', 'created_at', 'updated_at'
+      )
+    end
+  end
 end

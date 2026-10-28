@@ -5,16 +5,16 @@ require 'rails_helper'
 RSpec.describe ReviewPolicy do
   subject { described_class.new(user, review) }
 
-  let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor) { vendor_user.vendor }
-  let(:customer) { create(:user, :customer) }
-  let(:other_user) { create(:user, :customer) }
-  let(:service) { create(:service, vendor: vendor) }
+  let(:vendor_user) { build_stubbed(:user, :vendor) }
+  let(:vendor) { build_stubbed(:vendor, user: vendor_user) }
+  let(:customer) { build_stubbed(:user, :customer) }
+  let(:other_user) { build_stubbed(:user, :customer) }
+  let(:service) { build_stubbed(:service, vendor: vendor) }
   let(:booking) do
-    create(:booking, vendor: vendor, customer: customer, service: service, status: :completed)
+    build_stubbed(:booking, vendor: vendor, customer: customer, service: service, status: :completed)
   end
   let(:review) do
-    create(:review, booking: booking, vendor: vendor, customer: customer, service: service)
+    build_stubbed(:review, booking: booking, vendor: vendor, customer: customer, service: service)
   end
 
   describe '#respond?' do
@@ -25,7 +25,7 @@ RSpec.describe ReviewPolicy do
     end
 
     context 'when vendor does not own the service' do
-      let(:other_vendor) { create(:user, :vendor) }
+      let(:other_vendor) { build_stubbed(:user, :vendor) }
       let(:user) { other_vendor }
 
       it { is_expected.not_to permit(:respond) }

@@ -3,10 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe Auth::AuthorizationService do
-  let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor) { vendor_user.vendor }
-  let(:customer) { create(:user, :customer) }
-  let(:other_user) { create(:user, :customer) }
+  let(:vendor_user) { build_stubbed(:user, :vendor) }
+  let(:vendor) { build_stubbed(:vendor, user: vendor_user) }
+  let(:customer) { build_stubbed(:user, :customer) }
+  let(:other_user) { build_stubbed(:user, :customer) }
 
   describe '.authorize!' do
     context 'when authorization succeeds' do

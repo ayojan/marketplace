@@ -5,18 +5,18 @@ require 'rails_helper'
 RSpec.describe BookingPolicy do
   subject { described_class.new(user, booking) }
 
-  let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor) { vendor_user.vendor }
-  let(:customer) { create(:user, :customer) }
-  let(:other_customer) { create(:user, :customer) }
-  let(:service) { create(:service, vendor: vendor) }
+  let(:vendor_user) { build_stubbed(:user, :vendor) }
+  let(:vendor) { build_stubbed(:vendor, user: vendor_user) }
+  let(:customer) { build_stubbed(:user, :customer) }
+  let(:other_customer) { build_stubbed(:user, :customer) }
+  let(:service) { build_stubbed(:service, vendor: vendor) }
   let(:booking) do
-    create(:booking,
-           vendor: vendor,
-           customer: customer,
-           service: service,
-           status: :pending,
-           event_date: 48.hours.from_now)
+    build_stubbed(:booking,
+                  vendor: vendor,
+                  customer: customer,
+                  service: service,
+                  status: :pending,
+                  event_date: 48.hours.from_now)
   end
 
   describe '#show?' do
@@ -53,7 +53,7 @@ RSpec.describe BookingPolicy do
     end
 
     context 'when user is another vendor' do
-      let(:other_vendor) { create(:user, :vendor) }
+      let(:other_vendor) { build_stubbed(:user, :vendor) }
       let(:user) { other_vendor }
 
       it { is_expected.not_to permit(:vendor_view) }
@@ -70,12 +70,12 @@ RSpec.describe BookingPolicy do
     context 'when event is within 24 hours' do
       let(:user) { customer }
       let(:booking) do
-        create(:booking,
-               vendor: vendor,
-               customer: customer,
-               service: service,
-               status: :pending,
-               event_date: 12.hours.from_now)
+        build_stubbed(:booking,
+                      vendor: vendor,
+                      customer: customer,
+                      service: service,
+                      status: :pending,
+                      event_date: 12.hours.from_now)
       end
 
       it { is_expected.not_to permit(:update) }
@@ -98,12 +98,12 @@ RSpec.describe BookingPolicy do
     context 'when event is within 24 hours' do
       let(:user) { customer }
       let(:booking) do
-        create(:booking,
-               vendor: vendor,
-               customer: customer,
-               service: service,
-               status: :pending,
-               event_date: 12.hours.from_now)
+        build_stubbed(:booking,
+                      vendor: vendor,
+                      customer: customer,
+                      service: service,
+                      status: :pending,
+                      event_date: 12.hours.from_now)
       end
 
       it { is_expected.not_to permit(:cancel) }
@@ -126,7 +126,7 @@ RSpec.describe BookingPolicy do
     context 'when booking is not pending' do
       let(:user) { vendor_user }
       let(:booking) do
-        create(:booking, vendor: vendor, customer: customer, service: service, status: :completed)
+        build_stubbed(:booking, vendor: vendor, customer: customer, service: service, status: :completed)
       end
 
       it { is_expected.not_to permit(:accept) }

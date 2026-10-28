@@ -38,7 +38,7 @@
 require 'rails_helper'
 
 RSpec.describe User do
-  let(:user) { create(:user) }
+  let(:user) { build_stubbed(:user) }
 
   describe 'validations' do
     it { is_expected.to validate_presence_of(:email) }
@@ -76,7 +76,7 @@ RSpec.describe User do
   end
 
   describe 'associations' do
-    subject(:user_model) { create(:user) }
+    subject(:user_model) { build_stubbed(:user) }
 
     it { is_expected.to have_one(:vendor).dependent(:destroy) }
 
@@ -197,7 +197,7 @@ RSpec.describe User do
 
     describe '#confirmed?' do
       it 'returns true if confirmed_at is present' do
-        expect(create(:user, confirmed_at: Time.current).confirmed?).to be true
+        expect(build_stubbed(:user, confirmed_at: Time.current).confirmed?).to be true
       end
 
       it 'returns false if confirmed_at is nil' do
@@ -280,7 +280,7 @@ RSpec.describe User do
     end
 
     it 'returns nil for #customer when role is vendor' do
-      vendor_user = create(:user, :vendor)
+      vendor_user = build_stubbed(:user, :vendor)
       expect(vendor_user.customer).to be_nil
     end
 

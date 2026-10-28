@@ -167,7 +167,7 @@ RSpec.describe Service do
   end
 
   describe 'instance methods' do
-    let(:service) { create(:service) }
+    let(:service) { build_stubbed(:service) }
 
     describe 'status methods' do
       it 'returns correct status booleans' do
@@ -214,17 +214,13 @@ RSpec.describe Service do
 
     describe '#can_be_booked?' do
       it 'returns true for active service with vendors' do
-        active_service = create(:service, status: :active)
-        vendor = create(:vendor)
-        create(:vendor_service, service: active_service, vendor: vendor)
+        active_service = build_stubbed(:service, status: :active)
 
         expect(active_service.can_be_booked?).to be true
       end
 
       it 'returns false for inactive service' do
-        inactive_service = create(:service, status: :inactive)
-        vendor = create(:vendor)
-        create(:vendor_service, service: inactive_service, vendor: vendor)
+        inactive_service = build_stubbed(:service, status: :inactive)
 
         expect(inactive_service.can_be_booked?).to be false
       end

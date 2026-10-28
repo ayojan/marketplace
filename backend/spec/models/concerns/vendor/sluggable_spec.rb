@@ -7,7 +7,10 @@ RSpec.describe Vendor::Sluggable do
   subject(:vendor) { build(:vendor, slug: nil) }
 
   describe 'included validations' do
-    it { is_expected.to validate_uniqueness_of(:slug).case_insensitive }
+    it do
+      expect(build(:vendor, slug: 'valid-vendor-slug'))
+        .to validate_uniqueness_of(:slug).case_insensitive
+    end
 
     it 'declares presence validator on slug' do
       expect(Vendor.validators_on(:slug).map(&:class))
