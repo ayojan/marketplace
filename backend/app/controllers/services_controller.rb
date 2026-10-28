@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
+# rubocop:disable-next Metrics/ClassLength
 class ServicesController < ApiController
   before_action :authenticate_user!, except: %i[index show search]
   before_action :set_service, only: %i[update destroy]
@@ -26,7 +26,7 @@ class ServicesController < ApiController
       :bookings,
       service_images: { image_attachment: :blob },
       vendor: { portfolio_items: { images_attachments: :blob } }
-    ).find(params[:id])
+    ).find(params.expect(:id))
 
     render json: present_service(@service, include_details: true)
   end
@@ -100,7 +100,7 @@ class ServicesController < ApiController
   end
 
   def set_service
-    @service = Service.find(params[:id])
+    @service = Service.find(params.expect(:id))
   end
 
   def ensure_service_owner
@@ -174,4 +174,3 @@ class ServicesController < ApiController
     }
   end
 end
-# rubocop:enable Metrics/ClassLength
