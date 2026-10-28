@@ -1,29 +1,56 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Star, ArrowRight, Search } from 'lucide-react';
 import { InView } from '@/components/motion';
 import { VendorCard } from '@/components/marketplace/card';
+import { useLocation } from '@/lib/contexts/LocationContext';
 import { VENDOR_FILTER_TABS } from './presets';
 
 interface HomeFeaturedVendorsProps {
-  selectedCity: string;
-  vendors: any[];
-  loading: boolean;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  getTabCount: (tabId: string) => number;
+  selectedCity?: string;
+  vendors?: any[];
+  initialVendors?: any[];
+  loading?: boolean;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
+  getTabCount?: (tabId: string) => number;
 }
 
 export function HomeFeaturedVendors({
-  selectedCity,
-  vendors,
-  loading,
-  activeTab,
-  setActiveTab,
-  getTabCount,
-}: HomeFeaturedVendorsProps) {
+  selectedCity: propCity,
+  vendors: propVendors,
+  initialVendors = [],
+  loading: propLoading = false,
+  activeTab: propTab,
+  setActiveTab: propSetTab,
+  getTabCount: propGetTabCount,
+}: HomeFeaturedVendorsProps = {}) {
+  const { selectedCity: ctxCity } = useLocation();
+  const selectedCity = propCity ?? ctxCity ?? 'All Cities';
+  const [internalTab, setInternalTab] = useState('all');
+  const activeTab = propTab ?? internalTab;
+  const setActiveTab = propSetTab ?? setInternalTab;
+
+  const vendors = propVendors ?? initialVendors;
+  const loading = propLoading;
+
+  const getTabCount = (tabId: string) => {
+    if (propGetTabCount) return propGetTabCount(tabId);
+    const list = Array.isArray(vendors) ? vendors : [];
+    if (tabId === 'all') return list.length;
+    return list.filter((v: any) => {
+      const cat = (v.category || v.service_category || '').toLowerCase();
+      const name = (v.name || v.business_name || '').toLowerCase();
+      if (tabId === 'photographer') return cat.includes('photo') || name.includes('narrative') || name.includes('photo') || name.includes('shutter');
+      if (tabId === 'makeup-artist') return cat.includes('makeup') || name.includes('makeover') || name.includes('glam') || name.includes('glow');
+      if (tabId === 'decorator') return cat.includes('decor') || name.includes('eventica') || name.includes('floral');
+      if (tabId === 'dj') return cat.includes('dj') || cat.includes('music') || name.includes('beat') || name.includes('aryan');
+      if (tabId === 'venue') return cat.includes('venue') || name.includes('palm') || name.includes('haveli') || name.includes('heritage');
+      return true;
+    }).length;
+  };
   const list = Array.isArray(vendors) ? vendors : [];
   const filtered = list.filter((v: any) => {
     if (activeTab === 'all') return true;

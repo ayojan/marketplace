@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-// @ts-ignore
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
@@ -24,7 +23,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         router.push(fromPath ? `/login?from=${encodeURIComponent(fromPath)}` : '/login');
       } else if (requiredRole) {
         const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-        if (!allowedRoles.includes(user?.role)) {
+        if (!user?.role || !allowedRoles.includes(user.role)) {
           router.push('/unauthorized');
         } else {
           setIsAuthorized(true);

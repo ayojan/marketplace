@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { InView, Magnetic } from '@/components/motion';
 import { CATEGORY_ICONS } from './presets';
 
 interface HomeCategoryGridProps {
-  onSelectCategory: (slug: string) => void;
+  onSelectCategory?: (slug: string) => void;
 }
 
 export function HomeCategoryGrid({ onSelectCategory }: HomeCategoryGridProps) {
@@ -15,10 +16,18 @@ export function HomeCategoryGrid({ onSelectCategory }: HomeCategoryGridProps) {
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 text-center">
           {CATEGORY_ICONS.map((cat) => {
             const Icon = cat.icon;
+            const slug = cat.slug || cat.name;
+            const href = `/marketplace?category=${encodeURIComponent(slug)}`;
             return (
-              <button
+              <Link
                 key={cat.name}
-                onClick={() => onSelectCategory(cat.slug || cat.name)}
+                href={href}
+                onClick={(e) => {
+                  if (onSelectCategory) {
+                    e.preventDefault();
+                    onSelectCategory(slug);
+                  }
+                }}
                 className="flex flex-col items-center gap-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9E5338] rounded-2xl p-1 active:scale-95 transition-transform"
                 aria-label={`Browse ${cat.name}`}
               >
@@ -30,7 +39,7 @@ export function HomeCategoryGrid({ onSelectCategory }: HomeCategoryGridProps) {
                 <span className="text-xs font-medium text-[#221F1C] group-hover:text-[#9E5338] transition-colors leading-tight max-w-[85px]">
                   {cat.name}
                 </span>
-              </button>
+              </Link>
             );
           })}
         </div>

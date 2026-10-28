@@ -1,11 +1,29 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from 'react';
 import { apiService } from '../api';
 import { tokenService } from '../tokenService';
+import type { User } from '@/types/user';
+
+// State interface
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
 
 // Initial state
-const initialState = {
+const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
@@ -14,7 +32,7 @@ const initialState = {
 };
 
 // Action types
-const AUTH_ACTIONS = {
+export const AUTH_ACTIONS = {
   LOGIN_START: 'LOGIN_START',
   LOGIN_SUCCESS: 'LOGIN_SUCCESS',
   LOGIN_FAILURE: 'LOGIN_FAILURE',
@@ -26,10 +44,23 @@ const AUTH_ACTIONS = {
   LOAD_USER_SUCCESS: 'LOAD_USER_SUCCESS',
   LOAD_USER_FAILURE: 'LOAD_USER_FAILURE',
   CLEAR_ERROR: 'CLEAR_ERROR',
-};
+} as const;
+
+type AuthAction =
+  | { type: typeof AUTH_ACTIONS.LOGIN_START }
+  | { type: typeof AUTH_ACTIONS.REGISTER_START }
+  | { type: typeof AUTH_ACTIONS.LOAD_USER_START }
+  | { type: typeof AUTH_ACTIONS.LOGIN_SUCCESS; payload: { user: User; token: string | null } }
+  | { type: typeof AUTH_ACTIONS.REGISTER_SUCCESS; payload: { user: User | null; token: string | null } }
+  | { type: typeof AUTH_ACTIONS.LOAD_USER_SUCCESS; payload: User }
+  | { type: typeof AUTH_ACTIONS.LOGIN_FAILURE; payload: string }
+  | { type: typeof AUTH_ACTIONS.REGISTER_FAILURE; payload: string }
+  | { type: typeof AUTH_ACTIONS.LOAD_USER_FAILURE; payload: string | null }
+  | { type: typeof AUTH_ACTIONS.LOGOUT }
+  | { type: typeof AUTH_ACTIONS.CLEAR_ERROR };
 
 // Reducer
-const authReducer = (state, action) => {
+const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
     case AUTH_ACTIONS.LOGIN_START:
     case AUTH_ACTIONS.REGISTER_START:
@@ -93,11 +124,30 @@ const authReducer = (state, action) => {
   }
 };
 
+export interface AuthContextType extends AuthState {
+  login: (credentials: any) => Promise<{ success: boolean; user?: User; error?: string }>;
+  register: (userData: any) => Promise<{ success: boolean; message?: string; user?: User | null; error?: string }>;
+  loginWithGoogle: (googleData: any) => Promise<{
+    success: boolean;
+    message?: string;
+    user?: User;
+    needs_mobile_onboarding?: boolean;
+    error?: string;
+    status?: number;
+    code?: string;
+    email?: string;
+    details?: any;
+  }>;
+  logout: () => Promise<void>;
+  clearError: () => void;
+  updateUser: (updatedUserData: Partial<User>) => void;
+}
+
 // Create context
-const AuthContext = createContext();
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Auth provider component
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   // Load user on app start
@@ -121,11 +171,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login action
-  const login = useCallback(async (credentials) => {
+  const login = useCallback(async (credentials: any) => {
     dispatch({ type: AUTH_ACTIONS.LOGIN_START });
     try {
       // Wrap credentials in auth key if not already wrapped
-      const payload = credentials.auth ? credentials : { auth: credentials };
+      const payload = credentials?.auth ? credentials : { auth: credentials };
       const response = await apiService.auth.login(payload);
       const { user, token, refresh_token } = response.data;
 
@@ -141,13 +191,16 @@ export const AuthProvider = ({ children }) => {
       });
 
       return { success: true, user };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error details:', {
         status: error.response?.status,
         data: error.response?.data,
-        message: error.message
+        message: error.message,
       });
-      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Login failed';
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Login failed';
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: errorMessage,
@@ -157,11 +210,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Register action
-  const register = useCallback(async (userData) => {
+  const register = useCallback(async (userData: any) => {
     dispatch({ type: AUTH_ACTIONS.REGISTER_START });
     try {
       // Wrap userData in auth key if not already wrapped
-      const payload = userData.auth ? userData : { auth: userData };
+      const payload = userData?.auth ? userData : { auth: userData };
       const response = await apiService.auth.register(payload);
       const { user, token, refresh_token, message } = response.data;
 
@@ -186,12 +239,15 @@ export const AuthProvider = ({ children }) => {
       }
 
       return { success: true, message: message || 'Registration successful', user };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration API Error:', error.response?.data);
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message || 
-                          (Array.isArray(error.response?.data?.details) ? error.response?.data?.details.join(', ') : null) || 
-                          'Registration failed';
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        (Array.isArray(error.response?.data?.details)
+          ? error.response?.data?.details.join(', ')
+          : null) ||
+        'Registration failed';
       dispatch({
         type: AUTH_ACTIONS.REGISTER_FAILURE,
         payload: errorMessage,
@@ -201,12 +257,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Google sign-in action
-  const loginWithGoogle = useCallback(async (googleData) => {
+  const loginWithGoogle = useCallback(async (googleData: any) => {
     dispatch({ type: AUTH_ACTIONS.LOGIN_START });
     try {
-      const payload = googleData.auth ? googleData : { auth: googleData };
+      const payload = googleData?.auth ? googleData : { auth: googleData };
       const response = await apiService.auth.google(payload);
-      const { user, token, refresh_token, message, needs_mobile_onboarding } = response.data;
+      const { user, token, refresh_token, message, needs_mobile_onboarding } =
+        response.data;
 
       if (token) {
         tokenService.setToken(token);
@@ -225,9 +282,9 @@ export const AuthProvider = ({ children }) => {
         success: true,
         message: message || 'Google sign-in successful',
         user,
-        needs_mobile_onboarding: Boolean(needs_mobile_onboarding)
+        needs_mobile_onboarding: Boolean(needs_mobile_onboarding),
       };
-    } catch (error) {
+    } catch (error: any) {
       const data = error.response?.data;
       const errorMessage = data?.error || data?.message || 'Google sign-in failed';
       dispatch({
@@ -240,7 +297,7 @@ export const AuthProvider = ({ children }) => {
         status: error.response?.status,
         code: data?.code,
         email: data?.email,
-        details: data?.details
+        details: data?.details,
       };
     }
   }, []);
@@ -261,9 +318,9 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
   }, []);
 
-  const updateUser = useCallback((updatedUserData) => {
-    const currentUser = tokenService.getUser() || state.user || {};
-    const newUser = { ...currentUser, ...updatedUserData };
+  const updateUser = useCallback((updatedUserData: Partial<User>) => {
+    const currentUser = (tokenService.getUser() || state.user || {}) as User;
+    const newUser: User = { ...currentUser, ...updatedUserData };
     tokenService.setUser(newUser);
     dispatch({
       type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
@@ -271,25 +328,24 @@ export const AuthProvider = ({ children }) => {
     });
   }, [state.user]);
 
-  const value = useMemo(() => ({
-    ...state,
-    login,
-    register,
-    loginWithGoogle,
-    logout,
-    clearError,
-    updateUser,
-  }), [state, login, register, loginWithGoogle, logout, clearError, updateUser]);
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      ...state,
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      clearError,
+      updateUser,
+    }),
+    [state, login, register, loginWithGoogle, logout, clearError, updateUser]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 // Custom hook to use auth context
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

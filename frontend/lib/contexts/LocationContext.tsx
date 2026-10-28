@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
 export interface SupportedCity {
@@ -297,21 +297,34 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     [setSelectedCity]
   );
 
+  const value = useMemo(
+    () => ({
+      selectedCity,
+      setSelectedCity,
+      isPromptOpen,
+      openLocationPrompt,
+      closeLocationPrompt,
+      detectLocation,
+      isDetecting,
+      detectionError,
+      clearDetectionError,
+      supportedCities: SUPPORTED_CITIES,
+    }),
+    [
+      selectedCity,
+      setSelectedCity,
+      isPromptOpen,
+      openLocationPrompt,
+      closeLocationPrompt,
+      detectLocation,
+      isDetecting,
+      detectionError,
+      clearDetectionError,
+    ]
+  );
+
   return (
-    <LocationContext.Provider
-      value={{
-        selectedCity,
-        setSelectedCity,
-        isPromptOpen,
-        openLocationPrompt,
-        closeLocationPrompt,
-        detectLocation,
-        isDetecting,
-        detectionError,
-        clearDetectionError,
-        supportedCities: SUPPORTED_CITIES,
-      }}
-    >
+    <LocationContext.Provider value={value}>
       {children}
     </LocationContext.Provider>
   );
