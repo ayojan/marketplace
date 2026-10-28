@@ -135,8 +135,8 @@ ActiveAdmin.register Vendor do
 
     panel 'Verified Partner Standards & Checks Breakdown' do
       table_for vendor.verification_checks.values do
-        column 'Check Name', &:title
-        column 'Description', &:description
+        column('Check Name') { |c| c[:title] }
+        column('Description') { |c| c[:description] }
         column 'Status' do |c|
           status_tag(c[:completed] ? 'Completed' : 'Pending', class: c[:completed] ? :ok : :warn)
         end

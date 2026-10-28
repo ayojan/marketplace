@@ -2,6 +2,8 @@
 
 require 'rails_helper'
 
+Vendor.define_attribute_methods
+
 RSpec.describe VendorVerificationPresenter do
   subject(:presenter) { described_class.new(vendor) }
 

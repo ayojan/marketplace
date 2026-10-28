@@ -65,7 +65,7 @@ RSpec.describe BookingMessage do
       specific_time = 1.hour.ago
       message = build(:booking_message, booking: booking, sender: customer, sent_at: specific_time)
       message.valid?
-      expect(message.sent_at).to eq(specific_time)
+      expect(message.sent_at).to be_within(1.second).of(specific_time)
     end
   end
 

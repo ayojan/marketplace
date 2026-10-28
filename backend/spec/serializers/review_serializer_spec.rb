@@ -50,7 +50,7 @@ RSpec.describe ReviewSerializer do
   let(:vendor_user) { create(:user, :with_vendor) }
   let(:vendor) { vendor_user.vendor }
   let(:service) { create(:service, vendor: vendor) }
-  let(:booking) { create(:booking, customer: customer_user, vendor: vendor, service: service) }
+  let(:booking) { create(:booking, :completed, customer: customer_user, vendor: vendor, service: service) }
   let(:review) do
     create(
       :review,

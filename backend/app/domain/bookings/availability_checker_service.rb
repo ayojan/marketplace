@@ -46,9 +46,7 @@ module Bookings
     attr_reader :errors
 
     def availability_slots
-      @availability_slots ||= vendor.availability_slots
-                                    .available
-                                    .for_date(date)
+      @availability_slots ||= vendor.availability_slots.available.for_date(date)
     end
 
     def suggested_times
@@ -68,31 +66,29 @@ module Bookings
     private
 
     def find_availability_slot
-      availability_slots.find do |slot|
-        time_within_slot?(slot)
-      end
+      availability_slots.find { |slot| time_within_slot?(slot) }
     end
 
     def time_within_slot?(slot)
       requested_start_minutes = parse_time_to_minutes(start_time)
       requested_end_minutes = parse_time_to_minutes(end_time)
-      slot_start_minutes = (slot.start_time.hour * 60) + slot.start_time.min
-      slot_end_minutes = (slot.end_time.hour * 60) + slot.end_time.min
+      slot_start_minutes = parse_time_to_minutes(slot.start_time)
+      slot_end_minutes = parse_time_to_minutes(slot.end_time)
 
-      # For now, only handle same-day slots to get basic functionality working
-      # TODO: Add proper overnight slot support later
-      if slot_end_minutes < slot_start_minutes
-        # Skip overnight slots for now
-        return false
-      end
+      # Skip overnight slots for now
+      return false if slot_end_minutes < slot_start_minutes
 
       # Same-day slot
       requested_start_minutes >= slot_start_minutes && requested_end_minutes <= slot_end_minutes
     end
 
-    def parse_time_to_minutes(time_string)
-      time = Time.zone.parse("#{Date.current} #{time_string}")
-      (time.hour * 60) + time.min
+    def parse_time_to_minutes(time_value)
+      return 0 if time_value.blank?
+      return (time_value.seconds_since_midnight / 60).to_i if time_value.respond_to?(:seconds_since_midnight)
+
+      str = time_value.is_a?(String) ? time_value : time_value.strftime('%H:%M')
+      hours, minutes = str.split(':').map(&:to_i)
+      (hours.to_i * 60) + minutes.to_i
     end
 
     def date_and_time_in_future

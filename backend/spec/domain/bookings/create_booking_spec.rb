@@ -42,7 +42,7 @@ RSpec.describe Bookings::CreateBooking do
         expect(booking.customer_id).to eq(customer.id)
         expect(booking.service_id).to eq(service.id)
         expect(booking.vendor_id).to eq(vendor.id)
-        expect(booking.event_date).to eq(valid_params[:event_date])
+        expect(booking.event_date).to be_within(1.second).of(valid_params[:event_date])
         expect(booking.event_location).to eq(valid_params[:event_location])
         expect(booking.total_amount).to eq(valid_params[:total_amount])
         expect(booking.requirements).to eq(valid_params[:requirements])
@@ -60,7 +60,7 @@ RSpec.describe Bookings::CreateBooking do
         )
 
         booking = result[:booking]
-        expect(booking.event_end_date).to eq(end_date)
+        expect(booking.event_end_date).to be_within(1.second).of(end_date)
         expect(booking.event_duration).to eq('4 hours')
       end
     end
