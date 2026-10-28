@@ -11,6 +11,7 @@ module Bookings
     attribute :date, :date
     attribute :start_time, :string
     attribute :end_time, :string
+    attribute :duration, :integer
 
     validates :vendor, presence: true
     validates :date, presence: true

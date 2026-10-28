@@ -7,8 +7,8 @@ Vendor.define_attribute_methods
 RSpec.describe VendorVerificationPresenter do
   subject(:presenter) { described_class.new(vendor) }
 
-  let(:services_relation) { instance_double(ActiveRecord::Relation, exists?: true) }
-  let(:services_active_relation) { instance_double(ActiveRecord::Relation, exists?: true) }
+  let(:services_relation) { Service.none }
+  let(:services_active_relation) { Service.none }
   let(:services_association) { instance_double(ActiveRecord::Associations::HasManyAssociation, loaded?: false) }
   let(:vendor) do
     instance_double(
@@ -25,7 +25,8 @@ RSpec.describe VendorVerificationPresenter do
   before do
     allow(vendor).to receive(:association).with(:services).and_return(services_association)
     allow(vendor).to receive(:services).and_return(services_relation)
-    allow(services_relation).to receive(:active).and_return(services_active_relation)
+    allow(services_relation).to receive_messages(active: services_active_relation, exists?: true)
+    allow(services_active_relation).to receive(:exists?).and_return(true)
   end
 
   describe '#to_h' do
