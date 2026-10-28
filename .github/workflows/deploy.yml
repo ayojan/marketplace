@@ -63,6 +63,9 @@ jobs:
     name: Deploy to GCE VM
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Prepare Lowercase Image Name
@@ -74,11 +77,14 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           ENV_CONTENT: ${{ secrets.ENV_PRODUCTION }}
+          REGISTRY: ${{ env.REGISTRY }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.GCE_HOST }}
           username: ${{ secrets.GCE_USERNAME }}
           key: ${{ secrets.GCE_SSH_KEY }}
-          envs: ENV_CONTENT,IMAGE_NAME
+          envs: ENV_CONTENT,IMAGE_NAME,REGISTRY,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -e
 
@@ -87,6 +93,9 @@ jobs:
               echo "$ENV_CONTENT" > ~/.env.production
               chmod 600 ~/.env.production
             fi
+
+            echo "🔑 Authenticating Docker with GitHub Container Registry..."
+            echo "$GHCR_TOKEN" | docker login "$REGISTRY" -u "$GHCR_USERNAME" --password-stdin
 
             echo "📦 Pulling latest image: $IMAGE_NAME..."
             docker pull "$IMAGE_NAME"
