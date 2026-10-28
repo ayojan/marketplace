@@ -24,10 +24,11 @@ module Vendor::Sluggable
     def find_by_id_or_slug(id_or_slug)
       return nil if id_or_slug.blank?
 
-      found = find_by(slug: id_or_slug.to_s.downcase)
-      return found if found
-
-      find_by(id: id_or_slug) if id_or_slug.to_s.match?(/\A\d+\z/)
+      if id_or_slug.to_s.match?(/\A\d+\z/)
+        find_by(id: id_or_slug) || find_by(slug: id_or_slug.to_s.downcase)
+      else
+        find_by(slug: id_or_slug.to_s.downcase)
+      end
     end
 
     # Returns a unique slug derived from +base+, excluding the record with

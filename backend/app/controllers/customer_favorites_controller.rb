@@ -8,7 +8,7 @@ class CustomerFavoritesController < ApiController
   def index
     favorites = CustomerFavorite.for_user(current_user.id)
                                 .recent_first
-                                .includes(vendor: { services: :categories })
+                                .includes(:vendor)
 
     render json: {
       favorites: favorites.map { |fav| favorite_json(fav) }
@@ -55,9 +55,14 @@ class CustomerFavoritesController < ApiController
 
   # GET /customer_favorites/check/:vendor_id
   def check
-    target_id = params[:vendor_id] || params[:id]
-    vendor = Vendor.find_by_id_or_slug(target_id)
-    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_id: vendor&.id)
+    target = params[:vendor_id] || params[:id]
+    vendor_id = if target.to_s.match?(/\A\d+\z/)
+                  target.to_i
+                else
+                  Vendor.find_by(slug: target.to_s.downcase)&.id
+                end
+
+    favorite = CustomerFavorite.find_by(user_id: current_user.id, vendor_id: vendor_id) if vendor_id
 
     render json: {
       is_favorite: favorite.present?,
@@ -74,10 +79,11 @@ class CustomerFavoritesController < ApiController
   def save_and_render_favorite(vendor)
     favorite = CustomerFavorite.find_or_initialize_by(
       user_id: current_user.id,
-      vendor_id: vendor.id
+      vendor: vendor
     )
 
     if favorite.save
+      favorite.vendor = vendor
       render json: { message: 'Vendor added to favorites', favorite: favorite_json(favorite) },
              status: :created
     else

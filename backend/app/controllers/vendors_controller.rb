@@ -9,6 +9,7 @@ class VendorsController < ApiController
     @vendors = apply_filters(
       Vendor.includes(
         :user, :vendor_categories, :categories,
+        :primary_vendor_category, :primary_category,
         services: :categories,
         portfolio_items: { images_attachments: :blob }
       )
@@ -24,7 +25,16 @@ class VendorsController < ApiController
   end
 
   def show
-    data = VendorSerializer.render_as_hash(@vendor, view: :detail)
+    vendor = Vendor.includes(
+      :user,
+      :primary_vendor_category,
+      :primary_category,
+      :services,
+      vendor_categories: :category,
+      portfolio_items: { images_attachments: :blob }
+    ).find(@vendor.id)
+
+    data = VendorSerializer.render_as_hash(vendor, view: :detail)
     render json: { vendor: data }
   end
 
@@ -34,7 +44,8 @@ class VendorsController < ApiController
                      else
                        @vendor.services.active
                      end
-    services = services_scope.includes(:categories, :service_images).order(created_at: :desc)
+    services = services_scope.includes(:categories,
+                                       service_images: { image_attachment: :blob }).order(created_at: :desc)
 
     render json: {
       services: ServiceSerializer.render_as_hash(services)
@@ -64,7 +75,7 @@ class VendorsController < ApiController
   end
 
   def portfolio
-    portfolio_items = @vendor.portfolio_items.ordered
+    portfolio_items = @vendor.portfolio_items.ordered.includes(images_attachments: :blob)
     portfolio_items = portfolio_items.by_category(params[:category]) if params[:category].present?
     portfolio_items = portfolio_items.featured if params[:featured] == 'true'
 

@@ -108,7 +108,10 @@ module Services
         .includes(
           :categories,
           service_images: { image_attachment: :blob },
-          vendor: { portfolio_items: { images_attachments: :blob } }
+          vendor: [:primary_vendor_category,
+                   :primary_category,
+                   :categories,
+                   { portfolio_items: { images_attachments: :blob } }]
         )
         .limit(per_page)
         .offset((page - 1) * per_page)
