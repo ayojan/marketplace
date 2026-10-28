@@ -50,4 +50,5 @@ export interface OnboardingPortfolioItem {
   title: string;
   category: string;
   url: string;
+  file?: File;
 }

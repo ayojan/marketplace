@@ -353,14 +353,25 @@ export default function VendorOnboardingWizard() {
   const handleStep5Publish = async () => {
     setIsSubmitting(true);
     try {
-      for (const item of portfolioItems.slice(0, 3)) {
-        await apiService.portfolioItems.create({
-          title: item.title,
-          category: item.category,
-          description: `Portfolio showcase of ${item.title} delivered by ${profileData.businessName || 'our team'}.`,
-          is_featured: true,
-          display_order: 1
-        }).catch(() => {});
+      for (const item of portfolioItems.slice(0, 10)) {
+        try {
+          const createRes = await apiService.portfolioItems.create({
+            portfolio_item: {
+              title: item.title,
+              category: item.category || 'Portfolio',
+              description: `Portfolio showcase of ${item.title} delivered by ${profileData.businessName || 'our team'}.`,
+              is_featured: true,
+              display_order: 1
+            }
+          });
+
+          const itemId = createRes?.data?.portfolio_item?.id;
+          if (itemId && item.file) {
+            await apiService.portfolioItems.uploadImages(itemId, [item.file]).catch(() => null);
+          }
+        } catch (itemErr) {
+          console.warn('Failed to save portfolio showcase item:', item.title, itemErr);
+        }
       }
 
       await apiService.profiles.updateMe({
