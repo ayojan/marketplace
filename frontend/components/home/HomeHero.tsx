@@ -14,6 +14,7 @@ import {
   Navigation, 
   Loader2 
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { TextLoop, Magnetic } from '@/components/motion';
@@ -22,22 +23,56 @@ import { useLocation } from '@/lib/contexts/LocationContext';
 import { TRENDING_SEARCHES, POPULAR_SEARCH_PILLS } from './presets';
 
 interface HomeHeroProps {
-  selectedCity: string;
-  setSelectedCity: (city: string) => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  onSearchSubmit: (e?: React.FormEvent) => void;
-  onDirectSearch: (query?: string, categorySlug?: string) => void;
+  selectedCity?: string;
+  setSelectedCity?: (city: string) => void;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  onSearchSubmit?: (e?: React.FormEvent) => void;
+  onDirectSearch?: (query?: string, categorySlug?: string) => void;
 }
 
 export function HomeHero({
-  selectedCity,
-  setSelectedCity,
-  searchQuery,
-  setSearchQuery,
-  onSearchSubmit,
-  onDirectSearch,
-}: HomeHeroProps) {
+  selectedCity: propCity,
+  setSelectedCity: propSetCity,
+  searchQuery: propQuery,
+  setSearchQuery: propSetQuery,
+  onSearchSubmit: propOnSubmit,
+  onDirectSearch: propOnDirectSearch,
+}: HomeHeroProps = {}) {
+  const router = useRouter();
+  const locationCtx = useLocation();
+  const selectedCity = propCity ?? locationCtx.selectedCity;
+  const setSelectedCity = propSetCity ?? locationCtx.setSelectedCity;
+  const [internalQuery, setInternalQuery] = useState('');
+  const searchQuery = propQuery ?? internalQuery;
+  const setSearchQuery = propSetQuery ?? setInternalQuery;
+
+  const onSearchSubmit = (e?: React.FormEvent) => {
+    if (propOnSubmit) {
+      propOnSubmit(e);
+      return;
+    }
+    if (e) e.preventDefault();
+    const query = searchQuery.trim();
+    const params = new URLSearchParams();
+    if (query) params.set('search', query);
+    if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
+    const qs = params.toString();
+    router.push(qs ? `/marketplace?${qs}` : '/marketplace');
+  };
+
+  const onDirectSearch = (query?: string, categorySlug?: string) => {
+    if (propOnDirectSearch) {
+      propOnDirectSearch(query, categorySlug);
+      return;
+    }
+    const params = new URLSearchParams();
+    if (query) params.set('search', query);
+    if (categorySlug && categorySlug !== 'all') params.set('category', categorySlug);
+    if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
+    const qs = params.toString();
+    router.push(qs ? `/marketplace?${qs}` : '/marketplace');
+  };
   const { detectLocation, isDetecting, openLocationPrompt } = useLocation();
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);

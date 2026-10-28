@@ -1,13 +1,7 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { apiService } from '@/lib/api';
-import { useLocation } from '@/lib/contexts/LocationContext';
+import dynamic from 'next/dynamic';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import RecentlyViewedStrip from '@/components/RecentlyViewedStrip';
-import CelebrationMatchmaker from '@/components/CelebrationMatchmaker';
 import {
   HomeHero,
   HomeCategoryGrid,
@@ -18,74 +12,37 @@ import {
   HomeVendorCta,
 } from '@/components/home';
 
-export default function Landing() {
-  const router = useRouter();
-  const { selectedCity, setSelectedCity } = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [topVendors, setTopVendors] = useState<any[]>([]);
-  const [loadingVendors, setLoadingVendors] = useState<boolean>(true);
-  const [activeVendorTab, setActiveVendorTab] = useState<string>('all');
+// Lazy load below-the-fold 400+ line matchmaker wizard
+const CelebrationMatchmaker = dynamic(
+  () => import('@/components/CelebrationMatchmaker'),
+  {
+    loading: () => <div className="min-h-[200px]" />,
+  }
+);
 
-  useEffect(() => {
-    const fetchTopVendors = async () => {
-      try {
-        setLoadingVendors(true);
-        const res = await apiService.vendors.getAll();
-        const rawData = res.data?.vendors || (Array.isArray(res.data) ? res.data : []);
-        setTopVendors(Array.isArray(rawData) ? rawData : []);
-      } catch (err) {
-        setTopVendors([]);
-      } finally {
-        setLoadingVendors(false);
-      }
-    };
-    fetchTopVendors();
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
 
-    // Scroll to anchor on load if hash is present (e.g. /#reviews or /#occasions)
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.substring(1);
-      setTimeout(() => {
-        const el = document.getElementById(hash);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 150);
-    }
-  }, []);
+async function fetchTopVendors() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-  const handleSearchSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const query = searchQuery.trim();
-    const params = new URLSearchParams();
-    if (query) params.set('search', query);
-    if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
-    const qs = params.toString();
-    router.push(qs ? `/marketplace?${qs}` : '/marketplace');
-  };
+    const res = await fetch(`${apiUrl}/vendors`, {
+      signal: controller.signal,
+      next: { revalidate: 300 }, // ISR cache for 5 minutes
+    });
+    clearTimeout(timeoutId);
 
-  const handleDirectSearch = (query?: string, categorySlug?: string) => {
-    const params = new URLSearchParams();
-    if (query) params.set('search', query);
-    if (categorySlug && categorySlug !== 'all') params.set('category', categorySlug);
-    if (selectedCity && selectedCity !== 'All Cities') params.set('location', selectedCity);
-    const qs = params.toString();
-    router.push(qs ? `/marketplace?${qs}` : '/marketplace');
-  };
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.vendors || (Array.isArray(data) ? data : []);
+  } catch {
+    return [];
+  }
+}
 
-  const getTabCount = (tabId: string) => {
-    const list = Array.isArray(topVendors) ? topVendors : [];
-    if (tabId === 'all') return list.length;
-    return list.filter((v: any) => {
-      const cat = (v.category || v.service_category || '').toLowerCase();
-      const name = (v.name || v.business_name || '').toLowerCase();
-      if (tabId === 'photographer') return cat.includes('photo') || name.includes('narrative') || name.includes('photo') || name.includes('shutter');
-      if (tabId === 'makeup-artist') return cat.includes('makeup') || name.includes('makeover') || name.includes('glam') || name.includes('glow');
-      if (tabId === 'decorator') return cat.includes('decor') || name.includes('eventica') || name.includes('floral');
-      if (tabId === 'dj') return cat.includes('dj') || cat.includes('music') || name.includes('beat') || name.includes('aryan');
-      if (tabId === 'venue') return cat.includes('venue') || name.includes('palm') || name.includes('haveli') || name.includes('heritage');
-      return true;
-    }).length;
-  };
+export default async function Landing() {
+  const topVendors = await fetchTopVendors();
 
   return (
     <div className="min-h-screen bg-[#FBF8F4] text-[#221F1C] selection:bg-[#F3EADF] selection:text-[#9E5338]">
@@ -101,39 +58,21 @@ export default function Landing() {
 
       <main id="main-content">
         {/* Main Hero Header and Search Capsule */}
-        <HomeHero
-          selectedCity={selectedCity}
-          setSelectedCity={setSelectedCity}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onSearchSubmit={handleSearchSubmit}
-          onDirectSearch={handleDirectSearch}
-        />
+        <HomeHero />
 
         {/* 8-Icon Circular Category Grid */}
-        <HomeCategoryGrid
-          onSelectCategory={(slug) => router.push(`/marketplace?category=${encodeURIComponent(slug)}`)}
-        />
+        <HomeCategoryGrid />
 
         {/* Popular Occasions Section */}
-        <HomeOccasionsSection
-          onSelectOccasion={(slug) => router.push(`/marketplace?occasion=${encodeURIComponent(slug)}`)}
-        />
+        <HomeOccasionsSection />
 
         {/* Pick Up Where You Left Off Strip */}
         <RecentlyViewedStrip />
 
-        {/* Top Rated Vendors in Selected City */}
-        <HomeFeaturedVendors
-          selectedCity={selectedCity}
-          vendors={topVendors}
-          loading={loadingVendors}
-          activeTab={activeVendorTab}
-          setActiveTab={setActiveVendorTab}
-          getTabCount={getTabCount}
-        />
+        {/* Top Rated Vendors in Selected City (SSR Hydrated) */}
+        <HomeFeaturedVendors initialVendors={topVendors} />
 
-        {/* 60-Second Celebration Matchmaker Wizard */}
+        {/* 60-Second Celebration Matchmaker Wizard (Dynamic Import) */}
         <CelebrationMatchmaker />
 
         {/* How Ayoj Works 3-Step Journey */}

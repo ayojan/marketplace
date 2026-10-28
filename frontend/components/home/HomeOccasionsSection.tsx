@@ -8,7 +8,7 @@ import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { POPULAR_OCCASIONS } from './presets';
 
 interface HomeOccasionsSectionProps {
-  onSelectOccasion: (slug: string) => void;
+  onSelectOccasion?: (slug: string) => void;
 }
 
 export function HomeOccasionsSection({ onSelectOccasion }: HomeOccasionsSectionProps) {
@@ -62,26 +62,36 @@ export function HomeOccasionsSection({ onSelectOccasion }: HomeOccasionsSectionP
           ref={occasionsScrollRef}
           className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x snap-mandatory scroll-smooth"
         >
-          {POPULAR_OCCASIONS.map((occ) => (
-            <div
-              key={occ.name}
-              onClick={() => onSelectOccasion(occ.name.toLowerCase().replace(/\s+/g, '-'))}
-              className="relative aspect-[3/2] sm:aspect-[4/3] w-[180px] sm:w-[200px] md:w-[220px] rounded-2xl overflow-hidden group cursor-pointer border border-[#E8E2D9] shrink-0 snap-start shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
-            >
-              <ImageWithFallback
-                src={occ.image}
-                alt={occ.name}
-                fill
-                unoptimized
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent transition-opacity group-hover:from-black/90" />
-              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
-                <span className="font-serif font-bold text-xs sm:text-sm tracking-tight">{occ.name}</span>
-                <ArrowRight className="size-3 text-white/80 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-              </div>
-            </div>
-          ))}
+          {POPULAR_OCCASIONS.map((occ) => {
+            const slug = occ.name.toLowerCase().replace(/\s+/g, '-');
+            const href = `/marketplace?occasion=${encodeURIComponent(slug)}`;
+            return (
+              <Link
+                key={occ.name}
+                href={href}
+                onClick={(e) => {
+                  if (onSelectOccasion) {
+                    e.preventDefault();
+                    onSelectOccasion(slug);
+                  }
+                }}
+                className="relative aspect-[3/2] sm:aspect-[4/3] w-[180px] sm:w-[200px] md:w-[220px] rounded-2xl overflow-hidden group cursor-pointer border border-[#E8E2D9] shrink-0 snap-start shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 block"
+              >
+                <ImageWithFallback
+                  src={occ.image}
+                  alt={occ.name}
+                  fill
+                  unoptimized
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent transition-opacity group-hover:from-black/90" />
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
+                  <span className="font-serif font-bold text-xs sm:text-sm tracking-tight">{occ.name}</span>
+                  <ArrowRight className="size-3 text-white/80 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
       </InView>

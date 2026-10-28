@@ -24,7 +24,7 @@ interface GoogleSignInButtonProps {
     business_name?: string;
     location?: string;
   };
-  onSuccess?: (user: any, needsMobile: boolean) => void;
+  onSuccess?: (user: any, needsMobile?: boolean) => void;
   onError?: (error: string) => void;
   className?: string;
   buttonText?: string;
@@ -144,7 +144,7 @@ export default function GoogleSignInButton({
       if (res.success) {
         toast.success(res.message || 'Signed in with Google successfully!');
         if (onSuccess) {
-          onSuccess(res.user, res.needs_mobile_onboarding);
+          onSuccess(res.user, Boolean(res.needs_mobile_onboarding));
         } else {
           // Default post-auth navigation
           if (res.user?.role === 'vendor') {
@@ -198,10 +198,8 @@ export default function GoogleSignInButton({
       if (hiddenBtn) {
         hiddenBtn.click();
       } else {
-        window.google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            console.log('One-tap dismissed or skipped:', notification.getNotDisplayedReason());
-          }
+        window.google.accounts.id.prompt(() => {
+          // One-tap notification handler
         });
       }
     } catch (err) {
@@ -230,7 +228,7 @@ export default function GoogleSignInButton({
         toast.success('Google account successfully linked!');
 
         if (onSuccess) {
-          onSuccess(res.user, res.needs_mobile_onboarding);
+          onSuccess(res.user, Boolean(res.needs_mobile_onboarding));
         } else if (res.user?.role === 'vendor') {
           router.push('/vendor/dashboard');
         } else {

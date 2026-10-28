@@ -1,17 +1,19 @@
+import type { User, TokenPayload } from '@/types/user';
+
 // Token storage keys
 const TOKEN_KEY = 'authToken';
 const USER_KEY = 'user';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 
-class TokenService {
+export class TokenService {
   // Get stored token
-  getToken() {
+  getToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(TOKEN_KEY);
   }
 
   // Set token in storage
-  setToken(token) {
+  setToken(token: string | null): void {
     if (typeof window === 'undefined') return;
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
@@ -21,11 +23,11 @@ class TokenService {
   }
 
   // Get stored user
-  getUser() {
+  getUser(): User | null {
     if (typeof window === 'undefined') return null;
     const user = localStorage.getItem(USER_KEY);
     try {
-      return user ? JSON.parse(user) : null;
+      return user ? (JSON.parse(user) as User) : null;
     } catch (error) {
       console.error('Error parsing stored user:', error);
       this.removeUser();
@@ -34,7 +36,7 @@ class TokenService {
   }
 
   // Set user in storage
-  setUser(user) {
+  setUser(user: User | null): void {
     if (typeof window === 'undefined') return;
     if (user) {
       localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -44,19 +46,19 @@ class TokenService {
   }
 
   // Remove user from storage
-  removeUser() {
+  removeUser(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(USER_KEY);
   }
 
   // Get refresh token
-  getRefreshToken() {
+  getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
 
   // Set refresh token
-  setRefreshToken(refreshToken) {
+  setRefreshToken(refreshToken: string | null): void {
     if (typeof window === 'undefined') return;
     if (refreshToken) {
       localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
@@ -66,7 +68,7 @@ class TokenService {
   }
 
   // Clear all stored auth data
-  clearAuthData() {
+  clearAuthData(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -74,18 +76,18 @@ class TokenService {
   }
 
   // Check if token exists
-  hasToken() {
+  hasToken(): boolean {
     return !!this.getToken();
   }
 
   // Check if token is expired (basic check)
-  isTokenExpired() {
+  isTokenExpired(): boolean {
     const token = this.getToken();
     if (!token) return true;
 
     try {
-      // Decode JWT payload (basic implementation)
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const payload = this.getTokenPayload();
+      if (!payload || typeof payload.exp !== 'number') return true;
       const currentTime = Date.now() / 1000;
       return payload.exp < currentTime;
     } catch (error) {
@@ -95,12 +97,14 @@ class TokenService {
   }
 
   // Get token payload
-  getTokenPayload() {
+  getTokenPayload(): TokenPayload | null {
     const token = this.getToken();
     if (!token) return null;
 
     try {
-      return JSON.parse(atob(token.split('.')[1]));
+      const parts = token.split('.');
+      if (parts.length < 2) return null;
+      return JSON.parse(atob(parts[1])) as TokenPayload;
     } catch (error) {
       console.error('Error decoding token payload:', error);
       return null;
