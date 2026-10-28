@@ -12,7 +12,7 @@ class VendorVerificationPresenter
   end
 
   def to_h
-    {
+    @to_h ||= {
       business_license: business_license_check,
       contact_verified: contact_verified_check,
       profile_complete: profile_complete_check,

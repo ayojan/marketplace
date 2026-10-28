@@ -46,9 +46,10 @@ class ServicesController < ApiController
     result = Services::CreateService.call(user: current_user, params: params)
 
     if result[:success]
+      service = preload_service(result[:service])
       render json: {
         message: 'Service created successfully',
-        service: present_service(result[:service], include_details: true)
+        service: present_service(service, include_details: true)
       }, status: :created
     else
       render json: {
@@ -62,9 +63,10 @@ class ServicesController < ApiController
     result = Services::UpdateService.call(service: @service, params: params)
 
     if result[:success]
+      service = preload_service(result[:service])
       render json: {
         message: 'Service updated successfully',
-        service: present_service(result[:service], include_details: true)
+        service: present_service(service, include_details: true)
       }
     else
       render json: {
@@ -80,6 +82,22 @@ class ServicesController < ApiController
   end
 
   private
+
+  def preload_service(service_or_id)
+    id = service_or_id.is_a?(Service) ? service_or_id.id : service_or_id
+    Service.includes(
+      :categories,
+      :bookings,
+      service_images: { image_attachment: :blob },
+      vendor: [
+        :primary_vendor_category,
+        :primary_category,
+        :categories,
+        { vendor_categories: :category },
+        { portfolio_items: { images_attachments: :blob } }
+      ]
+    ).find_by(id: id) || service_or_id
+  end
 
   def set_service
     @service = Service.find(params[:id])

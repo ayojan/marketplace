@@ -19,11 +19,11 @@ module Vendor::Verification
   end
 
   def verification_checks
-    VendorVerificationPresenter.new(self).to_h
+    @verification_checks ||= VendorVerificationPresenter.new(self).to_h
   end
 
   def all_verification_checks_completed?
-    VendorVerificationPresenter.new(self).all_completed?
+    verification_checks.values.all? { |c| c[:completed] }
   end
 
   def can_display_verified_badge?
