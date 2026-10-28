@@ -80,7 +80,12 @@ const VendorProfile = ({ params, initialVendor }: VendorProfileProps) => {
     }
 
     try {
-      const fetchVendorPromise = (initialVendor && String(initialVendor.id) === String(params.id))
+      const isSameVendor = initialVendor && (
+        String(initialVendor.id) === String(params.id) ||
+        initialVendor.slug === params.id
+      );
+
+      const fetchVendorPromise = isSameVendor
         ? Promise.resolve({ data: { vendor: initialVendor } })
         : apiService.vendors.getById(params.id).catch(() => null);
 

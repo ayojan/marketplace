@@ -190,18 +190,19 @@ class ProfilesController < ApiController
   end
 
   def profile_response(profile)
-    vendor = if profile.is_a?(Vendor)
-               Vendor.includes(
-                 :services,
-                 :primary_vendor_category,
-                 :primary_category,
-                 vendor_categories: :category,
-                 portfolio_items: { images_attachments: :blob }
-               ).find_by(id: profile.id) || profile
-             else
-               profile
-             end
+    if profile.is_a?(Vendor)
+      ActiveRecord::Associations::Preloader.new(
+        records: [profile],
+        associations: [
+          :services,
+          :primary_vendor_category,
+          :primary_category,
+          { vendor_categories: :category },
+          { portfolio_items: { images_attachments: :blob } }
+        ]
+      ).call
+    end
 
-    VendorSerializer.render_as_hash(vendor, view: :profile)
+    VendorSerializer.render_as_hash(profile, view: :profile)
   end
 end
