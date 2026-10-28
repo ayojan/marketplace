@@ -4,20 +4,44 @@ set -e
 # Remove a potentially pre-existing server.pid for Rails.
 rm -f /rails/tmp/pids/server.pid
 
-# Wait for database to be ready
-echo "Waiting for database..."
-until pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; do
-  echo "Database is unavailable - sleeping"
-  sleep 1
-done
-echo "Database is ready!"
+# Check database availability with safe retry limit (max 15 seconds)
+MAX_RETRIES=15
+COUNT=0
 
-# Run database migrations
-echo "Running database setup..."
-bundle exec rails db:prepare
+if [ -n "$DATABASE_URL" ]; then
+  echo "⏳ Checking database availability via DATABASE_URL..."
+  until pg_isready -d "$DATABASE_URL" -t 3 > /dev/null 2>&1; do
+    COUNT=$((COUNT + 1))
+    if [ $COUNT -ge $MAX_RETRIES ]; then
+      echo "⚠️ Database connection timed out after $MAX_RETRIES attempts. Continuing boot..."
+      break
+    fi
+    echo "Waiting for database to respond (attempt $COUNT/$MAX_RETRIES)..."
+    sleep 1
+  done
+  echo "✅ Database is ready!"
+elif [ -n "$DB_HOST" ]; then
+  echo "⏳ Waiting for local database at $DB_HOST..."
+  until pg_isready -h "$DB_HOST" -p "${DB_PORT:-5432}" -U "${POSTGRES_USER:-marketplace}"; do
+    COUNT=$((COUNT + 1))
+    if [ $COUNT -ge $MAX_RETRIES ]; then
+      echo "⚠️ Local database timed out after $MAX_RETRIES attempts. Continuing boot..."
+      break
+    fi
+    echo "Local database is unavailable - sleeping..."
+    sleep 1
+  done
+  echo "✅ Database is ready!"
+fi
+
+# Run database setup / migrations if running rails server
+if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
+  echo "🚀 Running database migrations..."
+  bundle exec rails db:prepare || true
+fi
 
 # Create storage directory if it doesn't exist
-mkdir -p /rails/storage
+mkdir -p /rails/storage 2>/dev/null || true
 
-# Then exec the container's main process (what's set as CMD in the Dockerfile).
+# Then exec the container's main process (CMD in Dockerfile).
 exec "$@"

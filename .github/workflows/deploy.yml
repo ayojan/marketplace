@@ -1,0 +1,111 @@
+name: Build, Push to GHCR & Deploy to GCE 
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Prepare Lowercase Image Name
+        run: |
+          echo "IMAGE_NAME=${{ env.REGISTRY }}/${{ github.repository }}-backend" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to GCE VM
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prepare Lowercase Image Name
+        run: |
+          echo "IMAGE_NAME=${{ env.REGISTRY }}/${{ github.repository }}-backend:latest" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
+
+      - name: Deploy via SSH using Docker
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ENV_CONTENT: ${{ secrets.ENV_PRODUCTION }}
+        with:
+          host: ${{ secrets.GCE_HOST }}
+          username: ${{ secrets.GCE_USERNAME }}
+          key: ${{ secrets.GCE_SSH_KEY }}
+          envs: ENV_CONTENT,IMAGE_NAME
+          script: |
+            set -e
+
+            echo "🔐 Updating production environment variables..."
+            if [ -n "$ENV_CONTENT" ]; then
+              echo "$ENV_CONTENT" > ~/.env.production
+              chmod 600 ~/.env.production
+            fi
+
+            echo "📦 Pulling latest image: $IMAGE_NAME..."
+            docker pull "$IMAGE_NAME"
+
+            echo "🛑 Stopping old container (if running)..."
+            docker stop rails-backend || true
+            docker rm rails-backend || true
+
+            echo "🚀 Starting new Docker container..."
+            docker run -d \
+              --name rails-backend \
+              --restart=always \
+              -p 3000:3000 \
+              --memory 1500m \
+              --env-file ~/.env.production \
+              "$IMAGE_NAME"
+
+            echo "⚡ Running database migrations on Neon..."
+            docker exec rails-backend bin/rails db:migrate
+
+            echo "🧹 Cleaning up old unused image layers..."
+            docker image prune -f
+
+            echo "✅ Deployment completed successfully!"
