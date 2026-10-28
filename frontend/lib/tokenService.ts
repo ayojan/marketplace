@@ -103,7 +103,9 @@ export class TokenService {
 
     try {
       const parts = token.split('.');
-      if (parts.length < 2) return null;
+      if (parts.length < 2) {
+        throw new Error('Invalid token format');
+      }
       return JSON.parse(atob(parts[1])) as TokenPayload;
     } catch (error) {
       console.error('Error decoding token payload:', error);
