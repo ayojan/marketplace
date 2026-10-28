@@ -24,7 +24,7 @@
 #  fk_rails_...  (vendor_id => vendors.id)
 #
 class VendorCategory < ApplicationRecord
-  belongs_to :vendor
+  belongs_to :vendor, touch: true
   belongs_to :category
 
   validates :category_id, uniqueness: { scope: :vendor_id }

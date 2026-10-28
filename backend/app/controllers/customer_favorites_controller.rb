@@ -8,7 +8,7 @@ class CustomerFavoritesController < ApiController
   def index
     favorites = CustomerFavorite.for_user(current_user.id)
                                 .recent_first
-                                .includes(:vendor)
+                                .includes(vendor: { vendor_categories: :category })
 
     render json: {
       favorites: favorites.map { |fav| favorite_json(fav) }

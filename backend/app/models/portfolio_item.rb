@@ -27,7 +27,7 @@
 #  fk_rails_...  (vendor_id => vendors.id)
 #
 class PortfolioItem < ApplicationRecord
-  belongs_to :vendor
+  belongs_to :vendor, touch: true
 
   # Active Storage for images
   has_many_attached :images

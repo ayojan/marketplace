@@ -4,11 +4,16 @@ module RateLimitable
   extend ActiveSupport::Concern
 
   class_methods do
+    def rate_limit_store
+      @rate_limit_store ||= ActiveSupport::Cache::MemoryStore.new(size: 16.megabytes)
+    end
+
     def apply_rate_limit(to:, within: 1.minute, by: :ip, message: 'Rate limit exceeded', **options)
       config = {
         to: to,
         within: within,
         by: resolve_rate_limit_key(by),
+        store: rate_limit_store,
         unless: -> { Rails.env.test? },
         with: -> { render json: { error: message }, status: :too_many_requests }
       }.merge(options)

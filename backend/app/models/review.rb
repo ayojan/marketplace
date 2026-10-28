@@ -47,7 +47,7 @@ class Review < ApplicationRecord
   # Associations
   belongs_to :booking
   belongs_to :customer, class_name: 'User'
-  belongs_to :vendor
+  belongs_to :vendor, touch: true
 
   belongs_to :service
   has_many :votes, class_name: 'ReviewVote', dependent: :destroy

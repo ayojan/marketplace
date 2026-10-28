@@ -38,7 +38,7 @@ class Service < ApplicationRecord
   include Service::Searchable  # category & text search scopes, featured, filter_by_category
 
   # ── Associations ──────────────────────────────────────────────────────────────
-  belongs_to :vendor
+  belongs_to :vendor, touch: true
 
   has_many :vendor_services,    dependent: :destroy
   has_many :vendors,            through: :vendor_services

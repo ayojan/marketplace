@@ -53,8 +53,8 @@ module Marketplace
     # Note: Setting to false to support ActiveAdmin
     config.api_only = false
 
-    # Configure Solid Cache for caching (PostgreSQL-backed, no Redis required)
-    config.cache_store = :solid_cache_store
+    # Configure in-memory cache store (zero database roundtrips, no Redis required)
+    config.cache_store = :memory_store, { size: 64.megabytes }
     # Configure Active Job to use Solid Queue (PostgreSQL-backed, no Redis required)
     config.active_job.queue_adapter = :solid_queue
   end

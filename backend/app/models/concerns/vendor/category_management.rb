@@ -54,10 +54,8 @@ module Vendor::CategoryManagement
   def vendor_category_names
     if vendor_categories.loaded?
       vendor_categories.sort_by { |vc| vc.is_primary? ? 0 : 1 }.map { |vc| vc.category.name }
-    elsif vendor_categories.exists?
-      vendor_categories.joins(:category).order(is_primary: :desc).pluck('categories.name')
     else
-      []
+      vendor_categories.joins(:category).order(is_primary: :desc).pluck('categories.name')
     end
   end
 

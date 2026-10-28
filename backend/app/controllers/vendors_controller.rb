@@ -25,31 +25,50 @@ class VendorsController < ApiController
   end
 
   def show
-    vendor = Vendor.includes(
-      :user,
-      :primary_vendor_category,
-      :primary_category,
-      :services,
-      vendor_categories: :category,
-      portfolio_items: { images_attachments: :blob }
-    ).find(@vendor.id)
+    cache_key = ['vendor_detail', @vendor.id, @vendor.updated_at.to_i]
+    data = Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
+      ActiveRecord::Associations::Preloader.new(
+        records: [@vendor],
+        associations: [
+          :user,
+          :primary_vendor_category,
+          :primary_category,
+          { services: :categories },
+          { vendor_categories: :category },
+          { portfolio_items: { images_attachments: :blob } }
+        ]
+      ).call
 
-    data = VendorSerializer.render_as_hash(vendor, view: :detail)
+      VendorSerializer.render_as_hash(@vendor, view: :detail)
+    end
+
+    expires_in 1.minute, public: true, stale_while_revalidate: 5.minutes
     render json: { vendor: data }
   end
 
   def services
-    services_scope = if current_user && @vendor.user_id == current_user.id
-                       @vendor.services
-                     else
-                       @vendor.services.active
-                     end
-    services = services_scope.includes(:categories,
-                                       service_images: { image_attachment: :blob }).order(created_at: :desc)
+    if current_user && @vendor.user_id == current_user.id
+      services = @vendor.services
+                        .includes(:categories,
+                                  service_images: { image_attachment: :blob },
+                                  images_attachments: :blob)
+                        .order(created_at: :desc)
+      return render json: { services: ServiceSerializer.render_as_hash(services) }
+    end
 
-    render json: {
-      services: ServiceSerializer.render_as_hash(services)
-    }
+    cache_key = ['vendor_public_services', @vendor.id, @vendor.updated_at.to_i]
+    data = Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
+      services = @vendor.services
+                        .active
+                        .includes(:categories,
+                                  service_images: { image_attachment: :blob },
+                                  images_attachments: :blob)
+                        .order(created_at: :desc)
+      ServiceSerializer.render_as_hash(services)
+    end
+
+    expires_in 1.minute, public: true, stale_while_revalidate: 5.minutes
+    render json: { services: data }
   end
 
   def availability
@@ -65,6 +84,7 @@ class VendorsController < ApiController
                                 .order(:date, :start_time)
                                 .reject(&:passed?)
 
+    expires_in 1.minute, public: true, stale_while_revalidate: 2.minutes
     render json: {
       availability_slots: AvailabilitySlotSerializer.render_as_hash(availability_slots),
       date_range: {
@@ -75,23 +95,28 @@ class VendorsController < ApiController
   end
 
   def portfolio
-    portfolio_items = @vendor.portfolio_items.ordered.includes(images_attachments: :blob)
-    portfolio_items = portfolio_items.by_category(params[:category]) if params[:category].present?
-    portfolio_items = portfolio_items.featured if params[:featured] == 'true'
+    if params[:category].present? || params[:featured].present?
+      render json: filtered_portfolio_payload
+      return
+    end
 
-    render json: {
-      portfolio_items: PortfolioItemSerializer.render_as_hash(portfolio_items),
-      categories: @vendor.portfolio_categories
-    }
+    expires_in 1.minute, public: true, stale_while_revalidate: 5.minutes
+    render json: cached_portfolio_payload
   end
 
   def vendor_reviews
-    reviews = Review.published.where(vendor_id: @vendor.id).recent.includes(:customer, :service)
-    render json: {
-      reviews: ReviewSerializer.render_as_hash(reviews, view: :vendor_review),
-      average_rating: @vendor.average_rating,
-      total_reviews: @vendor.total_reviews
-    }
+    cache_key = ['vendor_public_reviews', @vendor.id, @vendor.updated_at.to_i]
+    data = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
+      reviews = Review.published.where(vendor_id: @vendor.id).recent.includes(:customer, :service)
+      {
+        reviews: ReviewSerializer.render_as_hash(reviews, view: :vendor_review),
+        average_rating: @vendor.average_rating,
+        total_reviews: @vendor.total_reviews
+      }
+    end
+
+    expires_in 1.minute, public: true, stale_while_revalidate: 5.minutes
+    render json: data
   end
 
   private
@@ -130,6 +155,28 @@ class VendorsController < ApiController
       total_count: total_count,
       total_pages: (total_count.to_f / per_page).ceil
     }
+  end
+
+  def filtered_portfolio_payload
+    portfolio_items = @vendor.portfolio_items.ordered.includes(images_attachments: :blob)
+    portfolio_items = portfolio_items.by_category(params[:category]) if params[:category].present?
+    portfolio_items = portfolio_items.featured if params[:featured] == 'true'
+
+    {
+      portfolio_items: PortfolioItemSerializer.render_as_hash(portfolio_items),
+      categories: @vendor.portfolio_categories
+    }
+  end
+
+  def cached_portfolio_payload
+    cache_key = ['vendor_public_portfolio', @vendor.id, @vendor.updated_at.to_i]
+    Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
+      items = @vendor.portfolio_items.ordered.includes(images_attachments: :blob)
+      {
+        portfolio_items: PortfolioItemSerializer.render_as_hash(items),
+        categories: items.map(&:category).uniq.compact.sort
+      }
+    end
   end
 
   def set_vendor

@@ -57,8 +57,8 @@ Rails.application.configure do
   # want to log everything, set the level to "debug".
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
 
-  # Use a different cache store in production.
-  # config.cache_store = :mem_cache_store
+  # Use in-memory cache store in production to eliminate database round-trips for caching and rate-limiting
+  config.cache_store = :memory_store, { size: 64.megabytes }
 
   # Use Solid Queue for Active Job (persisted in PostgreSQL primary database)
   config.active_job.queue_adapter = :solid_queue
