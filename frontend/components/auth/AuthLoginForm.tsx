@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Github } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -170,16 +170,8 @@ export default function AuthLoginForm({
       </div>
 
       {/* Social Logins */}
-      <div className="grid grid-cols-2 gap-3">
-        <GoogleSignInButton mode="login" />
-        <Button
-          type="button"
-          variant="outline"
-          className="h-10 rounded-xl border-[#E8E2D9] bg-[#FBF8F4] hover:bg-[#F3EADF] text-[#221F1C] text-xs font-medium gap-2 cursor-pointer"
-        >
-          <Github className="w-4 h-4 text-[#221F1C]" />
-          Github
-        </Button>
+      <div className="w-full">
+        <GoogleSignInButton mode="login" className="w-full justify-center" />
       </div>
     </div>
   );

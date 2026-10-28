@@ -8,8 +8,7 @@ import {
   Building,
   Eye,
   EyeOff,
-  ArrowRight,
-  Github
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -312,16 +311,8 @@ export default function AuthRegisterForm({
         </div>
 
         {/* Social Logins */}
-        <div className="grid grid-cols-2 gap-3">
-          <GoogleSignInButton mode="register" role={role} />
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 rounded-xl border-[#E8E2D9] bg-[#FBF8F4] hover:bg-[#F3EADF] text-[#221F1C] text-xs font-medium gap-2 cursor-pointer"
-          >
-            <Github className="w-4 h-4 text-[#221F1C]" />
-            Github
-          </Button>
+        <div className="w-full">
+          <GoogleSignInButton mode="register" role={role} className="w-full justify-center" />
         </div>
       </form>
     </div>
