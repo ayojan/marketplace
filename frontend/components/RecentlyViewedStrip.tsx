@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, Star, MapPin, IndianRupee, ArrowRight, X } from 'lucide-react';
+import { Clock, Star } from 'lucide-react';
+import { useAuth } from '@/lib/contexts/AuthContext';
 import { 
   getRecentlyViewedVendors, 
   clearRecentlyViewedVendors, 
@@ -13,19 +14,25 @@ import {
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=600&auto=format&fit=crop';
 
 export default function RecentlyViewedStrip() {
+  const { user, isAuthenticated } = useAuth();
   const [items, setItems] = useState<RecentlyViewedVendor[]>([]);
 
-  const loadItems = () => {
-    setItems(getRecentlyViewedVendors());
-  };
+  const loadItems = useCallback(() => {
+    if (!isAuthenticated || !user?.id) {
+      setItems([]);
+      return;
+    }
+    setItems(getRecentlyViewedVendors(user.id));
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     loadItems();
     window.addEventListener('ayoj-recently-viewed-updated', loadItems);
     return () => window.removeEventListener('ayoj-recently-viewed-updated', loadItems);
-  }, []);
+  }, [loadItems]);
 
-  if (items.length === 0) return null;
+  // If user is not logged in or has no recently viewed vendors, do not render
+  if (!isAuthenticated || !user || items.length === 0) return null;
 
   return (
     <section className="py-6 px-4 sm:px-6 bg-[#FAF7F2] border-b border-[#E8E2D9]">
@@ -45,7 +52,7 @@ export default function RecentlyViewedStrip() {
 
           <button
             type="button"
-            onClick={clearRecentlyViewedVendors}
+            onClick={() => clearRecentlyViewedVendors(user?.id)}
             className="text-[11px] text-[#6B6560] hover:text-[#9E5338] hover:underline cursor-pointer transition-colors"
           >
             Clear history

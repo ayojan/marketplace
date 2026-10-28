@@ -1,5 +1,7 @@
 'use client';
 
+import { tokenService } from './tokenService';
+
 export interface RecentlyViewedVendor {
   id: string | number;
   slug?: string;
@@ -13,13 +15,16 @@ export interface RecentlyViewedVendor {
   viewedAt: number;
 }
 
-const STORAGE_KEY = 'ayoj_recently_viewed_vendors';
+const STORAGE_PREFIX = 'ayoj_recently_viewed_vendors_';
 const MAX_ITEMS = 8;
 
-export function getRecentlyViewedVendors(): RecentlyViewedVendor[] {
+export function getRecentlyViewedVendors(userId?: string | number): RecentlyViewedVendor[] {
   if (typeof window === 'undefined') return [];
+  const activeId = userId ?? tokenService.getUser()?.id;
+  if (!activeId) return []; // User is logged out / no user signed in: Return empty array!
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = `${STORAGE_PREFIX}${activeId}`;
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -28,10 +33,13 @@ export function getRecentlyViewedVendors(): RecentlyViewedVendor[] {
   }
 }
 
-export function saveRecentlyViewedVendor(vendor: any): void {
+export function saveRecentlyViewedVendor(vendor: any, userId?: string | number): void {
   if (typeof window === 'undefined' || !vendor || !vendor.id) return;
+  const activeId = userId ?? tokenService.getUser()?.id;
+  if (!activeId) return; // Do not record history for unauthenticated/anonymous visitors!
   try {
-    const current = getRecentlyViewedVendors();
+    const key = `${STORAGE_PREFIX}${activeId}`;
+    const current = getRecentlyViewedVendors(activeId);
     const name = vendor.name || vendor.business_name || 'Creative Partner';
     const image = vendor.image || vendor.profile_image_url || '';
     const rating = vendor.rating ?? vendor.average_rating;
@@ -56,17 +64,24 @@ export function saveRecentlyViewedVendor(vendor: any): void {
     const filtered = current.filter((item) => String(item.id) !== String(vendor.id));
     const updated = [newItem, ...filtered].slice(0, MAX_ITEMS);
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(key, JSON.stringify(updated));
+    // Also clean up any legacy un-scoped key from previous version
+    localStorage.removeItem('ayoj_recently_viewed_vendors');
     window.dispatchEvent(new CustomEvent('ayoj-recently-viewed-updated'));
   } catch {
     // Ignore storage quota errors
   }
 }
 
-export function clearRecentlyViewedVendors(): void {
+export function clearRecentlyViewedVendors(userId?: string | number): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    const activeId = userId ?? tokenService.getUser()?.id;
+    if (activeId) {
+      localStorage.removeItem(`${STORAGE_PREFIX}${activeId}`);
+    }
+    // Also clean legacy un-scoped key if present
+    localStorage.removeItem('ayoj_recently_viewed_vendors');
     window.dispatchEvent(new CustomEvent('ayoj-recently-viewed-updated'));
   } catch {
     // Ignore
