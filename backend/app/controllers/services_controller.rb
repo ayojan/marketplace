@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
+# rubocop:disable-next Metrics/ClassLength
 class ServicesController < ApiController
   before_action :authenticate_user!, except: %i[index show search]
   before_action :set_service, only: %i[update destroy]
@@ -26,7 +26,7 @@ class ServicesController < ApiController
       :bookings,
       service_images: { image_attachment: :blob },
       vendor: { portfolio_items: { images_attachments: :blob } }
-    ).find(params[:id])
+    ).find(params.expect(:id))
 
     render json: present_service(@service, include_details: true)
   end
@@ -46,9 +46,10 @@ class ServicesController < ApiController
     result = Services::CreateService.call(user: current_user, params: params)
 
     if result[:success]
+      service = preload_service(result[:service])
       render json: {
         message: 'Service created successfully',
-        service: present_service(result[:service], include_details: true)
+        service: present_service(service, include_details: true)
       }, status: :created
     else
       render json: {
@@ -62,9 +63,10 @@ class ServicesController < ApiController
     result = Services::UpdateService.call(service: @service, params: params)
 
     if result[:success]
+      service = preload_service(result[:service])
       render json: {
         message: 'Service updated successfully',
-        service: present_service(result[:service], include_details: true)
+        service: present_service(service, include_details: true)
       }
     else
       render json: {
@@ -81,8 +83,24 @@ class ServicesController < ApiController
 
   private
 
+  def preload_service(service_or_id)
+    id = service_or_id.is_a?(Service) ? service_or_id.id : service_or_id
+    Service.includes(
+      :categories,
+      :bookings,
+      service_images: { image_attachment: :blob },
+      vendor: [
+        :primary_vendor_category,
+        :primary_category,
+        :categories,
+        { vendor_categories: :category },
+        { portfolio_items: { images_attachments: :blob } }
+      ]
+    ).find_by(id: id) || service_or_id
+  end
+
   def set_service
-    @service = Service.find(params[:id])
+    @service = Service.find(params.expect(:id))
   end
 
   def ensure_service_owner
@@ -156,4 +174,3 @@ class ServicesController < ApiController
     }
   end
 end
-# rubocop:enable Metrics/ClassLength

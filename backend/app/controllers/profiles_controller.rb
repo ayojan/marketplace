@@ -190,6 +190,18 @@ class ProfilesController < ApiController
   end
 
   def profile_response(profile)
-    VendorSerializer.render_as_hash(profile, view: :profile)
+    vendor = if profile.is_a?(Vendor)
+               Vendor.includes(
+                 :services,
+                 :primary_vendor_category,
+                 :primary_category,
+                 vendor_categories: :category,
+                 portfolio_items: { images_attachments: :blob }
+               ).find_by(id: profile.id) || profile
+             else
+               profile
+             end
+
+    VendorSerializer.render_as_hash(vendor, view: :profile)
   end
 end

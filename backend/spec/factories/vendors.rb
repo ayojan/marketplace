@@ -2,8 +2,8 @@
 
 FactoryBot.define do
   factory :vendor do
-    # Use the auto-created vendor from User model
-    initialize_with { create(:user, role: :vendor).vendor }
+    user { association :user, :vendor }
+    initialize_with { user.association(:vendor).target || Vendor.new(user: user) }
 
     business_name { Faker::Company.name }
     description { Faker::Lorem.paragraph(sentence_count: 5) }

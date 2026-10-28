@@ -5,11 +5,11 @@ require 'rails_helper'
 RSpec.describe VendorPolicy do
   subject { described_class.new(user, vendor) }
 
-  let(:vendor_user) { create(:user, :vendor) }
-  let(:vendor) { vendor_user.vendor }
-  let(:other_vendor) { create(:user, :vendor) }
-  let(:admin_user) { create(:user, :admin) }
-  let(:customer) { create(:user, :customer) }
+  let(:vendor_user) { build_stubbed(:user, :vendor) }
+  let(:vendor) { build_stubbed(:vendor, user: vendor_user) }
+  let(:other_vendor) { build_stubbed(:user, :vendor) }
+  let(:admin_user) { build_stubbed(:user, :admin) }
+  let(:customer) { build_stubbed(:user, :customer) }
 
   describe '#show?' do
     context 'when user is authenticated' do

@@ -46,7 +46,7 @@ class PortfolioItemSerializer < Blueprinter::Base
 
   field :images do |item|
     if item.images.attached?
-      ImageSerializer.render_as_hash(item.images)
+      ImageSerializer.render_as_hash(item.images.attachments)
     else
       []
     end
