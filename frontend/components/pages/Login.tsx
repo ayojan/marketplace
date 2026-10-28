@@ -22,8 +22,8 @@ const Login = () => {
     const result = await login(formData);
 
     if (result.success) {
-      const fromParam = searchParams.get('from');
-      if (fromParam && fromParam !== '/') {
+      const fromParam = searchParams.get('redirect') || searchParams.get('from');
+      if (fromParam && fromParam.startsWith('/') && fromParam !== '/') {
         router.push(fromParam);
       } else if (result.user?.role === 'vendor') {
         try {
@@ -43,7 +43,7 @@ const Login = () => {
           router.push('/vendor/onboarding');
         }
       } else {
-        router.push(fromParam || '/');
+        router.push(fromParam && fromParam.startsWith('/') ? fromParam : '/');
       }
     }
 

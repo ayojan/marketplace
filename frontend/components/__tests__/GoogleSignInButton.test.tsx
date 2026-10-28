@@ -10,6 +10,7 @@ jest.mock('@/lib/contexts/AuthContext', () => ({
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
 }));
 
 jest.mock('sonner', () => ({

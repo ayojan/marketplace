@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,17 @@ export default function GoogleSignInButton({
 }: GoogleSignInButtonProps) {
   const { loginWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  let targetRedirect = '/';
+  try {
+    const fromParam = searchParams?.get('redirect') || searchParams?.get('from');
+    if (fromParam && fromParam.startsWith('/')) {
+      targetRedirect = fromParam;
+    }
+  } catch {
+    targetRedirect = '/';
+  }
 
   const [isLoading, setIsLoading] = useState(false);
   const [gisReady, setGisReady] = useState(false);
@@ -157,7 +168,7 @@ export default function GoogleSignInButton({
             if (res.needs_mobile_onboarding) {
               setShowMobileModal(true);
             } else {
-              router.push('/customer/dashboard');
+              router.push(targetRedirect);
             }
           }
         }
@@ -232,7 +243,7 @@ export default function GoogleSignInButton({
         } else if (res.user?.role === 'vendor') {
           router.push('/vendor/dashboard');
         } else {
-          router.push('/customer/dashboard');
+          router.push(targetRedirect);
         }
       } else {
         setCollisionError(res.error || 'Incorrect password. Could not link account.');
@@ -415,11 +426,11 @@ export default function GoogleSignInButton({
                 <Button
                   onClick={() => {
                     setShowMobileModal(false);
-                    router.push('/customer/dashboard');
+                    router.push(targetRedirect);
                   }}
-                  className="h-10 px-6 rounded-xl text-xs font-semibold bg-[#9E5338] hover:bg-[#85432c] text-white flex items-center gap-1.5"
+                  className="h-10 px-6 rounded-xl text-xs font-semibold bg-[#9E5338] hover:bg-[#85432c] text-white flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>Go to Customer Dashboard</span>
+                  <span>Explore Vendors</span>
                   <ArrowRight className="size-3.5" />
                 </Button>
               </div>

@@ -88,7 +88,8 @@ const Register = () => {
           router.push('/vendor/onboarding');
         } else {
           toast.success('Welcome to Ayoj! Start planning your celebration.');
-          router.push(searchParams?.get('from') || '/');
+          const target = searchParams?.get('redirect') || searchParams?.get('from') || '/';
+          router.push(target.startsWith('/') ? target : '/');
         }
       }
     }
