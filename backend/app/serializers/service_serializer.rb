@@ -61,8 +61,12 @@ class ServiceSerializer < Blueprinter::Base
       images = service.service_images.loaded? ? service.service_images.first(5) : service.service_images.limit(5)
       ImageSerializer.render_as_hash(images)
     elsif service.respond_to?(:images) && service.images.attached?
-      images = service.images.attachments.loaded? ? service.images.attachments.first(5) : service.images.attachments
-      .limit(5)
+      images = if service.images.attachments.loaded?
+                 service.images.attachments.first(5)
+               else
+                 service.images.attachments
+                        .limit(5)
+               end
       ImageSerializer.render_as_hash(images)
     else
       []
