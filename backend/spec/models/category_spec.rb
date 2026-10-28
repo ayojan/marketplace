@@ -16,7 +16,8 @@
 #
 # Indexes
 #
-#  index_categories_on_slug  (slug) UNIQUE
+#  index_categories_on_name_tsvector  (to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text)) USING gin
+#  index_categories_on_slug           (slug) UNIQUE
 #
 require 'rails_helper'
 

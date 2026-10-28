@@ -10,6 +10,7 @@
 #  description    :text
 #  name           :string
 #  pricing_type   :string           default("hourly")
+#  search_vector  :tsvector
 #  status         :string           default("draft")
 #  total_reviews  :integer          default(0)
 #  created_at     :datetime         not null
@@ -19,6 +20,7 @@
 # Indexes
 #
 #  index_services_on_average_rating        (average_rating)
+#  index_services_on_search_vector         (search_vector) USING gin
 #  index_services_on_status                (status)
 #  index_services_on_vendor_id             (vendor_id)
 #  index_services_on_vendor_id_and_status  (vendor_id,status)

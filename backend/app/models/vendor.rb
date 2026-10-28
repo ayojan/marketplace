@@ -33,13 +33,14 @@
 #
 # Indexes
 #
-#  index_vendors_on_business_name        (business_name)
-#  index_vendors_on_coordinates          (latitude,longitude)
-#  index_vendors_on_favorites_count      (favorites_count)
-#  index_vendors_on_location             (location)
-#  index_vendors_on_slug                 (slug) UNIQUE
-#  index_vendors_on_user_id              (user_id) UNIQUE
-#  index_vendors_on_verification_status  (verification_status)
+#  index_vendors_on_business_name           (business_name)
+#  index_vendors_on_business_name_tsvector  (to_tsvector('english'::regconfig, (COALESCE(business_name, ''::character varying))::text)) USING gin
+#  index_vendors_on_coordinates             (latitude,longitude)
+#  index_vendors_on_favorites_count         (favorites_count)
+#  index_vendors_on_location                (location)
+#  index_vendors_on_slug                    (slug) UNIQUE
+#  index_vendors_on_user_id                 (user_id) UNIQUE
+#  index_vendors_on_verification_status     (verification_status)
 #
 # Foreign Keys
 #

@@ -1,5 +1,34 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: services
+#
+#  id             :bigint           not null, primary key
+#  average_rating :decimal(3, 2)    default(0.0)
+#  base_price     :decimal(10, 2)
+#  description    :text
+#  name           :string
+#  pricing_type   :string           default("hourly")
+#  search_vector  :tsvector
+#  status         :string           default("draft")
+#  total_reviews  :integer          default(0)
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  vendor_id      :bigint           not null
+#
+# Indexes
+#
+#  index_services_on_average_rating        (average_rating)
+#  index_services_on_search_vector         (search_vector) USING gin
+#  index_services_on_status                (status)
+#  index_services_on_vendor_id             (vendor_id)
+#  index_services_on_vendor_id_and_status  (vendor_id,status)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (vendor_id => vendors.id)
+#
 class ServiceSerializer < Blueprinter::Base
   identifier :id
   fields :vendor_id, :name, :description, :status, :base_price, :pricing_type

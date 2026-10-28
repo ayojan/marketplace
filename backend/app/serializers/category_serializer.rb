@@ -1,5 +1,24 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: categories
+#
+#  id          :bigint           not null, primary key
+#  active      :boolean          default(TRUE)
+#  description :text
+#  icon        :string
+#  metadata    :jsonb
+#  name        :string
+#  slug        :string
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#
+# Indexes
+#
+#  index_categories_on_name_tsvector  (to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text)) USING gin
+#  index_categories_on_slug           (slug) UNIQUE
+#
 class CategorySerializer < Blueprinter::Base
   identifier :id
   fields :name, :slug

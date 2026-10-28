@@ -10,9 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_18_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_26_031700) do
+  create_schema "auth"
+  create_schema "extensions"
+  create_schema "graphql"
+  create_schema "graphql_public"
+  create_schema "pgbouncer"
+  create_schema "realtime"
+  create_schema "storage"
+  create_schema "vault"
+
   # These are extensions that must be enabled in order to support this database
+  enable_extension "extensions.pg_stat_statements"
+  enable_extension "extensions.pgcrypto"
+  enable_extension "extensions.uuid-ossp"
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "vault.supabase_vault"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -130,6 +143,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_18_000001) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index "to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text)", name: "index_categories_on_name_tsvector", using: :gin
     t.index ["slug"], name: "index_categories_on_slug", unique: true
   end
 
@@ -280,7 +294,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_18_000001) do
     t.integer "total_reviews", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.virtual "search_vector", type: :tsvector, as: "(setweight(to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text), 'A'::\"char\") || setweight(to_tsvector('english'::regconfig, COALESCE(description, ''::text)), 'B'::\"char\"))", stored: true
     t.index ["average_rating"], name: "index_services_on_average_rating"
+    t.index ["search_vector"], name: "index_services_on_search_vector", using: :gin
     t.index ["status"], name: "index_services_on_status"
     t.index ["vendor_id", "status"], name: "index_services_on_vendor_id_and_status"
     t.index ["vendor_id"], name: "index_services_on_vendor_id"
@@ -524,6 +540,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_18_000001) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index "to_tsvector('english'::regconfig, (COALESCE(business_name, ''::character varying))::text)", name: "index_vendors_on_business_name_tsvector", using: :gin
     t.index ["business_name"], name: "index_vendors_on_business_name"
     t.index ["favorites_count"], name: "index_vendors_on_favorites_count"
     t.index ["latitude", "longitude"], name: "index_vendors_on_coordinates"
