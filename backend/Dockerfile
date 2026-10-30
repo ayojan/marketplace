@@ -54,11 +54,12 @@ RUN chmod +x /rails/bin/docker-entrypoint
 # Run and own only the runtime files as a non-root user for security
 RUN useradd rails --create-home --shell /bin/bash && \
     mkdir -p db log storage tmp && \
-    chown -R rails:rails db log storage tmp
+    chown -R rails:rails db log storage tmp && \
+    (ln -sf /usr/lib/*-linux-gnu/libjemalloc.so.2 /usr/lib/libjemalloc.so.2 2>/dev/null || true)
 USER rails:rails
 
-# Optimize Ruby memory usage in container
-ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 \
+# Optimize Ruby memory usage in container across both x86_64 and aarch64 (Apple Silicon / OCI Ampere)
+ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2 \
     MALLOC_ARENA_MAX=2
 
 # Entrypoint prepares the database.

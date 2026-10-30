@@ -42,14 +42,17 @@ graph TD
 ### The "Traffic Cop" Concept
 Nginx acts as the single entry point (listening on port 80/443). Instead of the user talking directly to the frontend or backend, they talk only to Nginx. Nginx then looks at the **URL Path** to decide where to send the message.
 
-### Routing Rules (from `docker/nginx/local.conf`)
+### Routing Rules (from `docker/nginx/prod.conf`)
 
 | Request Path | Destination | Internal Logic |
 | :--- | :--- | :--- |
-| `localhost/` | **Frontend** | Direct pass to Next.js container. |
-| `localhost/api/vendors` | **Backend** | Rewrites `/api/vendors` to `/vendors` and sends to Rails. |
-| `localhost/up` | **Backend** | Direct pass to Rails health check. |
-| `localhost/sidekiq` | **Backend** | Direct pass to Background Job dashboard. |
+| `ayoj.in/` (or `localhost/`) | **Frontend** | Direct proxy to Next.js container (`frontend:3000`) for SSR. |
+| `ayoj.in/_next/static/*` | **Frontend** | Proxied to Next.js with 1-year immutable edge caching. |
+| `ayoj.in/api/*` | **Backend** | Rewrites `/api/*` to `/*` and proxies to Rails (`backend:3000`). |
+| `ayoj.in/rails/active_storage/*` | **Backend** | Direct proxy to Rails Active Storage image processor. |
+| `ayoj.in/up` | **Backend** | Direct proxy to Rails healthcheck probe. |
+| `admin.ayoj.in/` | **Backend** | Redirects to `/admin` ActiveAdmin portal. |
+| `api.ayoj.in/*` | **Backend** | Direct API subdomain endpoint for mobile clients. |
 
 ---
 

@@ -57,17 +57,17 @@ docker-compose build
 
 ### Development
 ```bash
-# Build with caching
-docker-compose build
+# Build local development images with caching
+docker compose -f docker-compose.local.yml build
 
 # Force rebuild without cache (if needed)
-docker-compose build --no-cache
+docker compose -f docker-compose.local.yml build --no-cache
 ```
 
-### Production
+### Production / Mirror
 ```bash
-# Build production images
-docker-compose -f docker-compose.prod.yml build
+# Build production images (or pull from GitHub Container Registry)
+docker compose build
 ```
 
 ## Cache Invalidation

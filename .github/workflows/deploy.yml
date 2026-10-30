@@ -1,4 +1,4 @@
-name: Build, Push to GHCR & Deploy to GCE 
+name: Build, Push to GHCR & Deploy to OCI Ampere VM
 
 on:
   push:
@@ -6,31 +6,51 @@ on:
       - main
     paths:
       - 'backend/**'
+      - 'frontend/**'
+      - 'docker/**'
+      - 'docker-compose.yml'
       - '.github/workflows/deploy.yml'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
+  # ----------------------------------------------------------------------------
+  # Job 1: Build & Push Both Backend and Frontend Docker Images in Parallel
+  # Target architecture: linux/arm64 (OCI Ampere A1 Flex native ARM architecture)
+  # ----------------------------------------------------------------------------
   build-and-push:
-    name: Build & Push to GHCR
+    name: Build & Push (${{ matrix.name }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+          - name: frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Prepare Lowercase Image Name
-        run: |
-          IMAGE_NAME=$(echo "${{ env.REGISTRY }}/${{ github.repository }}-backend" | tr '[:upper:]' '[:lower:]')
-          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+      - name: Set up QEMU (for ARM64 cross-compilation)
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Prepare Lowercase Image Name
+        run: |
+          IMAGE_NAME=$(echo "${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -48,19 +68,23 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=
 
-      - name: Build and Push Docker Image
+      - name: Build and Push ARM64 Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # ----------------------------------------------------------------------------
+  # Job 2: Deploy to OCI Ampere VM via production.yml
+  # ----------------------------------------------------------------------------
   deploy:
-    name: Deploy to GCE VM
+    name: Deploy to OCI Ampere VM
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
@@ -68,25 +92,37 @@ jobs:
       packages: read
 
     steps:
-      - name: Prepare Lowercase Image Name
-        run: |
-          IMAGE_NAME=$(echo "${{ env.REGISTRY }}/${{ github.repository }}-backend:latest" | tr '[:upper:]' '[:lower:]')
-          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Deploy via SSH using Docker
+      - name: Copy docker-compose.yml and Nginx config to OCI VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST || secrets.GCE_HOST }}
+          username: ${{ secrets.OCI_USERNAME || secrets.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.OCI_SSH_KEY || secrets.GCE_SSH_KEY }}
+          source: "docker-compose.yml,docker/nginx/prod.conf"
+          target: "~/marketplace"
+
+      - name: Deploy via SSH using Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         env:
-          ENV_CONTENT: ${{ secrets.ENV_PRODUCTION }}
+          ENV_CONTENT: ${{ secrets.ENV_PRODUCTION || secrets.PRODUCTION_ENV || secrets.PROD_ENV || secrets.ENV_FILE }}
           REGISTRY: ${{ env.REGISTRY }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_LOWER: ${{ github.repository }}
         with:
-          host: ${{ secrets.GCE_HOST }}
-          username: ${{ secrets.GCE_USERNAME }}
-          key: ${{ secrets.GCE_SSH_KEY }}
-          envs: ENV_CONTENT,IMAGE_NAME,REGISTRY,GHCR_USERNAME,GHCR_TOKEN
+          host: ${{ secrets.OCI_HOST || secrets.GCE_HOST }}
+          username: ${{ secrets.OCI_USERNAME || secrets.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.OCI_SSH_KEY || secrets.GCE_SSH_KEY }}
+          envs: ENV_CONTENT,REGISTRY,GHCR_USERNAME,GHCR_TOKEN,REPO_LOWER
           script: |
             set -e
+
+            echo "📁 Ensuring deployment directory exists..."
+            mkdir -p ~/marketplace
+            cd ~/marketplace
 
             echo "🔐 Updating production environment variables..."
             if [ -n "$ENV_CONTENT" ]; then
@@ -94,29 +130,33 @@ jobs:
               chmod 600 ~/.env.production
             fi
 
+            # Format image names in lowercase
+            REPO_CLEAN=$(echo "$REPO_LOWER" | tr '[:upper:]' '[:lower:]')
+            BACKEND_IMG="${REGISTRY}/${REPO_CLEAN}-backend:latest"
+            FRONTEND_IMG="${REGISTRY}/${REPO_CLEAN}-frontend:latest"
+
+            # Ensure default images exist in .env.production if not already set
+            if [ -f ~/.env.production ]; then
+              grep -q "BACKEND_IMAGE=" ~/.env.production || echo "BACKEND_IMAGE=${BACKEND_IMG}" >> ~/.env.production
+              grep -q "FRONTEND_IMAGE=" ~/.env.production || echo "FRONTEND_IMAGE=${FRONTEND_IMG}" >> ~/.env.production
+            fi
+
             echo "🔑 Authenticating Docker with GitHub Container Registry..."
             echo "$GHCR_TOKEN" | docker login "$REGISTRY" -u "$GHCR_USERNAME" --password-stdin
 
-            echo "📦 Pulling latest image: $IMAGE_NAME..."
-            docker pull "$IMAGE_NAME"
+            echo "📦 Pulling latest production images..."
+            docker compose --env-file ~/.env.production pull
 
-            echo "🛑 Stopping old container (if running)..."
-            docker stop rails-backend || true
-            docker rm rails-backend || true
+            echo "🚀 Launching / upgrading stack with zero downtime..."
+            docker compose --env-file ~/.env.production up -d --remove-orphans
 
-            echo "🚀 Starting new Docker container..."
-            docker run -d \
-              --name rails-backend \
-              --restart=always \
-              -p 3000:3000 \
-              --memory 1500m \
-              --env-file ~/.env.production \
-              "$IMAGE_NAME"
-
-            echo "⚡ Running database migrations on Neon..."
-            docker exec rails-backend bin/rails db:migrate
+            echo "⚡ Running database migrations..."
+            docker compose --env-file ~/.env.production exec -T backend bin/rails db:migrate
 
             echo "🧹 Cleaning up old unused image layers..."
-            docker image prune -f
+            docker image prune -af --filter "until=72h"
 
-            echo "✅ Deployment completed successfully!"
+            echo "📊 Verifying running containers..."
+            docker compose --env-file ~/.env.production ps
+
+            echo "✅ Deployment to OCI completed successfully!"

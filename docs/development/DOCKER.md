@@ -1,235 +1,101 @@
 # Docker Setup for Marketplace Application
 
-This document provides instructions for running the Marketplace application using Docker.
+This document provides instructions for running the Marketplace application using Docker for both local development and production environments.
 
-## Prerequisites
+---
 
-- Docker
-- Docker Compose
-- Make (optional, for using Makefile commands)
+## Architecture Overview
 
-## Quick Start
+The application is structured into containerized microservices:
 
-1. **Clone the repository and navigate to the marketplace directory**
-   ```bash
-   cd marketplace
-   ```
+* **Frontend**: Next.js 14 App Router (Node.js 20, TypeScript, Tailwind CSS)
+* **Backend**: Ruby on Rails 8 / 7.2 REST API with Active Storage
+* **Database**: PostgreSQL 15 / 16 (with persistent volume)
+* **Cache**: Redis 7 Alpine (Rails `redis_cache_store` + rate limiting)
+* **Background Jobs**: Rails Solid Queue (transactional queues persisted in PostgreSQL)
+* **Reverse Proxy**: Nginx Alpine (routing, Gzip compression, and Cloudflare Real-IP restoration)
 
-2. **Copy environment file**
-   ```bash
-   cp .env.example .env
-   ```
+---
 
-3. **Build and start the application**
-   ```bash
-   make setup
-   # or manually:
-   docker-compose build
-   docker-compose up -d
-   ```
+## 1. Local Development (`docker-compose.local.yml`)
 
-The application will be available at:
-- Web application: http://localhost (via nginx)
-- Backend API: http://localhost/api
-- Sidekiq Web UI: http://localhost/sidekiq (development only)
-- Direct backend access: http://localhost:3000
-- Direct frontend access: http://localhost:5173
+Use this configuration when developing locally with live code reload.
 
-## Services
+### Memory & Performance (Tuned for 8 GB Mac & Colima)
+Container limits are pre-configured to consume **~2.9 GB max** so it runs smoothly inside Colima's 4.1 GB virtual machine:
+* `db`: `512m`
+* `redis`: `128m`
+* `backend`: `1200m`
+* `frontend`: `1000m`
 
-The Docker setup includes the following services:
-
-### Development Services
-- **db**: PostgreSQL 15 database server
-- **redis**: Redis server for caching and background jobs
-- **backend**: Rails API server with Active Storage for file uploads
-- **sidekiq**: Background job processor for image processing
-- **frontend**: React development server with Vite
-- **nginx**: Reverse proxy routing requests to backend/frontend
-
-### Production Services
-- **db**: PostgreSQL 15 database server
-- **redis**: Redis server with persistence
-- **web**: Rails API server (production build)
-- **sidekiq**: Background job processor
-- **frontend**: Static React build served by nginx
-- **nginx**: Production reverse proxy with static file serving
-
-## Available Make Commands
-
-| Command | Description |
-|---------|-------------|
-| `make build` | Build Docker images |
-| `make up` | Start all services |
-| `make up-d` | Start all services in detached mode |
-| `make down` | Stop all services |
-| `make logs` | View logs from all services |
-| `make shell` | Open bash shell in web container |
-| `make console` | Open Rails console |
-| `make test` | Run test suite |
-| `make setup` | Install gems and setup database |
-| `make clean` | Clean up Docker resources |
-| `make db-reset` | Reset database |
-| `make bundle` | Install gems |
-| `make migrate` | Run database migrations |
-| `make rollback` | Rollback last migration |
-| `make db-console` | Access PostgreSQL console |
-| `make wait-for-db` | Wait for database to be ready |
-
-## Development Workflow
-
-1. **Start the application**
-   ```bash
-   make up
-   ```
-
-2. **Make code changes** - The application will automatically reload thanks to volume mounting
-
-3. **Run tests**
-   ```bash
-   make test
-   ```
-
-4. **Access Rails console**
-   ```bash
-   make console
-   ```
-
-5. **View logs**
-   ```bash
-   make logs
-   ```
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and modify as needed:
-
+### Start Development Services
 ```bash
-cp .env.example .env
+# Start all local development containers in detached mode:
+docker-compose -f docker-compose.local.yml up -d
 ```
 
-Key environment variables:
-- `DATABASE_URL`: PostgreSQL connection URL
-- `REDIS_URL`: Redis connection URL
-- `RAILS_ENV`: Rails environment (development/test/production)
-- `JWT_SECRET_KEY`: Secret key for JWT token generation
-- `DEVISE_SECRET_KEY`: Secret key for Devise authentication
-- `POSTGRES_DB`: PostgreSQL database name
-- `POSTGRES_USER`: PostgreSQL username
-- `POSTGRES_PASSWORD`: PostgreSQL password
-- `RAILS_ACTIVE_STORAGE_SERVICE`: Active Storage service (local/amazon/google)
+### Access Endpoints
+| Service | URL | Notes |
+| :--- | :--- | :--- |
+| **Frontend** | `http://localhost:3000` | Next.js dev server with hot reload |
+| **Backend API** | `http://localhost:3001` | Rails API server with code reload |
+| **ActiveAdmin** | `http://localhost:3001/admin` | Admin portal |
+| **Solid Queue Monitor** | `http://localhost:3001/solid_queue` | Background job dashboard |
+| **PostgreSQL** | `localhost:5432` | User: `marketplace`, Password: `password` |
+| **Redis** | `localhost:6379` | Cache & session store |
 
-## New Features
+---
 
-### File Uploads and Image Processing
-- **Active Storage**: Configured for local file storage with volume persistence
-- **Image Processing**: Background jobs using Sidekiq for image optimization
-- **Bulk Upload**: Support for multiple file uploads via API
-- **Storage Volume**: Persistent storage mounted at `/rails/storage`
+## 2. Production-Mirror Stack (`docker-compose.yml`)
 
-### Background Jobs
-- **Sidekiq**: Configured for background job processing
-- **Image Processing Jobs**: Automatic image processing after upload
-- **Job Monitoring**: Sidekiq web interface available in development
-- **Redis Persistence**: Job queue data persisted across restarts
+Use this configuration to test the full production architecture locally or run it on your cloud server (e.g. OCI Always Free instance).
 
-### Authentication & Authorization
-- **JWT Tokens**: Stateless authentication for API access
-- **Devise Integration**: User registration and authentication
-- **Protected Routes**: Frontend route protection with authentication
-- **CORS Configuration**: Proper cross-origin request handling
-
-## Database
-
-The application uses PostgreSQL 15 in all environments. The database data is persisted in a Docker volume named `postgres_data`. 
-
-### Database Access
-
+### Start Production Stack
 ```bash
-# Access PostgreSQL console
-make db-console
-# or
-docker-compose exec db psql -U marketplace -d marketplace_development
-
-# View database logs
-docker-compose logs db
-
-# Reset database
-make db-reset
+docker-compose up -d --build
 ```
 
-## Troubleshooting
+### Access Endpoints (Unified Domain via Nginx)
+| Service | URL | Routing Logic |
+| :--- | :--- | :--- |
+| **Main Marketplace** | `http://localhost` (or `:8080`) | Nginx proxies to Next.js SSR (`frontend:3000`) |
+| **Backend API** | `http://localhost/api/...` | Nginx rewrites `/api/*` to `/*` and proxies to Rails |
+| **Health Check** | `http://localhost/up` | Rails system health probe |
+| **Active Storage** | `http://localhost/rails/active_storage/` | Direct file serving / variant transforms |
 
-### Port Already in Use
-If port 3000 is already in use, you can change it in `docker-compose.yml`:
-```yaml
-ports:
-  - "3001:3000"  # Change 3001 to any available port
-```
+---
 
-### Permission Issues
-If you encounter permission issues, try:
+## 3. Useful Docker Commands
+
+### Database Operations
 ```bash
-sudo chown -R $USER:$USER .
+# Access PostgreSQL terminal
+docker exec -it marketplace-db-1 psql -U marketplace -d marketplace_production
+
+# Run database migrations manually
+docker exec -it marketplace-backend-1 bin/rails db:migrate
+
+# Reset and re-seed the database
+docker exec -it marketplace-backend-1 bin/rails db:seed
 ```
 
-### Clean Start
-To start fresh:
+### Logs & Monitoring
 ```bash
-make clean
-make build
-make up
-make setup
+# View live logs for backend
+docker-compose logs -f backend
+
+# View live logs for frontend
+docker-compose logs -f frontend
+
+# Check real-time CPU & memory consumption
+docker stats
 ```
 
-### View Container Logs
-To view logs for a specific service:
+### Stopping Services
 ```bash
-docker-compose logs web
-docker-compose logs db
-docker-compose logs redis
-docker-compose logs sidekiq
+# Stop containers (preserves database data in volume)
+docker-compose down
+
+# Stop and remove volumes (WARNING: wipes local database)
+docker-compose down -v
 ```
-
-## Production Deployment
-
-For production deployment, use the production docker-compose file:
-
-```bash
-# Copy and configure production environment
-cp .env.example .env.production
-# Edit .env.production with production values
-
-# Build and start production services
-make prod-build
-make prod-up
-
-# Or manually:
-docker-compose -f docker-compose.prod.yml build
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### Production Environment Variables
-
-Make sure to set these environment variables for production:
-
-```bash
-# Required production variables
-MARKETPLACE_DATABASE_PASSWORD=secure_database_password
-JWT_SECRET_KEY=secure_jwt_secret_key_here
-DEVISE_SECRET_KEY=secure_devise_secret_key_here
-
-# Optional SSL configuration
-SSL_CERT_PATH=/path/to/ssl/cert.pem
-SSL_KEY_PATH=/path/to/ssl/private.key
-```
-
-### Production Features
-
-- **Static file serving**: Frontend assets served directly by nginx
-- **File uploads**: Active Storage with local disk storage
-- **Background jobs**: Sidekiq for image processing
-- **Health checks**: Built-in health monitoring
-- **Security headers**: Configured in nginx
-- **Gzip compression**: Enabled for better performance
-- **SSL ready**: Configure SSL certificates in nginx

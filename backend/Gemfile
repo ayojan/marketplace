@@ -54,6 +54,9 @@ gem 'image_processing', '~> 1.2'
 # Cloudflare R2 / S3-compatible cloud storage for Active Storage
 gem 'aws-sdk-s3', require: false
 
+# Redis for caching and rate limiting
+gem 'redis', '~> 5.0'
+
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 gem 'activeadmin'
 gem 'rack-cors'

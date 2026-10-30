@@ -57,8 +57,21 @@ Rails.application.configure do
   # want to log everything, set the level to "debug".
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
 
-  # Use in-memory cache store in production to eliminate database round-trips for caching and rate-limiting
-  config.cache_store = :memory_store, { size: 64.megabytes }
+  # Use Redis cache store if REDIS_URL is configured, otherwise fallback to in-memory store
+  if ENV['REDIS_URL'].present?
+    config.cache_store = :redis_cache_store, {
+      url: ENV['REDIS_URL'],
+      connect_timeout: 5,
+      read_timeout: 1,
+      write_timeout: 1,
+      reconnect_attempts: 1,
+      error_handler: -> (method:, returning:, exception:) {
+        Rails.logger.warn("RedisCacheStore failed on #{method}: #{exception.message}")
+      }
+    }
+  else
+    config.cache_store = :memory_store, { size: 64.megabytes }
+  end
 
   # Use Solid Queue for Active Job (persisted in PostgreSQL primary database)
   config.active_job.queue_adapter = :solid_queue
@@ -86,6 +99,7 @@ Rails.application.configure do
   config.hosts = [
     'ayoj.in',
     /\A.*\.ayoj\.in\z/,
+    'backend',
     'localhost',
     /127\.0\.0\.1/
   ]

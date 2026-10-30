@@ -2,6 +2,7 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
+    mem_limit: 512m
     environment:
       POSTGRES_DB: marketplace_development
       POSTGRES_USER: marketplace
@@ -16,9 +17,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis for caching and background jobs
+  # Redis for caching and rate limiting
   redis:
     image: redis:7-alpine
+    mem_limit: 128m
     ports:
       - "6379:6379"
     volumes:
@@ -29,11 +31,12 @@ services:
       timeout: 5s
       retries: 5
 
-  # Rails Backend API (Optional in local dev)
+  # Rails Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.local
+    mem_limit: 1024m
     ports:
       - "3001:3000"
     volumes:
@@ -51,22 +54,23 @@ services:
         condition: service_healthy
     stdin_open: true
     tty: true
-    profiles: ["full"]
 
-  # Next.js Frontend (Optional in local dev)
+  # Next.js Frontend
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.local
+    mem_limit: 1024m
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - INTERNAL_API_URL=http://backend:3000
     depends_on:
       - backend
-    profiles: ["full"]
 
 volumes:
   redis_data:

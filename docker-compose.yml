@@ -1,40 +1,102 @@
+# ==============================================================================
+# Ayoj Production Docker Compose Stack for Oracle Cloud Infrastructure (OCI)
+# VM Shape: Ampere A1 Flex (2 OCPU / 4 vCPU, 12 GB RAM, 100 GB NVMe Boot Volume)
+# Architecture: linux/arm64 (OCI Ampere) & linux/amd64 compatible
+# Usage on OCI:
+#   docker compose pull
+#   docker compose up -d
+#   docker compose exec -T backend bin/rails db:migrate
+# ==============================================================================
+
 services:
+  # ----------------------------------------------------------------------------
+  # 1. PostgreSQL 15 Database (Primary store + SolidQueue background job storage)
+  # ----------------------------------------------------------------------------
   db:
     image: postgres:15-alpine
+    container_name: ayoj-production-db
+    restart: always
+    mem_limit: 2048m
+    shm_size: 256m
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=1536MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c max_connections=100
     environment:
-      POSTGRES_DB: marketplace_production
-      POSTGRES_USER: marketplace
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-marketplace_production}
+      POSTGRES_USER: ${POSTGRES_USER:-marketplace}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set in .env.production}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U marketplace -d marketplace_production"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-marketplace} -d ${POSTGRES_DB:-marketplace_production}"]
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
+  # ----------------------------------------------------------------------------
+  # 2. Redis 7 (In-memory cache store, fragment caching, rate-limiting)
+  # ----------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
+    container_name: ayoj-production-redis
+    restart: always
+    mem_limit: 512m
+    command: redis-server --save 60 1 --loglevel warning --maxmemory 384mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # ----------------------------------------------------------------------------
+  # 3. Rails 8 API Backend (Puma 8 + SolidQueue background workers)
+  # ----------------------------------------------------------------------------
   backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/ajeet/marketplace-backend:latest}
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: ayoj-production-backend
+    restart: always
+    mem_limit: 3500m
     environment:
-      - RAILS_ENV=production
-      - DATABASE_URL=postgresql://marketplace:${DATABASE_PASSWORD}@db:5432/marketplace_production
-      - REDIS_URL=redis://redis:6379/0
-      - RAILS_SERVE_STATIC_FILES=true
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      RAILS_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-marketplace}:${DATABASE_PASSWORD}@db:5432/${POSTGRES_DB:-marketplace_production}?pool=15
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE must be set in .env.production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set in .env.production}
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_LOG_LEVEL: ${RAILS_LOG_LEVEL:-info}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-5}
+      ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-cloudflare}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+      CLOUDFLARE_R2_ACCESS_KEY_ID: ${CLOUDFLARE_R2_ACCESS_KEY_ID:-}
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:-}
+      CLOUDFLARE_R2_BUCKET: ${CLOUDFLARE_R2_BUCKET:-ayoj-media}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -42,29 +104,89 @@ services:
         condition: service_healthy
     volumes:
       - storage_data:/rails/storage
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/up || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
+  # ----------------------------------------------------------------------------
+  # 4. Next.js 14 Frontend (SSR + React Server Components, standalone output)
+  # ----------------------------------------------------------------------------
   frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/ajeet/marketplace-frontend:latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: ayoj-production-frontend
+    restart: always
+    mem_limit: 2500m
     environment:
-      - NEXT_PUBLIC_API_URL=/api
-    restart: unless-stopped
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NEXT_PUBLIC_API_URL: /api
+      INTERNAL_API_URL: http://backend:3000
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "5"
 
+  # ----------------------------------------------------------------------------
+  # 5. Nginx Reverse Proxy (SSL termination, Cloudflare Real-IP, asset caching)
+  # ----------------------------------------------------------------------------
   nginx:
     image: nginx:alpine
+    container_name: ayoj-production-nginx
+    restart: always
+    mem_limit: 256m
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./docker/nginx/prod.conf:/etc/nginx/nginx.conf:ro
+      - nginx_logs:/var/log/nginx
     depends_on:
-      - backend
-      - frontend
-    restart: unless-stopped
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
+# ==============================================================================
+# Persistent Storage Volumes (Resides on the 100 GB OCI Boot Volume)
+# ==============================================================================
 volumes:
-  redis_data:
   postgres_data:
+    name: ayoj_production_postgres_data
+  redis_data:
+    name: ayoj_production_redis_data
   storage_data:
+    name: ayoj_production_storage_data
+  nginx_logs:
+    name: ayoj_production_nginx_logs

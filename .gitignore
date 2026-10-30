@@ -10,6 +10,7 @@ backend/.bundle
 # Ignore all environment files (except templates).
 /.env*
 !/.env*.erb
+!/.env.example
 backend/.env*
 !backend/.env*.erb
 .idea

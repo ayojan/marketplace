@@ -4,7 +4,7 @@ import VendorProfile from '../../../components/pages/VendorProfile';
 const isProduction = process.env.NODE_ENV === 'production';
 const defaultSiteUrl = isProduction ? 'https://www.ayoj.in' : 'http://localhost:3000';
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL || defaultSiteUrl).replace(/\/+$/, '');
-const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
+const apiUrl = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
 
 async function fetchVendor(id: string) {
   try {
