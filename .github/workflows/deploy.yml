@@ -209,13 +209,17 @@ jobs:
             fi
 
             REPO_CLEAN=$(echo "$REPO_LOWER" | tr '[:upper:]' '[:lower:]')
-            BACKEND_IMG="${REGISTRY}/${REPO_CLEAN}-backend:latest"
-            FRONTEND_IMG="${REGISTRY}/${REPO_CLEAN}-frontend:latest"
+            export BACKEND_IMAGE="${REGISTRY}/${REPO_CLEAN}-backend:latest"
+            export FRONTEND_IMAGE="${REGISTRY}/${REPO_CLEAN}-frontend:latest"
 
-            if [ -f ~/.env.production ]; then
-              grep -q "BACKEND_IMAGE=" ~/.env.production || echo "BACKEND_IMAGE=${BACKEND_IMG}" >> ~/.env.production
-              grep -q "FRONTEND_IMAGE=" ~/.env.production || echo "FRONTEND_IMAGE=${FRONTEND_IMG}" >> ~/.env.production
-            fi
+            echo "📦 Target Backend Image:  $BACKEND_IMAGE"
+            echo "📦 Target Frontend Image: $FRONTEND_IMAGE"
+
+            # Ensure ~/.env.production always has the accurate image paths
+            sed -i '/^BACKEND_IMAGE=/d' ~/.env.production 2>/dev/null || true
+            sed -i '/^FRONTEND_IMAGE=/d' ~/.env.production 2>/dev/null || true
+            echo "BACKEND_IMAGE=${BACKEND_IMAGE}" >> ~/.env.production
+            echo "FRONTEND_IMAGE=${FRONTEND_IMAGE}" >> ~/.env.production
 
             echo "🔑 Authenticating Docker with GitHub Container Registry..."
             echo "$GHCR_TOKEN" | docker login "$REGISTRY" -u "$GHCR_USERNAME" --password-stdin

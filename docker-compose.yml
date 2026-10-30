@@ -73,7 +73,7 @@ services:
   # 3. Rails 8 API Backend (Puma 8 + SolidQueue background workers)
   # ----------------------------------------------------------------------------
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/ajeet/marketplace-backend:latest}
+    image: ${BACKEND_IMAGE:-ghcr.io/ayojan/marketplace-backend:latest}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -120,7 +120,7 @@ services:
   # 4. Next.js 14 Frontend (SSR + React Server Components, standalone output)
   # ----------------------------------------------------------------------------
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/ajeet/marketplace-frontend:latest}
+    image: ${FRONTEND_IMAGE:-ghcr.io/ayojan/marketplace-frontend:latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile
