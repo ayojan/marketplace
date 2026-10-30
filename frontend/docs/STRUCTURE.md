@@ -1,146 +1,213 @@
-# Frontend Structure - Next.js 13+ App Router
+# Frontend Structure - Next.js 14 App Router
 
-This document outlines the new frontend structure following Next.js 13+ App Router conventions.
+This document outlines the frontend structure of the Ayoj Marketplace, built with **Next.js 14 (App Router)**, **React 18**, **TypeScript**, and **Tailwind CSS**.
 
-## Directory Structure
+---
+
+## Directory Tree
 
 ```
 frontend/
-├── app/                    # Next.js 13+ App Router
-│   ├── layout.tsx         # Root layout with providers
-│   ├── page.tsx           # Home page
-│   ├── login/
-│   │   └── page.tsx       # Login page
-│   ├── register/
-│   │   └── page.tsx       # Register page
-│   ├── dashboard/
-│   │   └── page.tsx       # Dashboard page
-│   └── [other routes]/
+├── app/                           # Next.js 14 App Router (pages, layouts, metadata)
+│   ├── layout.tsx                 # Root layout (Auth & Location providers, Toast notifications)
+│   ├── page.tsx                   # Marketplace home page
+│   ├── error.tsx                  # Root error boundary
+│   ├── global-error.tsx           # Global catch-all error boundary
+│   ├── not-found.tsx              # Custom 404 page
+│   ├── manifest.ts                # PWA web app manifest
+│   ├── robots.ts                  # Robots.txt generator
+│   ├── sitemap.ts                 # Dynamic XML sitemap generator
+│   │
+│   ├── marketplace/               # Public discovery directory
+│   │   ├── layout.tsx             # Directory layout & filters
+│   │   └── page.tsx               # Service & category search
+│   ├── vendors/                   # Vendor profile & showcase
+│   │   ├── layout.tsx             # Vendor pages layout
+│   │   ├── page.tsx               # Vendor directory
+│   │   └── [id]/page.tsx          # Dynamic vendor profile & services
+│   ├── services/                  # Service catalog
+│   │   └── page.tsx               # Service search
+│   ├── booking/                   # Multi-step booking checkout
+│   │   ├── page.tsx               # General booking entry
+│   │   └── [serviceId]/page.tsx   # Service-specific 3-step booking flow
+│   ├── customer/                  # Customer dashboard & portal
+│   │   ├── page.tsx               # Customer dashboard root
+│   │   ├── dashboard/page.tsx     # Celebration Passport & stats
+│   │   ├── bookings/page.tsx      # Booking history & status tracker
+│   │   └── favorites/page.tsx     # Saved & short-listed vendors
+│   ├── vendor/                    # Vendor workspace & management portal
+│   │   ├── page.tsx               # Vendor workspace root
+│   │   ├── dashboard/page.tsx     # Business metrics & pending requests
+│   │   ├── bookings/page.tsx      # Order management & status transitions
+│   │   ├── portfolio/page.tsx     # Media gallery management
+│   │   ├── services/page.tsx      # Packages & pricing management
+│   │   ├── calendar/page.tsx      # Availability schedule
+│   │   ├── settings/page.tsx      # Business profile & bank info
+│   │   └── onboarding/page.tsx    # Multi-step vendor onboarding wizard
+│   ├── login/page.tsx             # User authentication (Email + Google OAuth)
+│   ├── register/page.tsx          # Account creation with role selection
+│   ├── unauthorized/page.tsx      # Access denied fallback
+│   └── photographer/[id]/page.tsx # Legacy photographer alias route
 │
-├── components/             # Shared UI components
-│   ├── BookingCalendar.jsx
-│   ├── PortfolioManager.jsx
-│   ├── ProtectedRoute.jsx
-│   ├── ServiceManagement.jsx
-│   └── pages/             # Page-specific components
-│       ├── Home.tsx
-│       ├── Login.tsx
-│       └── Register.tsx
+├── components/                    # Feature-sliced component architecture
+│   ├── ui/                        # Radix UI & shadcn/ui design primitives
+│   │   ├── button.tsx             # Button variants (default, outline, ghost)
+│   │   ├── card.tsx               # Content container cards
+│   │   ├── dialog.tsx             # Accessible modals & overlays
+│   │   ├── dropdown-menu.tsx      # Context menus & actions
+│   │   ├── sheet.tsx              # Mobile navigation drawers
+│   │   ├── tabs.tsx               # Segmented view controllers
+│   │   ├── sonner.tsx             # Toast notifications
+│   │   └── [other primitives]    # Badge, avatar, input, select, etc.
+│   │
+│   ├── auth/                      # Authentication components
+│   │   ├── AuthLoginForm.tsx      # Email/password login with JWT
+│   │   ├── AuthRegisterForm.tsx   # Customer/Vendor account registration
+│   │   ├── GoogleSignInButton.tsx # One-tap Google Identity Services OAuth
+│   │   ├── AuthPhoneOtpModal.tsx  # Mobile OTP verification modal
+│   │   └── AuthRoleSelector.tsx   # Role toggle (Customer vs Vendor)
+│   │
+│   ├── booking/                   # Booking flow components
+│   │   ├── BookingHeaderStepper.tsx       # Step 1-2-3 visual progress
+│   │   ├── BookingStep1Details.tsx        # Event type, date, and location
+│   │   ├── BookingStep2Schedule.tsx       # Duration, timing, and requirements
+│   │   ├── BookingStep3Review.tsx         # Price breakdown & review
+│   │   ├── BookingOrderSummarySidebar.tsx # Real-time price summary
+│   │   └── BookingMobileActionBar.tsx     # Responsive bottom checkout bar
+│   │
+│   ├── customer/                  # Customer portal components
+│   │   ├── CustomerProfileHeader.tsx      # Customer header & avatar
+│   │   ├── CelebrationPassportCard.tsx    # Gamified event progress
+│   │   ├── CustomerDreamTeamTracker.tsx   # Booked vendor team status
+│   │   ├── CustomerBookingsTab.tsx        # Active & past bookings
+│   │   └── CustomerSavedTab.tsx           # Favorited vendors
+│   │
+│   ├── vendor/                    # Vendor workspace components
+│   │   ├── VendorProfileHeader.tsx        # Public profile cover & details
+│   │   ├── VendorHeroMosaic.tsx           # Instagram-style portfolio mosaic
+│   │   ├── VendorPackagesSection.tsx      # Service tiers & pricing
+│   │   ├── VendorPortfolioSection.tsx     # Portfolio albums & lightbox
+│   │   ├── VendorReviewsSection.tsx       # Verified client ratings & reviews
+│   │   ├── VendorOnboardingWizard.tsx     # 4-step vendor application
+│   │   ├── VendorCalendarPicker.tsx       # Blackout dates & schedule
+│   │   └── VendorBookingSidebar.tsx       # Sticky instant inquiry widget
+│   │
+│   ├── home/                      # Modular landing page sections
+│   │   ├── HomeHero.tsx                   # Hero banner with city search
+│   │   ├── HomeCategoryGrid.tsx           # Category cards (Photography, Decor, etc.)
+│   │   ├── HomeFeaturedVendors.tsx        # Handpicked top vendors
+│   │   ├── HomeTrustPromise.tsx           # 100% verified & escrow guarantees
+│   │   ├── HomeOccasionsSection.tsx       # Weddings, Birthdays, Corporate
+│   │   └── HomeHowItWorks.tsx             # 3-step customer journey
+│   │
+│   ├── header/                    # Global navigation
+│   │   ├── HeaderNavLinks.tsx             # Main desktop menu
+│   │   ├── HeaderCityPicker.tsx           # Location switcher dropdown
+│   │   ├── HeaderUserMenu.tsx             # Profile, Dashboard & Logout dropdown
+│   │   └── HeaderMobileDrawer.tsx         # Mobile hamburger menu
+│   │
+│   ├── motion/                    # Framer Motion micro-interactions
+│   │   ├── InView.tsx                     # Viewport entry triggers
+│   │   ├── TextLoop.tsx                   # Cycling headline text
+│   │   ├── Spotlight.tsx                  # Mouse-following glow effect
+│   │   └── Magnetic.tsx                   # Magnetic hover buttons
+│   │
+│   ├── ProtectedRoute.tsx         # Client route protection boundary
+│   ├── AyojLogo.tsx               # Scalable brand vector logo
+│   ├── StarRating.tsx             # Fractional star review display
+│   ├── ReviewFormModal.tsx        # Client review submission modal
+│   ├── NotificationDropdown.tsx   # Activity & booking updates
+│   ├── Footer.tsx                 # Site-wide responsive footer
+│   └── __tests__/                 # Component Jest & Testing Library tests
 │
-├── lib/                   # Client helpers and utilities
-│   ├── api.js            # API service layer
-│   ├── tokenService.js   # Token management
-│   └── contexts/         # React contexts
-│       ├── AuthContext.jsx
-│       └── AppContext.jsx
+├── lib/                           # Core utilities, API clients & state
+│   ├── api.ts                     # Central Axios client (SSR vs Browser routing)
+│   ├── tokenService.ts            # JWT storage (LocalStorage + Cookie expiry)
+│   ├── recentlyViewed.ts          # Client-side recent vendor tracking
+│   ├── contexts/                  # React state providers
+│   │   ├── AuthContext.tsx        # User session, JWT auth & OAuth
+│   │   └── LocationContext.tsx    # Selected city & geographic filters
+│   ├── seo/                       # SEO & Structured Data helpers
+│   │   └── directoryMetadata.ts   # OpenGraph, Twitter Cards & JSON-LD schema
+│   └── __tests__/                 # Utility unit tests
 │
-├── public/               # Static assets
-│   └── [images, icons, etc.]
+├── types/                         # TypeScript interfaces & types
+│   └── user.ts                    # User, Role, Vendor, and Session types
 │
-├── styles/               # Global & module CSS
-│   └── globals.css       # Global styles with Tailwind
+├── styles/                        # Styling & design system
+│   └── globals.css                # Tailwind CSS v4 variables & base styles
 │
-├── next.config.js        # Next.js configuration
-├── package.json          # Dependencies and scripts
-└── tsconfig.json         # TypeScript configuration
+├── public/                        # Static public assets
+│   └── images/                    # Favicons, logos, and placeholder imagery
+│
+├── Dockerfile                     # Multi-stage production container build (standalone)
+├── Dockerfile.local               # Local development container build
+├── next.config.js                 # Next.js config (standalone output, images)
+├── tailwind.config.js             # Tailwind CSS tokens & color palette
+├── tsconfig.json                  # TypeScript compiler settings & path aliases
+└── package.json                   # Dependencies and npm scripts
 ```
 
-## Key Changes from Previous Structure
+---
 
-### 1. App Router Structure
-- Moved from `src/` based structure to Next.js 13+ App Router
-- Pages are now in `app/` directory with `page.tsx` files
-- Layout is defined in `app/layout.tsx`
+## Architectural Principles
 
-### 2. Component Organization
-- Shared components moved to `components/` directory
-- Page-specific components in `components/pages/`
-- Removed `.jsx` extensions in favor of `.tsx` for TypeScript
+### 1. Hybrid Rendering Model (RSC + Client Components)
+- **Server Components (Default)**: All pages under `app/` are React Server Components by default. Data pre-fetching executes on the server without shipping JavaScript to the client.
+- **Client Components (`'use client'`)**: Used selectively for interactive elements like forms (`AuthLoginForm`), stateful modals (`BookingStep1Details`), dropdowns, and motion animations.
 
-### 3. Library Structure
-- Services and utilities moved to `lib/` directory
-- Contexts moved to `lib/contexts/`
-- API services in `lib/api.js`
-- Token management in `lib/tokenService.js`
+### 2. Dual-Mode API Routing (`lib/api.ts`)
+Next.js renders both on the server (during SSR) and in the user's browser (client hydration). `lib/api.ts` automatically switches based on execution context:
+* **Server-Side (Node.js runtime)**: Routes to `INTERNAL_API_URL` (defaults to `http://backend:3000` within Docker network) for ultra-fast direct communication (<1ms latency).
+* **Browser Runtime**: Routes to relative `/api` (`NEXT_PUBLIC_API_URL=/api`), eliminating CORS issues and letting Nginx proxy to Rails seamlessly.
 
-### 4. Styling
-- Global styles moved to `styles/globals.css`
-- Includes Tailwind CSS directives
-- Dark theme support maintained
-
-### 5. TypeScript Configuration
-- Updated path mappings in `tsconfig.json`
-- New aliases:
-  - `@/components/*` → `./components/*`
-  - `@/lib/*` → `./lib/*`
-  - `@/app/*` → `./app/*`
-  - `@/styles/*` → `./styles/*`
-
-## Migration Benefits
-
-1. **Modern Next.js**: Uses the latest App Router for better performance
-2. **Better Organization**: Clear separation of concerns
-3. **TypeScript Ready**: Proper TypeScript setup with path mappings
-4. **Scalable**: Easy to add new components and pages
-5. **Maintainable**: Logical file organization
-
-## Usage Examples
-
-### Importing Components
 ```typescript
-// Old way
-import { useAuth } from '../src/contexts/AuthContext';
-import { apiService } from '../src/services/api';
-
-// New way
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { apiService } from '@/lib/api';
+// lib/api.ts
+const getBaseApiUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_API_URL || '/api';
+  }
+  return process.env.INTERNAL_API_URL || 'http://backend:3000';
+};
 ```
 
-### Creating New Pages
-```typescript
-// app/new-page/page.tsx
-import MyComponent from '@/components/MyComponent';
+### 3. Path Aliases (`tsconfig.json`)
+Clean absolute imports throughout the application without relative traversal:
+* `@/components/*` → `./components/*`
+* `@/lib/*` → `./lib/*`
+* `@/app/*` → `./app/*`
+* `@/styles/*` → `./styles/*`
+* `@/types/*` → `./types/*`
 
-export default function NewPage() {
-  return <MyComponent />;
-}
-```
+### 4. Authentication Lifecycle
+1. **Login / Register**: `AuthContext.tsx` invokes Rails endpoints (`/auth/login`, `/auth/register`, or `/auth/google`).
+2. **Token Persistence**: `tokenService.ts` stores the JWT bearer token in `localStorage` and a secure cookie for SSR.
+3. **Request Interceptor**: `lib/api.ts` automatically injects `Authorization: Bearer <token>` into outgoing requests.
+4. **Expiration Handling**: A 401 response triggers automatic token eviction and redirects unauthenticated users to `/login`.
 
-### Adding Components
-```typescript
-// components/MyComponent.tsx
-import { useAuth } from '@/lib/contexts/AuthContext';
+---
 
-export default function MyComponent() {
-  const { user } = useAuth();
-  return <div>Hello {user?.name}</div>;
-}
-```
-
-## Development Commands
+## Development & Build Commands
 
 ```bash
 # Install dependencies
 npm install
 
-# Start development server
+# Start Next.js development server (port 3000)
 npm run dev
 
-# Build for production
+# Run TypeScript type-checking
+npx tsc --noEmit
+
+# Run unit and component test suite
+npm run test
+
+# Run ESLint validation
+npm run lint
+
+# Build production standalone bundle
 npm run build
 
-# Start production server
+# Start production server locally
 npm start
-
-# Run linting
-npm run lint
 ```
-
-## Notes
-
-- All components are now TypeScript-ready
-- Server-side rendering is enabled by default
-- Client components are marked with `'use client'` directive
-- Protected routes use the `ProtectedRoute` component
-- Authentication context is available throughout the app
