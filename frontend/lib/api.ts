@@ -8,9 +8,20 @@ declare module 'axios' {
   }
 }
 
-// Get API URL from environment variable
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const normalizedApiUrl = API_URL.replace(/\/+$/, '');
+// Get API URL from environment variable or browser context
+const getBaseApiUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (envUrl && envUrl !== '') {
+    return envUrl.replace(/\/+$/, '');
+  }
+  // In the browser, default to the relative /api path so requests route to the backend via reverse proxy
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
+  return (process.env.INTERNAL_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
+};
+
+const normalizedApiUrl = getBaseApiUrl();
 
 const api: AxiosInstance = axios.create({
   baseURL: normalizedApiUrl === '' ? '/' : normalizedApiUrl,
@@ -69,12 +80,12 @@ api.interceptors.response.use(
           ? `${data.error}: ${detailsMsg}`
           : detailsMsg
         : data.error ||
-          data.message ||
-          (data.errors &&
-            (typeof data.errors === 'string'
-              ? data.errors
-              : data.errors.message ||
-                (Array.isArray(data.errors) && data.errors[0]?.message)));
+        data.message ||
+        (data.errors &&
+          (typeof data.errors === 'string'
+            ? data.errors
+            : data.errors.message ||
+            (Array.isArray(data.errors) && data.errors[0]?.message)));
 
       if (backendMessage) {
         error.extractedMessage = backendMessage;

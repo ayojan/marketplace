@@ -34,6 +34,8 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set in .env.production}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-marketplace} -d ${POSTGRES_DB:-marketplace_production}"]
       interval: 10s
@@ -97,6 +99,7 @@ services:
       CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:-}
       CLOUDFLARE_R2_BUCKET: ${CLOUDFLARE_R2_BUCKET:-ayoj-media}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     depends_on:
       db:
         condition: service_healthy
@@ -105,7 +108,7 @@ services:
     volumes:
       - storage_data:/rails/storage
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/up || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3000/up || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -133,15 +136,16 @@ services:
       HOSTNAME: "0.0.0.0"
       NEXT_PUBLIC_API_URL: /api
       INTERNAL_API_URL: http://backend:3000
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      test: ["CMD-SHELL", "wget -q -T 3 --spider http://127.0.0.1:3000 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 25s
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
