@@ -104,13 +104,9 @@ README.md
 
 # Next.js build output
 .next/
-
-# Nuxt.js build / generate output
-.nuxt/
-
-# Gatsby files
-.cache/
-public/
+out/
+build/
+dist/
 
 # Storybook build outputs
 .out/
