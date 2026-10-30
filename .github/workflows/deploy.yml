@@ -224,23 +224,26 @@ jobs:
             echo "🔑 Authenticating Docker with GitHub Container Registry..."
             echo "$GHCR_TOKEN" | docker login "$REGISTRY" -u "$GHCR_USERNAME" --password-stdin
 
-            # Selective Pull & Restart
+            # 1. Pull updated images selectively
             if [ "$BACKEND_CHANGED" = "true" ] || [ "$IS_DISPATCH" = "true" ]; then
-              echo "📦 Updating Backend service..."
+              echo "📦 Pulling latest Backend image..."
               docker compose --env-file ~/.env.production pull backend
-              docker compose --env-file ~/.env.production up -d --no-deps backend
-              echo "⚡ Running database migrations..."
-              docker compose --env-file ~/.env.production exec -T backend bin/rails db:migrate
             fi
 
             if [ "$FRONTEND_CHANGED" = "true" ] || [ "$IS_DISPATCH" = "true" ]; then
-              echo "📦 Updating Frontend service..."
+              echo "📦 Pulling latest Frontend image..."
               docker compose --env-file ~/.env.production pull frontend
-              docker compose --env-file ~/.env.production up -d --no-deps frontend
             fi
 
-            # Ensure proxy & base services (db, redis, nginx) are up
+            # 2. Launch / update stack (starts db & redis, waits for healthchecks, updates changed containers)
+            echo "🚀 Launching / updating services..."
             docker compose --env-file ~/.env.production up -d --remove-orphans
+
+            # 3. Run database migrations safely (db is guaranteed up and healthy)
+            if [ "$BACKEND_CHANGED" = "true" ] || [ "$IS_DISPATCH" = "true" ]; then
+              echo "⚡ Running database migrations..."
+              docker compose --env-file ~/.env.production exec -T backend bin/rails db:prepare
+            fi
 
             echo "🧹 Cleaning up old unused image layers..."
             docker image prune -af --filter "until=72h"
