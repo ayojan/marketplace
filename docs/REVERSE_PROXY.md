@@ -5,34 +5,35 @@ This document explains how the Ayoj Marketplace uses Nginx as a Reverse Proxy to
 ## 1. High-Level Flow
 
 ```mermaid
-graph TD
-    %% External World
-    User([User Browser]) -- "Request (ayoj.com)" --> Nginx{Nginx Reverse Proxy}
+flowchart TD
+    classDef edge fill:#f8fafc,stroke:#475569,stroke-width:1.5px,color:#0f172a;
+    classDef proxy fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e;
+    classDef app fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+    classDef data fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
 
-    %% Nginx Routing Logic
-    subgraph "Nginx (Routing Hub)"
-        Nginx -- "Path: /" --> FE_Proxy[Proxy to Frontend]
-        Nginx -- "Path: /api/*" --> BE_Proxy[Proxy to Backend]
-        Nginx -- "Path: /rails/*" --> BE_Proxy
+    User["User Browser / Client"]:::edge -->|"HTTPS (Port 443)"| CF["Cloudflare Edge (SSL, CDN, WAF)"]:::edge
+    CF -->|"HTTP (Port 80) + CF-Connecting-IP"| Nginx["Nginx Reverse Proxy"]:::proxy
+
+    subgraph NginxRouting["Nginx Routing Hub (prod.conf)"]
+        Nginx -->|"ayoj.in & www.ayoj.in /"| FE_Proxy["Proxy to Next.js"]:::proxy
+        Nginx -->|"ayoj.in/_next/static/*"| Static_Proxy["Proxy to Next.js (1yr Cache)"]:::proxy
+        Nginx -->|"ayoj.in/api/* (strip /api)"| BE_Proxy["Proxy to Rails API"]:::proxy
+        Nginx -->|"api.ayoj.in/*"| BE_Proxy
+        Nginx -->|"admin.ayoj.in & /admin"| Admin_Proxy["Proxy to ActiveAdmin"]:::proxy
+        Nginx -->|"/assets/*, /up, /rails/active_storage/*"| BE_Proxy
     end
 
-    %% Internal Services
-    subgraph "Docker Internal Network"
-        FE_Proxy -- "port 3000" --> NextJS[Next.js App]
-        BE_Proxy -- "port 3000" --> Rails[Rails API]
-        
-        Rails -- "Internal" --> DB[(PostgreSQL)]
-        Rails -- "Internal" --> Cache[(Redis)]
-    end
+    subgraph DockerNet["Docker Internal Network (ayoj_network)"]
+        direction TB
+        FE_Proxy --> NextJS["Next.js 14 App (Port 3000)"]:::app
+        Static_Proxy --> NextJS
+        BE_Proxy --> Rails["Rails 8 API (Port 3000)"]:::app
+        Admin_Proxy --> Rails
 
-    %% Styling
-    classDef external fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef proxy fill:#69f,stroke:#333,stroke-width:2px,color:#fff;
-    classDef internal fill:#dfd,stroke:#333,stroke-width:1px;
-    
-    class User external;
-    class Nginx proxy;
-    class NextJS,Rails,DB,Cache internal;
+        NextJS -.->|"Internal SSR API (http://backend:3000)"| Rails
+        Rails -->|"Primary Data & Solid Queue"| DB[("PostgreSQL 15")]:::data
+        Rails -->|"Cache & Rate Limiting"| Redis[("Redis 7")]:::data
+    end
 ```
 
 ---
@@ -52,6 +53,7 @@ Nginx acts as the single entry point (listening on port 80/443). Instead of the 
 | `ayoj.in/rails/active_storage/*` | **Backend** | Direct proxy to Rails Active Storage image processor. |
 | `ayoj.in/up` | **Backend** | Direct proxy to Rails healthcheck probe. |
 | `admin.ayoj.in/` | **Backend** | Redirects to `/admin` ActiveAdmin portal. |
+| `ayoj.in/assets/*` | **Backend** | Direct proxy for ActiveAdmin stylesheets & javascripts. |
 | `api.ayoj.in/*` | **Backend** | Direct API subdomain endpoint for mobile clients. |
 
 ---

@@ -5,27 +5,54 @@ The frontend is a Next.js 14 application using the App Router, React 18, TypeScr
 ## System Context
 
 ```mermaid
-flowchart LR
+flowchart TD
     classDef client fill:#f8fafc,stroke:#475569,stroke-width:1.5px,color:#0f172a;
-    classDef frontend fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e;
-    classDef api fill:#f3e8ff,stroke:#7e22ce,stroke-width:1.5px,color:#3b0764;
+    classDef edge fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e;
+    classDef frontend fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+    classDef backend fill:#f3e8ff,stroke:#7e22ce,stroke-width:1.5px,color:#3b0764;
     classDef data fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
 
-    User([Customer / Vendor]):::client --> Browser[Web browser]:::client
-    subgraph Next[Next.js 14 frontend]
+    User["User (Customer / Vendor)"]:::client --> Browser["Web Browser"]:::client
+
+    Browser -->|"HTTP/HTTPS"| Edge["Cloudflare Edge + Nginx Proxy"]:::edge
+
+    subgraph AppServer["Docker Host Environment (ayoj_network)"]
         direction TB
-        Routes[App Router pages<br/>app/]:::frontend
-        UI[Page and shared components<br/>components/]:::frontend
-        State[Client state<br/>AuthContext, AppContext, tokenService]:::frontend
-        Client[Axios API client<br/>lib/api.js]:::frontend
-        Routes --> UI
-        UI <--> State
-        UI --> Client
+
+        subgraph NextServer["Next.js 14 Container (frontend:3000)"]
+            direction TB
+            RSC["Server Components & SSR<br/>(app/)"]:::frontend
+            Static["Static Assets & Chunks<br/>(_next/static)"]:::frontend
+        end
+
+        subgraph ClientRuntime["Browser Client Runtime"]
+            direction TB
+            UI["Client Components<br/>(components/)"]:::frontend
+            State["AuthContext & tokenService"]:::frontend
+            Axios["Axios API Client<br/>(lib/api.ts)"]:::frontend
+            UI <--> State
+            UI --> Axios
+        end
+
+        subgraph RailsServer["Rails 8 API Container (backend:3000)"]
+            REST["REST Endpoints<br/>(/auth, /services, /bookings...)"]:::backend
+            Puma["Puma 8 + Solid Queue"]:::backend
+            REST --> Puma
+        end
+
+        DB[("PostgreSQL 15")]:::data
+        Redis[("Redis 7")]:::data
+        Puma --> DB
+        Puma --> Redis
     end
-    Browser --> Routes
-    Client -->|Bearer JWT over HTTPS| REST[REST API endpoints]:::api
-    REST --> Rails[Rails application]:::api
-    Rails --> Data[(PostgreSQL / Solid Queue / Active Storage)]:::data
+
+    Edge -->|"ayoj.in / (SSR)"| RSC
+    Edge -->|"_next/static/*"| Static
+    Edge -->|"/api/* (Rewritten to /*)"| REST
+
+    Browser --> ClientRuntime
+    Axios -->|"Bearer JWT to /api/*"| Edge
+    RSC -.->|"Internal SSR Fetch (http://backend:3000)"| REST
 ```
 
 ## Frontend Layers
@@ -35,7 +62,7 @@ flowchart LR
 | Route entry points | `app/` | App Router pages, root layout, error and not-found boundaries |
 | Feature and shared UI | `components/` | Booking, marketplace, vendor, navigation, auth, and reusable UI components |
 | Client state | `lib/contexts/`, `lib/tokenService.js` | Authenticated user state, shared UI state, and browser token persistence |
-| API boundary | `lib/api.js` | Axios client, base URL, JWT authorization header, and unauthorized-response handling |
+| API boundary | `lib/api.ts` | Axios client, base URL, JWT authorization header, and unauthorized-response handling |
 | Static/mock data | `lib/data/`, `lib/mockVendorData.ts` | Development and presentation data; not the production source of truth |
 
 ### Routing and rendering
@@ -79,9 +106,7 @@ sequenceDiagram
 
 ## Deployment Boundary
 
-The intended production Compose design places Nginx before the Next.js frontend and Rails backend. Nginx serves the frontend at `/`, forwards `/api/*` to Rails after removing `/api`, and forwards Rails health and Active Storage paths. The frontend should make no direct connection to PostgreSQL, Redis, Sidekiq, or Active Storage.
-
-> Deployment review: `docker-compose.yml` names the Rails service `backend`, while `docker/nginx/prod.conf` currently points its `backend` upstream at `web:3000`. Align that upstream name before relying on the proxy topology shown above.
+The production Compose architecture places Nginx before the Next.js frontend and Rails backend on the single OCI host. Nginx serves the frontend at `/`, forwards `/api/*` to Rails after rewriting the prefix, and forwards Rails health (`/up`) and Active Storage paths (`/rails/active_storage/*`). The frontend connects directly to Rails at `http://backend:3000` for SSR and makes no direct connection to PostgreSQL or Redis.
 
 ## Development
 

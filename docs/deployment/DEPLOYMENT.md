@@ -8,40 +8,42 @@ This guide explains how to deploy the entire Ayoj full-stack marketplace (Next.j
 
 By collocating the backend and database on a single high-memory instance, we eliminate cross-cloud network round-trips, dropping API query latency from **~400ms down to <2ms**.
 
-```
-                   [Users Around the World]
-                              │
-                              ▼ (HTTPS via Cloudflare SSL)
-        ┌───────────────────────────────────────────┐
-        │       Cloudflare Edge (WAF + CDN)         │
-        └─────────────────────┬─────────────────────┘
-                              │
-                              ▼ (Port 80/443 to OCI Static IP)
-   ┌─────────────────────────────────────────────────────┐
-   │         OCI Ampere A1 VM (2 OCPU, 12 GB RAM)        │
-   │                                                     │
-   │   ┌─────────────────────────────────────────────┐   │
-   │   │             Nginx Reverse Proxy             │   │
-   │   └──────┬───────────────────────────────┬──────┘   │
-   │          │ (0.2ms)                       │ (0.2ms)  │
-   │          ▼                               ▼          │
-   │   ┌──────────────┐               ┌──────────────┐   │
-   │   │   Next.js    │ (0.5ms)       │ Rails 8 API  │   │
-   │   │  (Frontend)  │──────────────>│  (Backend)   │   │
-   │   └──────────────┘               └───────┬──────┘   │
-   │                                          │          │
-   │                      ┌───────────────────┴──────┐   │
-   │                      ▼                          ▼   │
-   │             ┌──────────────────┐       ┌──────────┐ │
-   │             │  PostgreSQL 16   │       │ Redis 7  │ │
-   │             │ (DB + SolidQueue)│       │ (Cache)  │ │
-   │             └──────────────────┘       └──────────┘ │
-   └─────────────────────────────────────────────────────┘
-                              │
-                              ▼ (Nightly encrypted backup stream)
-        ┌───────────────────────────────────────────┐
-        │       Cloudflare R2 (10 GB Free Storage)  │
-        └───────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    classDef cloud fill:#f8fafc,stroke:#0284c7,stroke-width:1.5px,color:#0f172a;
+    classDef proxy fill:#e0f2fe,stroke:#0369a1,stroke-width:2px,color:#0c4a6e;
+    classDef app fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+    classDef data fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
+    classDef external fill:#f3e8ff,stroke:#7e22ce,stroke-width:1.5px,color:#3b0764;
+
+    Users["Internet Users (Browsers & Mobile)"]:::cloud
+    Users -->|"HTTPS (Port 443)"| CF["Cloudflare Edge (WAF, CDN, SSL Termination)"]:::cloud
+    CF -->|"HTTP (Port 80) + Real-IP Headers"| OCI
+
+    subgraph OCI["OCI Ampere A1 VM (2 OCPU / 12 GB RAM / 100 GB NVMe)"]
+        direction TB
+
+        Nginx["Nginx Reverse Proxy (Port 80/443)"]:::proxy
+
+        subgraph DockerNet["Docker Internal Network (ayoj_network)"]
+            direction TB
+            Frontend["Next.js 14 Frontend<br/>(SSR, React Server Components)<br/>port 3000"]:::app
+            Backend["Rails 8 API Backend<br/>(Puma 8 + Solid Queue)<br/>port 3000"]:::app
+            Postgres[("PostgreSQL 15<br/>(Primary Data + Solid Queue)<br/>port 5432")]:::data
+            Redis[("Redis 7<br/>(Cache & Rate Limiting)<br/>port 6379")]:::data
+
+            Frontend -->|"Internal SSR API (0.5ms)"| Backend
+            Backend -->|"SQL Queries (0.2ms)"| Postgres
+            Backend -->|"In-Memory Cache (0.1ms)"| Redis
+        end
+
+        Nginx -->|"ayoj.in / www.ayoj.in"| Frontend
+        Nginx -->|"ayoj.in/api/* & api.ayoj.in"| Backend
+        Nginx -->|"admin.ayoj.in"| Backend
+    end
+
+    Backend -->|"Attachments & Media Uploads"| R2["Cloudflare R2 Bucket ($0 Egress)"]:::external
+    Backend -->|"Transactional Email"| Resend["Resend API"]:::external
 ```
 
 ---

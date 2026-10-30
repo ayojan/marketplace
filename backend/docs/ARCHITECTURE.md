@@ -11,21 +11,24 @@ flowchart LR
     classDef domain fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
     classDef async fill:#f3e8ff,stroke:#7e22ce,stroke-width:1.5px,color:#3b0764;
     classDef store fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
+    classDef external fill:#fdf4ff,stroke:#c026d3,stroke-width:1.5px,color:#701a75;
 
-    Client[Next.js frontend or API client]:::edge -->|HTTPS + JWT| Edge[Nginx reverse proxy]:::edge
-    Edge --> REST[REST controllers<br/>/auth, /bookings, /services, ...]:::api
-    Edge --> Health[Health checks<br/>/up, /health]:::api
-    subgraph Rails[Rails application]
+    Client["Next.js frontend or API client"]:::edge -->|"HTTPS + JWT"| Edge["Nginx reverse proxy"]:::edge
+    Edge --> REST["REST controllers<br/>/auth, /bookings, /services, ..."]:::api
+    Edge --> Health["Health checks<br/>/up, /health"]:::api
+    subgraph Rails["Rails application (Puma + Solid Queue)"]
         direction TB
-        REST --> Auth[Authentication and authorization<br/>Devise, JWT, Pundit]:::api
-        Auth --> Domain[Domain services, forms, query objects,<br/>policies, presenters, and models]:::domain
-        Domain --> Jobs[Active Job / Solid Queue jobs]:::async
+        REST --> Auth["Authentication and authorization<br/>Devise, JWT, Pundit"]:::api
+        Auth --> Domain["Domain services, forms, query objects,<br/>policies, presenters, and models"]:::domain
+        Domain --> Jobs["Active Job / Solid Queue jobs"]:::async
     end
-    Domain <--> DB[(PostgreSQL)]:::store
-    Domain --> Storage[Active Storage]:::store
-    Jobs --> Redis[(Redis queues)]:::store
-    Jobs --> Mail[SMTP email delivery]:::edge
+    Domain <--> DB[("PostgreSQL 15<br/>(App Data & Solid Queue)")]:::store
+    Jobs <--> DB
+    Domain <--> Redis[("Redis 7<br/>(Cache & Rate Limiting)")]:::store
+    Domain --> Storage["Active Storage"]:::store
     Jobs --> Storage
+    Storage --> R2["Cloudflare R2 Bucket<br/>(S3-compatible)"]:::external
+    Jobs --> Mail["Resend / SMTP email delivery"]:::external
 ```
 
 ## HTTP Interfaces
@@ -67,11 +70,12 @@ The codebase is organized as a modular Rails application through these directori
 
 ## Background Work and Storage
 
-- Rails uses Solid Queue as its Active Job adapter and Solid Cache for key-value caching (both PostgreSQL-backed; no Redis dependency).
+- Rails uses Solid Queue as its Active Job adapter (backed by PostgreSQL tables `solid_queue_*`).
+- Redis is used for high-performance key-value caching and rate limiting (Rack::Attack).
 - Background jobs include image processing, notification delivery, booking reminders, and vendor-stat recalculation.
-- PostgreSQL is the primary transactional data store and backing engine for queues and cache.
-- Active Storage owns attached service, portfolio, and review media. Its storage service is environment-configured.
-- Mailers deliver transactional and notification email through the configured SMTP/Resend provider.
+- PostgreSQL 15 is the primary transactional data store and backing engine for queues.
+- Active Storage owns attached service, portfolio, and review media, backed by Cloudflare R2 (S3-compatible bucket) in production or local storage in development.
+- Mailers deliver transactional and notification email through the Resend API / SMTP provider.
 
 ## Local Development
 
